@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saffron (Mirpur 10) - Operating Cost Report</title>
+  <script>
+    if (localStorage.getItem('saffron_admin_logged_in') !== 'true') {
+      window.location.href = "index.html";
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { display: flex; height: 100vh; background-color: #f4f6f9; color: #333; }
+    
+    .sidebar { width: 250px; background-color: #1e293b; color: #fff; display: flex; flex-direction: column; flex-shrink: 0; }
+    .brand { padding: 20px 15px; text-align: center; background: #0f172a; border-bottom: 1px solid #334155; display: flex; flex-direction: column; align-items: center; }
+    .brand-logo { width: 180px; height: 50px; margin-bottom: 6px; display: block; }
+    .branch-tag { display: block; font-size: 12px; color: #94a3b8; margin-top: 4px; }
+    
+    .nav-links { list-style: none; padding: 20px 0; }
+    .sidebar a { text-decoration: none !important; }
+    .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 16px; transition: 0.2s; color: #cbd5e1; }
+    .nav-item:hover, .nav-item.active { background-color: #334155; color: #fff; border-left: 4px solid #f59e0b; }
+    
+    .logout-btn { color: #ef4444; border-top: 1px solid #334155; padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; text-decoration: none; position: absolute; bottom: 0; width: 250px;}
+    .logout-btn:hover { background-color: #334155; color: #f87171; }
+
+    .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background: #dcfce7; color: #166534; }
+
+    /* TAB MENU */
+    .report-tab-header { display: flex; gap: 10px; background: #e2e8f0; padding: 6px 8px 0 8px; border-radius: 8px 8px 0 0; border-bottom: 2px solid #cbd5e1; }
+    .tab-btn { padding: 12px 20px; font-size: 14px; font-weight: 600; color: #64748b; background: transparent; border: none; border-radius: 6px 6px 0 0; cursor: pointer; transition: all 0.2s; }
+    .tab-btn:hover { color: #0f172a; background: #f1f5f9; }
+    .tab-btn.active { background: #ffffff; color: #d97706; border-bottom: 3px solid #f59e0b; font-weight: 700; }
+
+    .tab-content { display: none; background: #fff; border-radius: 0 0 8px 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 25px; }
+    .tab-content.active { display: block; }
+
+    .card-title { font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    
+    .filter-box { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 15px; border-radius: 6px; margin-bottom: 15px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .filter-box label { font-size: 13px; font-weight: 600; color: #475569; }
+    .filter-box input[type="date"] { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; }
+    
+    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+    .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; text-align: center; }
+    .stat-card .title { font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px; }
+    .stat-card .amount { font-size: 22px; font-weight: 700; }
+
+    .btn { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 13px; }
+    .btn-primary { background: #f59e0b; color: #fff; }
+    .btn-primary:hover { background: #d97706; }
+    .btn-pdf { background-color: #0284c7; color: #fff; }
+    .btn-pdf:hover { background-color: #0369a1; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
+    th { background: #f8fafc; color: #475569; font-weight: 600; font-size: 13px; }
+    td { font-size: 13px; }
+
+    .print-only-header { display: none; }
+
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      .sidebar, .header, .filter-box, .btn, .report-tab-header { display: none !important; }
+      .main-content { padding: 0 !important; overflow: visible !important; }
+      
+      .tab-content { display: none !important; box-shadow: none !important; border: none !important; padding: 0 !important; }
+      .tab-content.print-active { display: block !important; }
+
+      .print-only-header { display: block !important; margin-bottom: 20px; }
+      .pdf-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+      .pdf-brand { display: flex; align-items: center; gap: 12px; }
+      .pdf-brand img { width: 140px; }
+      .pdf-brand-title { font-size: 24px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: 1px; }
+      .pdf-brand-sub { font-size: 11px; color: #64748b; }
+      .pdf-doc-title { font-size: 12px; font-weight: bold; color: #94a3b8; text-transform: uppercase; }
+
+      .pdf-meta-box { 
+        border: 1px solid #e2e8f0; 
+        border-radius: 8px; 
+        padding: 12px 18px; 
+        display: grid; 
+        grid-template-columns: 1fr 1fr; 
+        gap: 10px; 
+        margin-bottom: 20px; 
+        font-size: 12px;
+      }
+      .pdf-meta-item span { color: #64748b; font-weight: 600; }
+      .pdf-meta-item strong { color: #0f172a; }
+
+      .pdf-summary-cards { display: flex; gap: 10px; margin-bottom: 20px; }
+      .pdf-card { flex: 1; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; text-align: center; }
+      .pdf-card-title { font-size: 10px; font-weight:bold; color: #475569; text-transform: uppercase; margin-bottom: 4px; }
+      .pdf-card-value { font-size: 16px; font-weight: bold; }
+
+      .pdf-section-heading { font-size: 13px; font-weight: 800; color: #0f172a; border-left: 4px solid #f59e0b; padding-left: 8px; margin-bottom: 10px; text-transform: uppercase; }
+
+      table { border-collapse: collapse; width: 100%; }
+      th { background-color: #f8fafc !important; color: #334155 !important; font-size: 11px !important; text-transform: uppercase; border-bottom: 2px solid #cbd5e1 !important; }
+      td { font-size: 11px !important; border-bottom: 1px solid #e2e8f0 !important; padding: 8px 10px !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <div class="brand">
+      <img src="logo.png" alt="Saffron Logo" class="brand-logo" onerror="this.onerror=null; this.src='https://via.placeholder.com/120x50?text=SAFFRON';">
+      <span class="branch-tag">Mirpur 10 Branch</span>
+    </div>
+    <ul class="nav-links">
+<li><a href="manager_inventory.html" class="nav-item ">Stock Management</a></li>
+      <li><a href="manager_guestmanagement.html" class="nav-item">Guest Management</a></li>
+      <li><a href="manager_employeeexpense.html" class="nav-item">Employee Expense</a></li>
+      <li><a href="manager_otherexpense.html" class="nav-item">Other Expense</a></li>
+      <li><a href="manager_salesmanagement.html" class="nav-item">Employee Sales report</a></li>
+      <li><a href="manager_salesreport.html" class="nav-item">Sales History & Report</a></li>
+      <li><a href="manager_costreport.html" class="nav-item active">Operating Cost Report</a></li>
+      <li><a href="manager_pos.html" class="nav-item">POS System</a></li>
+
+    </ul>
+    <a href="#" class="logout-btn" onclick="logoutAdmin()">🚪 লগআউট (Logout)</a>
+  </div>
+
+  <div class="main-content">
+    <div class="header">
+      <h2>সেলস ও কস্ট রিপোর্ট প্যানেল</h2>
+      <div class="status-badge">🟢 অনলাইন (Auto Syncing)</div>
+    </div>
+
+    <!-- TAB MENU -->
+    <div class="report-tab-header">
+      <button class="tab-btn active" onclick="switchReportTab('food-tab', this)">🍔 ১. ফুড সেলস</button>
+      <button class="tab-btn" onclick="switchReportTab('emp-tab', this)">👥 ২. কর্মচারী খরচ</button>
+      <button class="tab-btn" onclick="switchReportTab('other-tab', this)">🧾 ৩. অন্যান্য খরচ</button>
+      <button class="tab-btn" onclick="switchReportTab('totalcost-tab', this)">💰 ৪. টোটাল কস্ট ও প্রফিট</button>
+    </div>
+
+    <!-- TAB 1: FOOD SALES SUMMARY -->
+    <div id="food-tab" class="tab-content active">
+      <div class="print-only-header">
+        <div class="pdf-top">
+          <div class="pdf-brand">
+            <img src="logo.png" onerror="this.onerror=null; this.src='https://via.placeholder.com/120x50?text=SAFFRON';">
+            <div>
+              <div class="pdf-brand-title">SAFFRON</div>
+              <div class="pdf-brand-sub">Official Food Sales & Production Cost Statement</div>
+            </div>
+          </div>
+          <div class="pdf-doc-title">SALES REPORT</div>
+        </div>
+        <div class="pdf-meta-box">
+          <div class="pdf-meta-item"><span>Filter Range:</span> <strong class="pdf-print-range">Today</strong></div>
+          <div class="pdf-meta-item"><span>Branch:</span> <strong>Mirpur 10</strong></div>
+          <div class="pdf-meta-item"><span>Generated Date:</span> <strong class="pdf-print-date">---</strong></div>
+          <div class="pdf-meta-item"><span>Status:</span> <strong style="color:green;">Verified</strong></div>
+        </div>
+        
+        <div class="pdf-summary-cards">
+          <div class="pdf-card">
+            <div class="pdf-card-title">TOTAL REVENUE</div>
+            <div class="pdf-card-value" id="pdf-food-revenue" style="color:#16a34a;">৳0.00</div>
+          </div>
+          <div class="pdf-card">
+            <div class="pdf-card-title">TOTAL COST</div>
+            <div class="pdf-card-value" id="pdf-food-cost" style="color:#dc2626;">৳0.00</div>
+          </div>
+          <div class="pdf-card">
+            <div class="pdf-card-title">GROSS MARGIN</div>
+            <div class="pdf-card-value" id="pdf-food-margin" style="color:#0284c7;">৳0.00</div>
+          </div>
+        </div>
+
+        <div class="pdf-section-heading">FOOD SALES & COST BREAKDOWN</div>
+      </div>
+
+      <div class="card-title">
+        <span>১. ফুড আইটেম সেলস ও কস্ট সামারি (Food Sales Summary)</span>
+        <button class="btn btn-pdf" onclick="printTabSection('food-tab')">📥 PDF / ডাউনলোড</button>
+      </div>
+
+      <div class="filter-box">
+        <label>হতে:</label>
+        <input type="date" id="food-start-date">
+        <label>পর্যন্ত:</label>
+        <input type="date" id="food-end-date">
+        <button class="btn btn-primary" onclick="loadFoodSalesReport()">ফিল্টার রিপোর্ট</button>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="title">মোট বিক্রি (Total Revenue)</div>
+          <div class="amount" id="food-stat-revenue" style="color: #16a34a;">৳0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="title">মোট ফুড কস্ট (Total Food Cost)</div>
+          <div class="amount" id="food-stat-cost" style="color: #dc2626;">৳0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="title">গ্রস প্রফিট (Gross Profit)</div>
+          <div class="amount" id="food-stat-margin" style="color: #0284c7;">৳0.00</div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>ফুডের নাম</th>
+            <th>পার পিস কস্ট</th>
+            <th>পরিমাণ (Qty)</th>
+            <th>মোট বিক্রি (Sales)</th>
+            <th>মোট কস্ট (Total Cost)</th>
+            <th>প্রফিট / মার্জিন</th>
+          </tr>
+        </thead>
+        <tbody id="food-sales-rows">
+          <tr><td colspan="7" style="text-align:center;">ডাটা লোড হচ্ছে...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TAB 2: EMPLOYEE EXPENSE SUMMARY -->
+    <div id="emp-tab" class="tab-content">
+      <div class="print-only-header">
+        <div class="pdf-top">
+          <div class="pdf-brand">
+            <img src="logo.png" onerror="this.onerror=null; this.src='https://via.placeholder.com/120x50?text=SAFFRON';">
+            <div>
+              <div class="pdf-brand-title">SAFFRON</div>
+              <div class="pdf-brand-sub">Employee Expense Statement</div>
+            </div>
+          </div>
+          <div class="pdf-doc-title">EXPENSE REPORT</div>
+        </div>
+        <div class="pdf-meta-box">
+          <div class="pdf-meta-item"><span>Filter Range:</span> <strong class="pdf-print-range">Today</strong></div>
+          <div class="pdf-meta-item"><span>Generated Date:</span> <strong class="pdf-print-date">---</strong></div>
+        </div>
+
+        <div class="pdf-summary-cards">
+          <div class="pdf-card">
+            <div class="pdf-card-title">TOTAL EXPENSE</div>
+            <div class="pdf-card-value" id="pdf-emp-total" style="color:#dc2626;">৳0.00</div>
+          </div>
+          <div class="pdf-card">
+            <div class="pdf-card-title">TOTAL ENTRIES</div>
+            <div class="pdf-card-value" id="pdf-emp-count" style="color:#0f172a;">0</div>
+          </div>
+          <div class="pdf-card">
+            <div class="pdf-card-title">AVG EXPENSE / ENTRY</div>
+            <div class="pdf-card-value" id="pdf-emp-avg" style="color:#0284c7;">৳0.00</div>
+          </div>
+        </div>
+
+        <div class="pdf-section-heading">EMPLOYEE EXPENSE BREAKDOWN</div>
+      </div>
+
+      <div class="card-title">
+        <span>২. কর্মচারী খরচ রিপোর্ট</span>
+        <button class="btn btn-pdf" onclick="printTabSection('emp-tab')">📥 PDF / ডাউনলোড</button>
+      </div>
+
+      <div class="filter-box">
+        <label>হতে:</label>
+        <input type="date" id="emp-start-date">
+        <label>পর্যন্ত:</label>
+        <input type="date" id="emp-end-date">
+        <button class="btn btn-primary" onclick="loadEmployeeExpenseReport()">ফিল্টার রিপোর্ট</button>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="title">মোট কর্মচারী খরচ (Total Employee Expense)</div>
+          <div class="amount" id="emp-stat-total" style="color: #dc2626;">৳0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="title">মোট এন্ট্রি (Total Transactions)</div>
+          <div class="amount" id="emp-stat-count" style="color: #0f172a;">0 টি</div>
+        </div>
+        <div class="stat-card">
+          <div class="title">গড় খরচ (Average Expense)</div>
+          <div class="amount" id="emp-stat-avg" style="color: #0284c7;">৳0.00</div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>তারিখ</th>
+            <th>কর্মচারীর নাম</th>
+            <th>খাত / বিবরণ</th>
+            <th>পরিমাণ (টাকা)</th>
+          </tr>
+        </thead>
+        <tbody id="employee-expense-rows">
+          <tr><td colspan="5" style="text-align:center;">ডাটা লোড হচ্ছে...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TAB 3: OTHER EXPENSE SUMMARY -->
+    <div id="other-tab" class="tab-content">
+      <div class="print-only-header">
+        <div class="pdf-top">
+          <div class="pdf-brand">
+            <img src="logo.png" onerror="this.onerror=null; this.src='https://via.placeholder.com/120x50?text=SAFFRON';">
+            <div>
+              <div class="pdf-brand-title">SAFFRON</div>
+              <div class="pdf-brand-sub">Other Expenses Statement</div>
+            </div>
+          </div>
+          <div class="pdf-doc-title">EXPENSE REPORT</div>
+        </div>
+        <div class="pdf-meta-box">
+          <div class="pdf-meta-item"><span>Filter Range:</span> <strong class="pdf-print-range">Today</strong></div>
+          <div class="pdf-meta-item"><span>Generated Date:</span> <strong class="pdf-print-date">---</strong></div>
+        </div>
+
+        <div class="pdf-summary-cards">
+          <div class="pdf-card">
+            <div class="pdf-card-title">TOTAL OTHER EXPENSE</div>
+            <div class="pdf-card-value" id="pdf-other-total" style="color:#ea580c;">৳0.00</div>
+          </div>
+          <div class="pdf-card">
+            <div class="pdf-card-title">TOTAL CATEGORIES</div>
+            <div class="pdf-card-value" id="pdf-other-cat-count" style="color:#0f172a;">0</div>
+          </div>
+          <div class="pdf-card">
+            <div class="pdf-card-title">TOTAL ENTRIES</div>
+            <div class="pdf-card-value" id="pdf-other-count" style="color:#0284c7;">0</div>
+          </div>
+        </div>
+
+        <div class="pdf-section-heading">OTHER EXPENSE BREAKDOWN</div>
+      </div>
+
+      <div class="card-title">
+        <span>৩. অন্যান্য খরচ রিপোর্ট</span>
+        <button class="btn btn-pdf" onclick="printTabSection('other-tab')">📥 PDF / ডাউনলোড</button>
+      </div>
+
+      <div class="filter-box">
+        <label>হতে:</label>
+        <input type="date" id="other-start-date">
+        <label>পর্যন্ত:</label>
+        <input type="date" id="other-end-date">
+        <button class="btn btn-primary" onclick="loadOtherExpenseReport()">ফিল্টার রিপোর্ট</button>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="title">মোট অন্যান্য খরচ (Total Other Expense)</div>
+          <div class="amount" id="other-stat-total" style="color: #ea580c;">৳0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="title">মোট ক্যাটাগরি (Total Categories)</div>
+          <div class="amount" id="other-stat-cat-count" style="color: #0f172a;">0 টি</div>
+        </div>
+        <div class="stat-card">
+          <div class="title">মোট লেনদেন (Total Entries)</div>
+          <div class="amount" id="other-stat-count" style="color: #0284c7;">0 টি</div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>তারিখ</th>
+            <th>ক্যাটাগরি</th>
+            <th>বিবরণ</th>
+            <th>পরিমাণ (টাকা)</th>
+          </tr>
+        </thead>
+        <tbody id="other-expense-rows">
+          <tr><td colspan="5" style="text-align:center;">ডাটা লোড হচ্ছে...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TAB 4: TOTAL COST & PROFIT SUMMARY -->
+    <div id="totalcost-tab" class="tab-content">
+      <div class="print-only-header">
+        <div class="pdf-top">
+          <div class="pdf-brand">
+            <img src="logo.png" onerror="this.onerror=null; this.src='https://via.placeholder.com/120x50?text=SAFFRON';">
+            <div>
+              <div class="pdf-brand-title">SAFFRON</div>
+              <div class="pdf-brand-sub">Comprehensive Financial & Profit Statement</div>
+            </div>
+          </div>
+          <div class="pdf-doc-title">FINANCIAL STATEMENT</div>
+        </div>
+        <div class="pdf-meta-box">
+          <div class="pdf-meta-item"><span>Filter Range:</span> <strong class="pdf-print-range">Today</strong></div>
+          <div class="pdf-meta-item"><span>Generated Date:</span> <strong class="pdf-print-date">---</strong></div>
+          <div class="pdf-meta-item"><span>Branch:</span> <strong>Mirpur 10</strong></div>
+          <div class="pdf-meta-item"><span>Status:</span> <strong style="color:green;">Verified</strong></div>
+        </div>
+
+        <div class="pdf-summary-cards">
+          <div class="pdf-card">
+            <div class="pdf-card-title">TOTAL REVENUE</div>
+            <div class="pdf-card-value" id="pdf-tc-revenue" style="color:#16a34a;">৳0.00</div>
+          </div>
+          <div class="pdf-card">
+            <div class="pdf-card-title">TOTAL EXPENSES</div>
+            <div class="pdf-card-value" id="pdf-tc-expense" style="color:#dc2626;">৳0.00</div>
+          </div>
+          <div class="pdf-card">
+            <div class="pdf-card-title">NET PROFIT / LOSS</div>
+            <div class="pdf-card-value" id="pdf-tc-profit" style="color:#0284c7;">৳0.00</div>
+          </div>
+        </div>
+
+        <div class="pdf-section-heading">ALL EXPENSE LISTING</div>
+      </div>
+
+      <div class="card-title">
+        <span>৪. টোটাল কস্ট, অল খরচের লিস্ট ও প্রফিট সামারি</span>
+        <button class="btn btn-pdf" onclick="printTabSection('totalcost-tab')">📥 PDF / ডাউনলোড</button>
+      </div>
+
+      <div class="filter-box">
+        <label>হতে:</label>
+        <input type="date" id="tc-start-date">
+        <label>পর্যন্ত:</label>
+        <input type="date" id="tc-end-date">
+        <button class="btn btn-primary" onclick="loadTotalCostReport()">ফিল্টার সামারি</button>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="title">মোট বিক্রি (Total Revenue)</div>
+          <div class="amount" id="tc-revenue" style="color: #16a34a;">৳0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="title">সর্বমোট খরচ (Total Expenses)</div>
+          <div class="amount" id="tc-total-expense" style="color: #dc2626;">৳0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="title">নিট প্রফিট / লস (Net Profit/Loss)</div>
+          <div class="amount" id="tc-net-profit" style="color: #0284c7;">৳0.00</div>
+        </div>
+      </div>
+
+      <h4 style="margin: 15px 0 10px 0; color: #334155;">সকল খরচের ক্যাটাগরিওয়াইজ বিবরণ:</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>তারিখ / সময়কাল</th>
+            <th>খরচের ধরন</th>
+            <th>খাত / বিবরণ</th>
+            <th>পরিমাণ (টাকা)</th>
+          </tr>
+        </thead>
+        <tbody id="all-expense-rows">
+          <tr><td colspan="5" style="text-align:center;">ডাটা ফিল্টার করুন...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    function logoutAdmin() {
+      if (confirm("লগআউট করতে চান?")) {
+        localStorage.removeItem('saffron_admin_logged_in');
+        window.location.href = "index.html";
+      }
+    }
+
+    function switchReportTab(tabId, element) {
+      document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(tb => tb.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      element.classList.add('active');
+    }
+
+    function printTabSection(tabId) {
+      const activeTab = document.getElementById(tabId);
+      
+      let startDate = "";
+      let endDate = "";
+      if(tabId === 'food-tab') {
+        startDate = document.getElementById('food-start-date').value;
+        endDate = document.getElementById('food-end-date').value;
+      } else if(tabId === 'emp-tab') {
+        startDate = document.getElementById('emp-start-date').value;
+        endDate = document.getElementById('emp-end-date').value;
+      } else if(tabId === 'other-tab') {
+        startDate = document.getElementById('other-start-date').value;
+        endDate = document.getElementById('other-end-date').value;
+      } else {
+        startDate = document.getElementById('tc-start-date').value;
+        endDate = document.getElementById('tc-end-date').value;
+      }
+
+      activeTab.querySelectorAll('.pdf-print-range').forEach(el => el.innerText = `${startDate} to ${endDate}`);
+      activeTab.querySelectorAll('.pdf-print-date').forEach(el => el.innerText = new Date().toLocaleString('bn-BD'));
+
+      activeTab.classList.add('print-active');
+      window.print();
+      activeTab.classList.remove('print-active');
+    }
+  </script>
+
+  <!-- FIREBASE MODULE SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+    import { 
+      initializeFirestore, 
+      collection, 
+      getDocs 
+    } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAq_vQ7ARn1TdMOOp1rtJqFOd1K4yUupP4",
+      authDomain: "saffron-65736.firebaseapp.com",
+      databaseURL: "https://saffron-65736-default-rtdb.firebaseio.com",
+      projectId: "saffron-65736",
+      storageBucket: "saffron-65736.firebasestorage.app",
+      messagingSenderId: "599450614604",
+      appId: "1:599450614604:web:e6be0bc5cb56dc867cede9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = initializeFirestore(app, {});
+
+    // Set Default Dates
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const todayStr = now.toISOString().split('T')[0];
+
+    ['food-start-date', 'emp-start-date', 'other-start-date', 'tc-start-date'].forEach(id => document.getElementById(id).value = firstDay);
+    ['food-end-date', 'emp-end-date', 'other-end-date', 'tc-end-date'].forEach(id => document.getElementById(id).value = todayStr);
+
+    // READ FOOD PER UNIT COST MAP
+    async function getFoodPerUnitCostMap() {
+      let unitCostMap = {};
+
+      try {
+        const foodsSnap = await getDocs(collection(db, "saffron", "mirpur10", "foods"));
+        
+        foodsSnap.forEach(doc => {
+          const docId = doc.id;
+          const data = doc.data();
+
+          if (Array.isArray(data.variants) && data.variants.length > 0) {
+            data.variants.forEach(variant => {
+              const sizeName = variant.size ? String(variant.size).trim().toLowerCase() : '';
+              const costVal = parseFloat(variant.totalCost) || 0;
+
+              const fullKey = `${String(docId).trim().toLowerCase()} ${sizeName}`.trim();
+              unitCostMap[fullKey] = costVal;
+
+              if (data.name) {
+                const nameKey = `${String(data.name).trim().toLowerCase()} ${sizeName}`.trim();
+                unitCostMap[nameKey] = costVal;
+              }
+
+              const cleanDocId = String(docId).trim().toLowerCase();
+              if (unitCostMap[cleanDocId] === undefined || unitCostMap[cleanDocId] === 0) {
+                unitCostMap[cleanDocId] = costVal;
+              }
+              if (data.name) {
+                const cleanName = String(data.name).trim().toLowerCase();
+                if (unitCostMap[cleanName] === undefined || unitCostMap[cleanName] === 0) {
+                  unitCostMap[cleanName] = costVal;
+                }
+              }
+            });
+          } else if (data.totalCost !== undefined && data.totalCost !== null) {
+            const costVal = parseFloat(data.totalCost) || 0;
+            unitCostMap[String(docId).trim().toLowerCase()] = costVal;
+            if (data.name) {
+              unitCostMap[String(data.name).trim().toLowerCase()] = costVal;
+            }
+          }
+        });
+      } catch (e) {
+        console.error("Error fetching /foods costs:", e);
+      }
+
+      return unitCostMap;
+    }
+
+    function resolveUnitCost(itemName, itemSize, unitCostMap) {
+      if (!itemName) return 0;
+      
+      const cleanName = String(itemName).trim().toLowerCase().replace(/\s+/g, ' ');
+      const cleanSize = itemSize ? String(itemSize).trim().toLowerCase().replace(/\s+/g, ' ') : '';
+      
+      const fullQuery = `${cleanName} ${cleanSize}`.trim();
+
+      if (unitCostMap[fullQuery] !== undefined) {
+        return unitCostMap[fullQuery];
+      }
+      if (unitCostMap[cleanName] !== undefined) {
+        return unitCostMap[cleanName];
+      }
+      for (let key in unitCostMap) {
+        if (cleanName.includes(key) || key.includes(cleanName)) {
+          return unitCostMap[key];
+        }
+      }
+      return 0;
+    }
+
+    // 1. LOAD FOOD SALES REPORT
+    window.loadFoodSalesReport = async function() {
+      const startDate = document.getElementById('food-start-date').value;
+      const endDate = document.getElementById('food-end-date').value;
+      const tbody = document.getElementById('food-sales-rows');
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">ডাটা লোড হচ্ছে...</td></tr>';
+
+      try {
+        const unitCostMap = await getFoodPerUnitCostMap();
+        const salesSnap = await getDocs(collection(db, "saffron", "mirpur10", "sales"));
+        let foodSummary = {};
+
+        let totalRevenue = 0;
+        let totalCostSum = 0;
+
+        salesSnap.forEach(doc => {
+          const sale = doc.data();
+          const saleDate = sale.completedAt ? sale.completedAt.split('T')[0] : (sale.date || '');
+
+          if (saleDate >= startDate && saleDate <= endDate && (sale.status === 'Completed' || !sale.status)) {
+            if (Array.isArray(sale.items)) {
+              sale.items.forEach(item => {
+                const name = item.name || item.title || item.foodName || 'Unknown Item';
+                const size = item.size || item.variant || '';
+                const qty = parseFloat(item.qty || item.quantity || 1);
+                const price = parseFloat(item.price || item.unitPrice || 0);
+                
+                const displayName = size ? `${name} (${size})` : name;
+                let unitCost = resolveUnitCost(name, size, unitCostMap);
+
+                if (foodSummary[displayName]) {
+                  foodSummary[displayName].qty += qty;
+                  foodSummary[displayName].totalSales += (qty * price);
+                  if (unitCost > 0) foodSummary[displayName].unitCost = unitCost;
+                } else {
+                  foodSummary[displayName] = { 
+                    unitCost: unitCost,
+                    qty: qty, 
+                    totalSales: (qty * price)
+                  };
+                }
+              });
+            }
+          }
+        });
+
+        let html = '';
+        let index = 1;
+
+        for (let displayName in foodSummary) {
+          const item = foodSummary[displayName];
+          const totalCost = item.qty * item.unitCost;
+          const margin = item.totalSales - totalCost;
+
+          totalRevenue += item.totalSales;
+          totalCostSum += totalCost;
+
+          html += `
+            <tr>
+              <td>${index++}</td>
+              <td style="font-weight:600; color:#0f172a;">${displayName}</td>
+              <td style="color:#64748b;">৳${item.unitCost.toFixed(2)}</td>
+              <td><strong>${item.qty}</strong> টি</td>
+              <td style="color:#16a34a; font-weight:600;">৳${item.totalSales.toFixed(2)}</td>
+              <td style="color:#dc2626; font-weight:600;">৳${totalCost.toFixed(2)}</td>
+              <td style="color:${margin >= 0 ? '#0284c7' : '#dc2626'}; font-weight:bold;">৳${margin.toFixed(2)}</td>
+            </tr>`;
+        }
+
+        const grossProfit = totalRevenue - totalCostSum;
+
+        // Update Stat Cards (UI & PDF)
+        document.getElementById('food-stat-revenue').innerText = `৳${totalRevenue.toFixed(2)}`;
+        document.getElementById('food-stat-cost').innerText = `৳${totalCostSum.toFixed(2)}`;
+        document.getElementById('food-stat-margin').innerText = `৳${grossProfit.toFixed(2)}`;
+        document.getElementById('food-stat-margin').style.color = grossProfit >= 0 ? '#0284c7' : '#dc2626';
+
+        document.getElementById('pdf-food-revenue').innerText = `৳${totalRevenue.toFixed(2)}`;
+        document.getElementById('pdf-food-cost').innerText = `৳${totalCostSum.toFixed(2)}`;
+        document.getElementById('pdf-food-margin').innerText = `৳${grossProfit.toFixed(2)}`;
+        document.getElementById('pdf-food-margin').style.color = grossProfit >= 0 ? '#0284c7' : '#dc2626';
+
+        tbody.innerHTML = html || '<tr><td colspan="7" style="text-align:center; color:#ef4444;">উক্ত ডেট রেঞ্জে কোনো বিক্রির ডাটা নেই।</td></tr>';
+      } catch (err) {
+        console.error(err);
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red;">ডাটা রিড করতে সমস্যা হয়েছে।</td></tr>';
+      }
+    };
+
+    // 2. LOAD EMPLOYEE EXPENSE REPORT
+    window.loadEmployeeExpenseReport = async function() {
+      const startDate = document.getElementById('emp-start-date').value;
+      const endDate = document.getElementById('emp-end-date').value;
+      const tbody = document.getElementById('employee-expense-rows');
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">ডাটা লোড হচ্ছে...</td></tr>';
+
+      try {
+        const empSnap = await getDocs(collection(db, "saffron", "mirpur10", "employee_expenses"));
+        let html = '';
+        let index = 1;
+
+        let totalEmpExpense = 0;
+        let entryCount = 0;
+
+        empSnap.forEach(doc => {
+          const exp = doc.data();
+          const expDate = exp.date || '';
+
+          if (expDate >= startDate && expDate <= endDate) {
+            const amount = parseFloat(exp.amount || 0);
+            totalEmpExpense += amount;
+            entryCount++;
+
+            html += `
+              <tr>
+                <td>${index++}</td>
+                <td>${expDate}</td>
+                <td style="font-weight:600;">${exp.employeeName || 'N/A'}</td>
+                <td>${exp.reason || 'বেতন / অগ্রিম / ভাতা'}</td>
+                <td style="font-weight:bold; color:#dc2626;">৳${amount.toFixed(2)}</td>
+              </tr>`;
+          }
+        });
+
+        const avgExpense = entryCount > 0 ? (totalEmpExpense / entryCount) : 0;
+
+        // Update Stat Cards (UI & PDF)
+        document.getElementById('emp-stat-total').innerText = `৳${totalEmpExpense.toFixed(2)}`;
+        document.getElementById('emp-stat-count').innerText = `${entryCount} টি`;
+        document.getElementById('emp-stat-avg').innerText = `৳${avgExpense.toFixed(2)}`;
+
+        document.getElementById('pdf-emp-total').innerText = `৳${totalEmpExpense.toFixed(2)}`;
+        document.getElementById('pdf-emp-count').innerText = `${entryCount}`;
+        document.getElementById('pdf-emp-avg').innerText = `৳${avgExpense.toFixed(2)}`;
+
+        tbody.innerHTML = html || '<tr><td colspan="5" style="text-align:center; color:#ef4444;">কোনো ডাটা পাওয়া যায়নি।</td></tr>';
+      } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">ডাটা রিড করতে সমস্যা হয়েছে।</td></tr>';
+      }
+    };
+
+    // 3. LOAD OTHER EXPENSE REPORT
+    window.loadOtherExpenseReport = async function() {
+      const startDate = document.getElementById('other-start-date').value;
+      const endDate = document.getElementById('other-end-date').value;
+      const tbody = document.getElementById('other-expense-rows');
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">ডাটা লোড হচ্ছে...</td></tr>';
+
+      try {
+        const otherSnap = await getDocs(collection(db, "saffron", "mirpur10", "other_expenses"));
+        let html = '';
+        let index = 1;
+
+        let totalOtherExpense = 0;
+        let entryCount = 0;
+        let categoriesSet = new Set();
+
+        otherSnap.forEach(doc => {
+          const exp = doc.data();
+          const expDate = exp.date || '';
+
+          if (expDate >= startDate && expDate <= endDate) {
+            const amount = parseFloat(exp.amount || 0);
+            totalOtherExpense += amount;
+            entryCount++;
+            
+            if (exp.category) categoriesSet.add(exp.category);
+
+            html += `
+              <tr>
+                <td>${index++}</td>
+                <td>${expDate}</td>
+                <td style="font-weight:600;">${exp.category || 'অন্যান্য'}</td>
+                <td>${exp.description || exp.title || '-'}</td>
+                <td style="font-weight:bold; color:#ea580c;">৳${amount.toFixed(2)}</td>
+              </tr>`;
+          }
+        });
+
+        // Update Stat Cards (UI & PDF)
+        document.getElementById('other-stat-total').innerText = `৳${totalOtherExpense.toFixed(2)}`;
+        document.getElementById('other-stat-cat-count').innerText = `${categoriesSet.size} টি`;
+        document.getElementById('other-stat-count').innerText = `${entryCount} টি`;
+
+        document.getElementById('pdf-other-total').innerText = `৳${totalOtherExpense.toFixed(2)}`;
+        document.getElementById('pdf-other-cat-count').innerText = `${categoriesSet.size}`;
+        document.getElementById('pdf-other-count').innerText = `${entryCount}`;
+
+        tbody.innerHTML = html || '<tr><td colspan="5" style="text-align:center; color:#ef4444;">কোনো ডাটা পাওয়া যায়নি।</td></tr>';
+      } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">ডাটা রিড করতে সমস্যা হয়েছে।</td></tr>';
+      }
+    };
+
+    // 4. LOAD TOTAL COST & PROFIT STATEMENT (AGGREGATED FOOD COST)
+    window.loadTotalCostReport = async function() {
+      const startDate = document.getElementById('tc-start-date').value;
+      const endDate = document.getElementById('tc-end-date').value;
+      const tbody = document.getElementById('all-expense-rows');
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">হিসাব করা হচ্ছে...</td></tr>';
+
+      let totalSales = 0;
+      let totalFoodCost = 0;
+      let totalEmpCost = 0;
+      let totalOtherCost = 0;
+      
+      let foodGroupMap = {}; // Aggregate food items here
+      let allExpenseList = [];
+
+      try {
+        const unitCostMap = await getFoodPerUnitCostMap();
+
+        // 1. Food Sales & Aggregate Costs
+        const salesSnap = await getDocs(collection(db, "saffron", "mirpur10", "sales"));
+        salesSnap.forEach(doc => {
+          const sale = doc.data();
+          const saleDate = sale.completedAt ? sale.completedAt.split('T')[0] : (sale.date || '');
+
+          if (saleDate >= startDate && saleDate <= endDate && (sale.status === 'Completed' || !sale.status)) {
+            if (Array.isArray(sale.items)) {
+              sale.items.forEach(item => {
+                const name = item.name || item.title || item.foodName || 'Item';
+                const size = item.size || item.variant || '';
+                const qty = parseFloat(item.qty || item.quantity || 1);
+                const price = parseFloat(item.price || item.unitPrice || 0);
+
+                const displayName = size ? `${name} (${size})` : name;
+                let unitCost = resolveUnitCost(name, size, unitCostMap);
+
+                totalSales += (qty * price);
+
+                if (!foodGroupMap[displayName]) {
+                  foodGroupMap[displayName] = {
+                    unitCost: unitCost,
+                    qty: 0
+                  };
+                }
+                foodGroupMap[displayName].qty += qty;
+                if (unitCost > 0) foodGroupMap[displayName].unitCost = unitCost;
+              });
+            }
+          }
+        });
+
+        // Convert Aggregated Food Map to Expense Rows
+        const dateRangeLabel = `${startDate} থেকে ${endDate}`;
+        for (let displayName in foodGroupMap) {
+          const fData = foodGroupMap[displayName];
+          const itemTotalCost = fData.qty * fData.unitCost;
+          totalFoodCost += itemTotalCost;
+
+          if (itemTotalCost > 0) {
+            allExpenseList.push({
+              date: dateRangeLabel,
+              type: 'ফুড কস্ট',
+              detail: `${displayName} (${fData.qty} টি × ৳${fData.unitCost.toFixed(2)})`,
+              amount: itemTotalCost
+            });
+          }
+        }
+
+        // 2. Employee Expenses
+        const empSnap = await getDocs(collection(db, "saffron", "mirpur10", "employee_expenses"));
+        empSnap.forEach(doc => {
+          const exp = doc.data();
+          const expDate = exp.date || '';
+
+          if (expDate >= startDate && expDate <= endDate) {
+            const amount = parseFloat(exp.amount || 0);
+            totalEmpCost += amount;
+            allExpenseList.push({
+              date: expDate,
+              type: 'কর্মচারী খরচ',
+              detail: `${exp.employeeName || 'N/A'} - ${exp.reason || 'বেতন/ভাতা'}`,
+              amount: amount
+            });
+          }
+        });
+
+        // 3. Other Expenses
+        const otherSnap = await getDocs(collection(db, "saffron", "mirpur10", "other_expenses"));
+        otherSnap.forEach(doc => {
+          const exp = doc.data();
+          const expDate = exp.date || '';
+
+          if (expDate >= startDate && expDate <= endDate) {
+            const amount = parseFloat(exp.amount || 0);
+            totalOtherCost += amount;
+            allExpenseList.push({
+              date: expDate,
+              type: 'অন্যান্য খরচ',
+              detail: `${exp.category || ''} (${exp.description || exp.title || '-'})`,
+              amount: amount
+            });
+          }
+        });
+
+        const totalExpensesSum = totalFoodCost + totalEmpCost + totalOtherCost;
+        const netProfit = totalSales - totalExpensesSum;
+
+        // Web Screen Updates
+        document.getElementById('tc-revenue').innerText = `৳${totalSales.toFixed(2)}`;
+        document.getElementById('tc-total-expense').innerText = `৳${totalExpensesSum.toFixed(2)}`;
+        document.getElementById('tc-net-profit').innerText = `৳${netProfit.toFixed(2)}`;
+        document.getElementById('tc-net-profit').style.color = netProfit >= 0 ? '#16a34a' : '#dc2626';
+
+        // PDF Template Updates
+        document.getElementById('pdf-tc-revenue').innerText = `৳${totalSales.toFixed(2)}`;
+        document.getElementById('pdf-tc-expense').innerText = `৳${totalExpensesSum.toFixed(2)}`;
+        document.getElementById('pdf-tc-profit').innerText = `৳${netProfit.toFixed(2)}`;
+        document.getElementById('pdf-tc-profit').style.color = netProfit >= 0 ? '#16a34a' : '#dc2626';
+
+        // Render Table Rows
+        let html = '';
+        let index = 1;
+
+        allExpenseList.forEach(exp => {
+          html += `
+            <tr>
+              <td>${index++}</td>
+              <td>${exp.date}</td>
+              <td><strong>${exp.type}</strong></td>
+              <td>${exp.detail}</td>
+              <td style="font-weight:bold; color:#dc2626;">৳${exp.amount.toFixed(2)}</td>
+            </tr>`;
+        });
+
+        tbody.innerHTML = html || '<tr><td colspan="5" style="text-align:center; color:#ef4444;">উক্ত ডেট রেঞ্জে কোনো খরচের ডাটা নেই।</td></tr>';
+
+      } catch (err) {
+        console.error("Total Cost error:", err);
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">ডাটা প্রসেস করতে সমস্যা হয়েছে।</td></tr>';
+      }
+    };
+
+    // Auto Initial Load
+    window.loadFoodSalesReport();
+    window.loadEmployeeExpenseReport();
+    window.loadOtherExpenseReport();
+    window.loadTotalCostReport();
+  </script>
+</body>
+</html>

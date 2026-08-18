@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saffron (Mirpur 10) - Stock Management</title>
+
+
+
+  <script>
+    if (localStorage.getItem('saffron_admin_logged_in') !== 'true') {
+      window.location.href = "index.html";
+    }
+  </script>
+
+
+
+
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { display: flex; height: 100vh; background-color: #f4f6f9; color: #333; }
+    
+    /* Sidebar Layout */
+    .sidebar { width: 250px; background-color: #1e293b; color: #fff; display: flex; flex-direction: column; position: relative; }
+
+    .brand { 
+      padding: 20px 15px; 
+      text-align: center; 
+      background: #0f172a; 
+      border-bottom: 1px solid #334155; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .brand-logo {
+      width: 180px;            
+      height: 50px;            
+      margin-bottom: 6px;
+      display: block;
+    }
+    .sidebar a {
+      text-decoration: none !important;
+    }
+
+    .logout-btn { color: #ef4444; border-top: 1px solid #334155; padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; text-decoration: none; position: absolute; bottom: 0; width: 100%; }
+    .logout-btn:hover { background-color: #334155; color: #f87171; }
+
+    .brand span { color: #f59e0b; }
+    .branch-tag { display: block; font-size: 12px; color: #94a3b8; font-weight: normal; margin-top: 4px; }
+    
+    .nav-links { list-style: none; padding: 20px 0; }
+    .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 16px; transition: 0.2s; color: #cbd5e1; }
+    .nav-item:hover, .nav-item.active { background-color: #334155; color: #fff; border-left: 4px solid #f59e0b; }
+    
+    /* Main Content Area */
+    .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .user-info-badge { background: #f1f5f9; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #1e293b; border: 1px solid #cbd5e1; }
+    .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .status-online { background: #dcfce7; color: #166534; }
+    .status-offline { background: #fee2e2; color: #991b1b; }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* Card & Forms */
+    .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .card-title { font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
+    
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; font-weight: 600; color: #475569; }
+    .form-control { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; }
+    .form-control:focus { border-color: #f59e0b; }
+
+    .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 14px; }
+    .btn-primary { background: #f59e0b; color: #fff; }
+    .btn-primary:hover { background: #d97706; }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-warning { background: #3b82f6; color: #fff; }
+    
+    /* Table Styling */
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
+    th { background: #f8fafc; color: #475569; font-weight: 600; font-size: 14px; }
+    td { font-size: 14px; }
+    .low-stock { color: #dc2626; font-weight: bold; background: #fef2f2; }
+    .action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar Structure Fixed -->
+<div class="sidebar">
+  <div>
+    <div class="brand">
+      <img src="logo.png" alt="Saffron Logo" class="brand-logo" onerror="this.onerror=null; this.src='https://via.placeholder.com/120x50?text=Saffron+Logo';">
+      <span class="branch-tag">Mirpur 10 Branch</span>
+    </div>
+
+    <ul class="nav-links">
+      <li><a href="admin_inventory.html" class="nav-item active">Stock Management</a></li>
+      <li><a href="admin_food.html" class="nav-item">Food Management</a></li>
+      <li><a href="admin_employees.html" class="nav-item">Employee Management</a></li>
+      <li><a href="admin_guestmanagement.html" class="nav-item">Guest Management</a></li>
+      <li><a href="admin_coupon.html" class="nav-item">Coupon & Others</a></li>
+      <li><a href="admin_employeeexpense.html" class="nav-item">Employee Expense</a></li>
+      <li><a href="admin_otherexpense.html" class="nav-item">Other Expense</a></li>
+      <li><a href="admin_salesmanagement.html" class="nav-item">Employee Sales report</a></li>
+      <li><a href="admin_salesreport.html" class="nav-item">Sales History & Report</a></li>
+      <li><a href="admin_costreport.html" class="nav-item">Operating Cost Report</a></li>
+      <li><a href="admin_pos.html" class="nav-item">POS System</a></li>
+    </ul>
+  </div>
+  
+  <a href="#" class="logout-btn" onclick="logoutAdmin()">🚪 লগআউট (Logout)</a>
+</div>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    
+    <!-- Top Bar Header -->
+    <div class="header">
+      <h2 id="page-title">ইনভেন্টরি প্যানেল</h2>
+      <div class="header-right">
+        <!-- ইউজার ইনফো ব্যাজ -->
+        <div id="logged-user-badge" class="user-info-badge">👤 ইউজার: লোড হচ্ছে...</div>
+        <div id="net-status" class="status-badge status-online">🟢 অনলাইন (Auto Syncing)</div>
+      </div>
+    </div>
+
+    <!-- 1. INVENTORY PANEL -->
+    <div id="inventory-panel" class="panel active">
+      
+      <!-- Section 1: Add New Product -->
+      <div class="card">
+        <div class="card-title">১. নতুন আইটেম যোগ করুন (Add Product)</div>
+        <form id="add-product-form" class="form-grid">
+          <div class="form-group">
+            <label>প্রোডাক্টের নাম</label>
+            <input type="text" id="prod-name" class="form-control" placeholder="যেমন: বাসমতি চাল, সয়াবিন তেল" required>
+          </div>
+          <div class="form-group">
+            <label>ইউনিট (Unit)</label>
+            <select id="prod-unit" class="form-control">
+              <option value="Gram" selected>Gram (গ্রাম)</option>
+              <option value="Liter">Liter (লিটার)</option>
+              <option value="Pcs">Pcs (পিস)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>প্রাথমিক পরিমাণ (Initial Qty)</label>
+            <input type="number" step="any" id="prod-qty" class="form-control" placeholder="0" required>
+          </div>
+          <div class="form-group">
+            <label>ক্রয়মূল্য / মোট টাকা (Cost in TK)</label>
+            <input type="number" step="any" id="prod-price" class="form-control" placeholder="কত টাকা দিয়ে কেনা?" required>
+          </div>
+          <div class="form-group" style="justify-content: flex-end;">
+            <button type="submit" class="btn btn-primary">সেভ করুন</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Section 2 & 3: Quantity Action Box (Stock Update) -->
+      <div class="card" id="update-stock-card" style="display: none; background: #fffbe0; border: 1px solid #fde047;">
+        <div class="card-title" id="update-title">স্টক পরিবর্তন করুন</div>
+        <form id="update-stock-form" class="form-grid">
+          <input type="hidden" id="selected-doc-id">
+          <input type="hidden" id="update-type">
+          <div class="form-group">
+            <label id="update-label">পরিমাণ লিখুন</label>
+            <input type="number" step="any" id="update-qty-input" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label id="update-price-label">টাকা (TK)</label>
+            <input type="number" step="any" id="update-price-input" class="form-control" placeholder="টাকার পরিমাণ লিখুন" required>
+          </div>
+          <div class="form-group" style="justify-content: flex-end; flex-direction: row; align-items: flex-end; gap: 10px;">
+            <button type="submit" class="btn btn-success">কনফার্ম করুন</button>
+            <button type="button" class="btn" style="background:#cbd5e1" onclick="closeUpdateCard()">বাতিল</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Section 4: Total Remaining Quantity List -->
+      <div class="card">
+        <div class="card-title">৪. বর্তমান অবশিষ্ট স্টক (Total Remaining Quantity)</div>
+        <table>
+          <thead>
+            <tr>
+              <th>আইটেমের নাম</th>
+              <th>বর্তমান পরিমাণ</th>
+              <th>ইউনিট</th>
+              <th>মোট খরচ (TK)</th>
+              <th>অ্যাকশন</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-table-body">
+            <tr><td colspan="5">ডাটা লোড হচ্ছে...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </div>
+
+ <script>
+    function logoutAdmin() {
+      if (confirm("আপনি কি নিশ্চিত যে লগআউট করতে চান?")) {
+        localStorage.removeItem('saffron_admin_logged_in');
+        localStorage.removeItem('saffron_logged_user_phone');
+        window.location.href = "index.html";
+      }
+    }
+  </script>
+
+  <!-- FIREBASE MODULE SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+    import { 
+      initializeFirestore, 
+      persistentLocalCache, 
+      persistentMultipleTabManager,
+      collection, 
+      getDocs,
+      onSnapshot, 
+      doc, 
+      setDoc,
+      deleteDoc,
+      updateDoc, 
+      increment, 
+      serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAq_vQ7ARn1TdMOOp1rtJqFOd1K4yUupP4",
+      authDomain: "saffron-65736.firebaseapp.com",
+      databaseURL: "https://saffron-65736-default-rtdb.firebaseio.com",
+      projectId: "saffron-65736",
+      storageBucket: "saffron-65736.firebasestorage.app",
+      messagingSenderId: "599450614604",
+      appId: "1:599450614604:web:e6be0bc5cb56dc867cede9",
+      measurementId: "G-FC5894HZEM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+
+    let db;
+    try {
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager()
+        })
+      });
+    } catch (e) {
+      console.warn("Offline cache initialization failed, using default Firestore", e);
+    }
+
+    const inventoryRef = collection(db, "saffron", "mirpur10", "inventory");
+    const usersRef = collection(db, "saffron", "mirpur10", "users");
+
+    // Network Online/Offline Monitor
+    window.addEventListener('online', updateNetStatus);
+    window.addEventListener('offline', updateNetStatus);
+
+    function updateNetStatus() {
+      const netBadge = document.getElementById("net-status");
+      if (navigator.onLine) {
+        netBadge.className = "status-badge status-online";
+        netBadge.innerHTML = "🟢 অনলাইন (Auto Syncing)";
+      } else {
+        netBadge.className = "status-badge status-offline";
+        netBadge.innerHTML = "🔴 অফলাইন (Saved Locally)";
+      }
+    }
+
+    // LOAD LOGGED USER INFO FUNCTION
+    async function loadLoggedUserInfo() {
+      try {
+        const querySnapshot = await getDocs(usersRef);
+        const loggedPhone = localStorage.getItem('saffron_logged_user_phone');
+        
+        let currentUser = null;
+        querySnapshot.forEach((docSnap) => {
+          const userData = docSnap.data();
+          if (loggedPhone && userData.phone === loggedPhone) {
+            currentUser = userData;
+          }
+        });
+
+        if (!currentUser && !querySnapshot.empty) {
+          currentUser = querySnapshot.docs[0].data(); 
+        }
+
+        if (currentUser) {
+          const name = currentUser.name || "অজানা ইউজার";
+          const role = currentUser.position || "";
+          document.getElementById("logged-user-badge").innerText = `👤 ${name} (${role})`;
+        } else {
+          document.getElementById("logged-user-badge").innerText = `👤 অ্যাডমিন`;
+        }
+      } catch (err) {
+        console.error("User info load error: ", err);
+        document.getElementById("logged-user-badge").innerText = `👤 ইউজার লোড হয়নি`;
+      }
+    }
+
+    // Call user info loader
+    loadLoggedUserInfo();
+
+    // REALTIME INVENTORY LISTENER
+    onSnapshot(inventoryRef, (snapshot) => {
+      const tbody = document.getElementById("inventory-table-body");
+      tbody.innerHTML = "";
+
+      let activeItemsCount = 0;
+
+      snapshot.docs.forEach((docSnap) => {
+        const item = docSnap.data();
+        const docId = docSnap.id;
+
+        if (item.isDeleted || docId.endsWith("-deleted")) {
+          return;
+        }
+
+        activeItemsCount++;
+        const isLow = item.quantity <= 1000;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${item.name || ''}</strong></td>
+          <td class="${isLow ? 'low-stock' : ''}">${item.quantity || 0} ${isLow ? '⚠️' : ''}</td>
+          <td>${item.unit || 'Gram'}</td>
+          <td>৳ ${item.totalCost || 0}</td>
+          <td class="action-btns">
+            <button class="btn btn-success"  onclick="openUpdateModal('${docId}', '${item.name}', 'add')">+ Add Qty</button>
+            <button class="btn" style="background:#f97316; color:#fff;" onclick="openUpdateModal('${docId}', '${item.name}', 'reduce')">- Reduce Qty</button>
+            <button class="btn btn-warning" onclick="openUpdateModal('${docId}', '${item.name}', 'edit', ${item.quantity}, ${item.totalCost || 0})">✏️ Edit Qty</button>
+            <button class="btn" style="background:#ef4444; color:#fff;" onclick="deleteItem('${docId}', '${item.name}', ${item.quantity}, '${item.unit}')">🗑️ Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      if (activeItemsCount === 0) {
+        tbody.innerHTML = `<tr><td colspan="5">কোনো সক্রিয় আইটেম পাওয়া যায়নি। নতুন আইটেম যুক্ত করুন।</td></tr>`;
+      }
+    }, (error) => {
+      console.error("Firestore Error: ", error);
+      alert("ফায়ারবেজ এরর: " + error.message);
+    });
+
+    // ADD NEW PRODUCT
+    document.getElementById("add-product-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("prod-name").value.trim();
+      const unit = document.getElementById("prod-unit").value;
+      const qty = parseFloat(document.getElementById("prod-qty").value);
+      const price = parseFloat(document.getElementById("prod-price").value);
+
+      if (!name) return;
+
+      const customDocRef = doc(db, "saffron", "mirpur10", "inventory", name);
+
+      try {
+        await setDoc(customDocRef, {
+          name: name,
+          unit: unit,
+          quantity: qty,
+          totalCost: price,
+          isDeleted: false,
+          updatedAt: serverTimestamp()
+        });
+        alert("প্রোডাক্ট সফলভাবে সেভ হয়েছে!");
+        document.getElementById("add-product-form").reset();
+        document.getElementById("prod-unit").value = "Gram";
+      } catch (err) {
+        console.error("Error adding doc: ", err);
+        alert("সেভ হতে সমস্যা হয়েছে: " + err.message);
+      }
+    });
+
+    // UPDATE / EDIT / REDUCE QUANTITY MODAL HANDLER
+    window.openUpdateModal = function(id, name, type, currentQty = 0, currentCost = 0) {
+      document.getElementById("update-stock-card").style.display = "block";
+      document.getElementById("selected-doc-id").value = id;
+      document.getElementById("update-type").value = type;
+
+      const title = document.getElementById("update-title");
+      const label = document.getElementById("update-label");
+      const input = document.getElementById("update-qty-input");
+      const priceInput = document.getElementById("update-price-input");
+      const priceLabel = document.getElementById("update-price-label");
+
+      if (type === 'add') {
+        title.innerText = `২. পরিমাণ ও টাকা যোগ করুন: ${name}`;
+        label.innerText = `কতটুকু পরিমাণ যোগ করবেন?`;
+        priceLabel.innerText = `এই পরিমাণের জন্য কত টাকা খরচ হয়েছে? (TK)`;
+        input.value = "";
+        priceInput.value = "";
+      } else if (type === 'reduce') {
+        title.innerText = `পরিমাণ ও খরচ কমান: ${name}`;
+        label.innerText = `কতটুকু পরিমাণ কমাবেন?`;
+        priceLabel.innerText = `এটির জন্য কত টাকার খরচ কমাতে চান? (TK)`;
+        input.value = "";
+        priceInput.value = "";
+      } else {
+        title.innerText = `৩. কয়ান্টিটি ও মোট টাকা সংশোধন করুন: ${name}`;
+        label.innerText = `সঠিক পরিমার্জিত মোট পরিমাণ (New Total Quantity)`;
+        priceLabel.innerText = `সংশোধিত মোট খরচ (New Total Cost in TK)`;
+        input.value = currentQty;
+        priceInput.value = currentCost;
+      }
+    };
+
+    window.closeUpdateCard = function() {
+      document.getElementById("update-stock-card").style.display = "none";
+    };
+
+    document.getElementById("update-stock-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("selected-doc-id").value;
+      const type = document.getElementById("update-type").value;
+      const qtyVal = parseFloat(document.getElementById("update-qty-input").value);
+      const priceVal = parseFloat(document.getElementById("update-price-input").value);
+
+      const itemDocRef = doc(db, "saffron", "mirpur10", "inventory", id);
+
+      try {
+        if (type === 'add') {
+          await updateDoc(itemDocRef, {
+            quantity: increment(qtyVal),
+            totalCost: increment(priceVal),
+            updatedAt: serverTimestamp()
+          });
+          alert("স্টক ও খরচ যোগ হয়েছে!");
+        } else if (type === 'reduce') {
+          await updateDoc(itemDocRef, {
+            quantity: increment(-qtyVal),
+            totalCost: increment(-priceVal),
+            updatedAt: serverTimestamp()
+          });
+          alert("স্টক ও খরচ কমানো হয়েছে!");
+        } else {
+          await updateDoc(itemDocRef, {
+            quantity: qtyVal,
+            totalCost: priceVal,
+            updatedAt: serverTimestamp()
+          });
+          alert("স্টক ও খরচ আপডেট হয়েছে!");
+        }
+        closeUpdateCard();
+      } catch (err) {
+        console.error("Error updating stock: ", err);
+        alert("আপডেট করতে সমস্যা হয়েছে: " + err.message);
+      }
+    });
+
+    // DELETE ITEM
+    window.deleteItem = async function(docId, name, qty, unit) {
+      const reason = prompt(`"${name}" আইটেমটি ডিলিট করার কারণ লিখুন:`);
+
+      if (reason === null) return; 
+      if (reason.trim() === "") {
+        alert("ডিলিট করার কারণ লেখা বাধ্যতামূলক!");
+        return;
+      }
+
+      const oldDocRef = doc(db, "saffron", "mirpur10", "inventory", docId);
+      const newDocId = `${docId}-deleted`;
+      const newDocRef = doc(db, "saffron", "mirpur10", "inventory", newDocId);
+
+      try {
+        await setDoc(newDocRef, {
+          name: name,
+          unit: unit,
+          lastQuantity: qty,
+          isDeleted: true,
+          deleteReason: reason.trim(),
+          deletedAt: serverTimestamp()
+        });
+
+        if (docId !== newDocId) {
+          await deleteDoc(oldDocRef);
+        }
+
+        alert(`"${name}" সফলতা সহ ডিলিট করা হয়েছে এবং কারণ ফায়ারবেজে জমা রয়েছে।`);
+      } catch (err) {
+        console.error("Error deleting document: ", err);
+        alert("ডিলিট করতে সমস্যা হয়েছে: " + err.message);
+      }
+    };
+  </script>
+</body>
+</html>

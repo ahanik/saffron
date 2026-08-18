@@ -1,0 +1,734 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saffron - Coupon & Others</title>
+ <!-- SECURITY CHECK: Redirect if not logged in -->
+  <script>
+    if (localStorage.getItem('saffron_admin_logged_in') !== 'true') {
+      window.location.href = "index.html";
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background: #f1f5f9; color: #1e293b; display: flex; min-height: 100vh; }
+
+    /* --- SIDEBAR STYLING --- */
+    .sidebar { 
+      width: 250px; 
+      background-color: #1e293b; 
+      color: #fff; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: space-between; 
+      flex-shrink: 0;
+    }
+    
+    .brand { 
+      padding: 20px 15px; 
+      text-align: center; 
+      background: #0f172a; 
+      border-bottom: 1px solid #334155; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-logo {
+      width: 120px;
+      height: 50px;
+      object-fit: contain;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .branch-tag { display: block; font-size: 12px; color: #94a3b8; font-weight: normal; }
+    
+    .nav-links { list-style: none; padding: 20px 0; }
+    .nav-item { 
+      padding: 15px 25px; 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      gap: 10px; 
+      font-size: 15px; 
+      transition: 0.2s; 
+      color: #cbd5e1; 
+      text-decoration: none; 
+      border-left: 4px solid transparent;
+    }
+    .nav-item:hover, .nav-item.active { 
+      background-color: #334155; 
+      color: #fff; 
+      border-left-color: #f59e0b; 
+    }
+    
+    .logout-item { 
+      color: #ef4444; 
+      border-top: 1px solid #334155; 
+      padding: 15px 25px; 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      gap: 10px; 
+      font-size: 15px; 
+      text-decoration: none; 
+    }
+    .logout-item:hover { background-color: #334155; color: #f87171; }
+
+    /* MAIN CONTENT AREA */
+    .main-content { flex: 1; padding: 25px; overflow-y: auto; }
+    
+    /* TOP HEADER & ONLINE STATUS BADGE */
+    .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 20px; }
+    .page-header { font-size: 18px; font-weight: bold; color: #0f172a; }
+    
+    .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; transition: 0.3s; }
+    .status-online { background-color: #dcfce7; color: #15803d; }
+    .status-offline { background-color: #fee2e2; color: #b91c1c; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .dot-online { background-color: #22c55e; box-shadow: 0 0 6px #22c55e; }
+    .dot-offline { background-color: #ef4444; box-shadow: 0 0 6px #ef4444; }
+
+    /* CARD STYLING */
+    .card { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 25px; border: 1px solid #e2e8f0; }
+    .card-title { font-size: 15px; font-weight: bold; color: #0f172a; margin-bottom: 15px; }
+
+    /* FORM STYLING */
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px; }
+    input, select { width: 100%; padding: 9px 12px; background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; color: #1e293b; font-size: 13px; outline: none; }
+    input:focus, select:focus { border-color: #0284c7; }
+
+    .form-row { display: flex; gap: 15px; flex-wrap: wrap; }
+    .form-row .form-group { flex: 1; min-width: 200px; }
+
+    /* BUTTON STYLING */
+    .btn-submit { background: #f59e0b; color: #fff; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; font-size: 13px; transition: 0.2s; }
+    .btn-submit:hover { background: #d97706; }
+    .btn-blue { background: #0284c7; color: #fff; }
+    .btn-blue:hover { background: #0369a1; }
+
+    /* TABLE STYLING */
+    .data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .data-table th, .data-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+    .data-table th { background: #f8fafc; color: #475569; font-weight: 600; }
+
+    /* ACTION BUTTONS & BADGES */
+    .btn-edit { background: #0284c7; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; margin-right: 4px; }
+    .btn-edit:hover { background: #0369a1; }
+    .btn-del { background: #ef4444; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; }
+    .btn-del:hover { background: #dc2626; }
+    
+    .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .badge-active { background: #dcfce7; color: #166534; }
+    .badge-expired { background: #fee2e2; color: #991b1b; }
+    .badge-exhausted { background: #fef3c7; color: #d97706; }
+
+    /* GRID FOR VAT, TABLE & PAYMENT */
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div>
+      <div class="brand">
+        <img src="logo.png" alt="Saffron Logo" class="brand-logo" onerror="this.onerror=null; this.src='https://via.placeholder.com/120x50?text=Saffron+Logo';">
+        <span class="branch-tag">Mirpur 10 Branch</span>
+      </div>
+
+      <ul class="nav-links">
+<li><a href="admin_inventory.html" class="nav-item">Stock Management</a></li>
+      <li><a href="admin_food.html" class="nav-item">Food Management</a></li>
+	<li><a href="admin_employees.html" class="nav-item">Employee Management</a></li>
+	<li><a href="admin_guestmanagement.html" class="nav-item">Guest Management</a></li>
+	<li><a href="admin_coupon.html" class="nav-item active">Coupon & Others</a></li>
+	<li><a href="admin_employeeexpense.html" class="nav-item">Employee Expense</a></li>
+      <li><a href="admin_otherexpense.html" class="nav-item ">Other Expense</a></li>
+	<li><a href="admin_salesmanagement.html" class="nav-item ">Employee Sales report</a></li>
+      <li><a href="admin_salesreport.html" class="nav-item">Sales History & Report</a></li>
+<li><a href="admin_costreport.html" class="nav-item">Operating Cost Report</a></li>
+<li><a href="admin_pos.html" class="nav-item">POS System</a></li>
+
+      </ul>
+    </div>
+    
+    <!-- Logout Button -->
+    <a href="#" class="logout-item" onclick="logoutAdmin()">🚪 লগআউট (Logout)</a>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    
+    <!-- TOP HEADER WITH ONLINE/OFFLINE STATUS -->
+    <div class="header-bar">
+      <div class="page-header">⚙️ পস কনফিগারেশন</div>
+      <div id="status-badge" class="status-badge status-online">
+        <span id="status-dot" class="dot dot-online"></span>
+        <span id="status-text">অনলাইন (Auto Syncing)</span>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <!-- 1. VAT SETTINGS -->
+      <div class="card">
+        <div class="card-title">১. ভ্যাট (VAT) সেটআপ</div>
+        <div class="form-group">
+          <label>ডিফল্ট ভ্যাট (%)</label>
+          <input type="number" id="vat-rate-input" placeholder="যেমন: 5">
+        </div>
+        <button class="btn-submit btn-blue" onclick="saveVatRate()">ভ্যাট আপডেট করুন</button>
+        <div style="margin-top: 12px; font-size: 12px; color: #64748b;">
+          বর্তমান ভ্যাট হার: <b id="current-vat-display" style="color:#0284c7;">0%</b>
+        </div>
+      </div>
+
+      <!-- 2. TABLE SETTINGS -->
+      <div class="card">
+        <div class="card-title">২. টেবিল সেটআপ</div>
+        <div class="form-group">
+          <label>নতুন টেবিলের নাম/নম্বর</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="table-name-input" placeholder="যেমন: Table 05">
+            <button class="btn-submit btn-blue" style="width: auto; padding: 0 15px; white-space: nowrap;" onclick="addTable()">+ যোগ</button>
+          </div>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>টেবিল নাম (ID)</th>
+              <th style="text-align: right;">অ্যাকশন</th>
+            </tr>
+          </thead>
+          <tbody id="tables-list-body">
+            <!-- Dynamic Tables -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 3. PAYMENT METHODS -->
+      <div class="card">
+        <div class="card-title">৩. পেমেন্ট মেথড সেটআপ</div>
+        <div class="form-group">
+          <label>পেমেন্ট মেথড নাম</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="payment-name-input" placeholder="যেমন: Bkash, Card">
+            <button class="btn-submit btn-blue" style="width: auto; padding: 0 15px; white-space: nowrap;" onclick="addPaymentMethod()">+ যোগ</button>
+          </div>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>মেথড নাম</th>
+              <th style="text-align: right;">অ্যাকশন</th>
+            </tr>
+          </thead>
+          <tbody id="payments-list-body">
+            <!-- Dynamic Payment Methods -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 4. COUPON SETTINGS -->
+    <div class="card">
+      <div class="card-title">৪. কুপন কোড সেটআপ ও আপডেট (ইউজার বেজড অপশনসহ)</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>কুপন কোড (Document ID হবে)</label>
+          <input type="text" id="coupon-code-input" placeholder="যেমন: RAMA3" style="text-transform: uppercase;">
+        </div>
+
+        <!-- USER TARGET TYPE -->
+        <div class="form-group">
+          <label>কুপনের ধরন (Target User)</label>
+          <select id="coupon-target-type" onchange="toggleCustomerSelectField()">
+            <option value="all">সকল গ্রাহক (All Customers)</option>
+            <option value="specific">নির্দিষ্ট গ্রাহক (Specific Customer)</option>
+          </select>
+        </div>
+
+        <!-- SPECIFIC CUSTOMER SELECTOR -->
+        <div class="form-group" id="specific-customer-group" style="display: none;">
+          <label>গ্রাহক নির্বাচন করুন</label>
+          <select id="coupon-customer-phone">
+            <option value="">গ্রাহক তালিকা লোড হচ্ছে...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>ছাড়ের টাইপ</label>
+          <select id="coupon-type" onchange="toggleMaxDiscountField()">
+            <option value="flat">টাকা (Flat ৳)</option>
+            <option value="percent">শতাংশ Percentage (%)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>ছাড়ের মান</label>
+          <input type="number" id="coupon-amount" placeholder="যেমন: 10">
+        </div>
+
+        <div class="form-group">
+          <label>মিনিমাম অর্ডার ভ্যালু (৳)</label>
+          <input type="number" id="coupon-min-order" placeholder="যেমন: 500">
+        </div>
+
+        <!-- MAX DISCOUNT FIELD -->
+        <div class="form-group" id="max-discount-group" style="display: none;">
+          <label>সর্বোচ্চ ছাড় (৳)</label>
+          <input type="number" id="coupon-max-discount" placeholder="যেমন: 200">
+        </div>
+
+        <!-- MAX USAGE LIMIT FIELD -->
+        <div class="form-group">
+          <label>সর্বোচ্চ ব্যবহারের সীমা (Max Limit)</label>
+          <input type="number" id="coupon-max-uses" placeholder="যেমন: 1 (ডিফল্ট অসীম)">
+        </div>
+
+        <!-- CURRENT USAGE COUNT FIELD (Hidden on Create, shown or tracked) -->
+        <div class="form-group">
+          <label>এ পর্যন্ত ব্যবহার হয়েছে (Used Count)</label>
+          <input type="number" id="coupon-used-count" value="0" placeholder="যেমন: 0">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>শুরুর তারিখ (Start Date)</label>
+          <input type="date" id="coupon-start-date">
+        </div>
+
+        <div class="form-group">
+          <label>মেয়াদ উত্তীর্ণের তারিখ (Expire Date)</label>
+          <input type="date" id="coupon-expire-date">
+        </div>
+      </div>
+
+      <button class="btn-submit" onclick="addOrUpdateCoupon()">কুপন সেভ / আপডেট করুন</button>
+
+      <!-- COUPONS LIST -->
+      <div style="margin-top: 25px; font-weight: bold; font-size: 15px; color: #0f172a;">বর্তমান কুপন লিস্ট</div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>কুপন নাম (ID)</th>
+            <th>গ্রাহক টার্গেট</th>
+            <th>ছাড়ের বিবরণ</th>
+            <th>মিনিমাম অর্ডার</th>
+            <th>সর্বোচ্চ ছাড় Limit</th>
+            <th>ব্যবহার (Used / Max)</th>
+            <th>মেয়াদ (Start - Expire)</th>
+            <th>স্ট্যাটাস</th>
+            <th style="text-align: right;">অ্যাকশন</th>
+          </tr>
+        </thead>
+        <tbody id="coupons-list-body">
+          <!-- Dynamic Coupons -->
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    function logoutAdmin() {
+      if (confirm("আপনি কি নিশ্চিত যে লগআউট করতে চান?")) {
+        localStorage.removeItem('saffron_admin_logged_in');
+        window.location.href = "index.html";
+      }
+    }
+  </script>
+
+  <!-- FIREBASE MODULE -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, setDoc, deleteDoc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAq_vQ7ARn1TdMOOp1rtJqFOd1K4yUupP4",
+      authDomain: "saffron-65736.firebaseapp.com",
+      databaseURL: "https://saffron-65736-default-rtdb.firebaseio.com",
+      projectId: "saffron-65736",
+      storageBucket: "saffron-65736.firebasestorage.app",
+      messagingSenderId: "599450614604",
+      appId: "1:599450614604:web:e6be0bc5cb56dc867cede9",
+      measurementId: "G-FC5894HZEM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+
+    // --- ONLINE / OFFLINE DETECTOR ---
+    function updateOnlineStatus() {
+      const statusBadge = document.getElementById('status-badge');
+      const statusDot = document.getElementById('status-dot');
+      const statusText = document.getElementById('status-text');
+
+      if (navigator.onLine) {
+        statusBadge.className = "status-badge status-online";
+        statusDot.className = "dot dot-online";
+        statusText.innerText = "অনলাইন (Auto Syncing)";
+      } else {
+        statusBadge.className = "status-badge status-offline";
+        statusDot.className = "dot dot-offline";
+        statusText.innerText = "অফলাইন";
+      }
+    }
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus();
+
+    // TOGGLE MAX DISCOUNT FIELD
+    window.toggleMaxDiscountField = function() {
+      const type = document.getElementById('coupon-type').value;
+      const maxDiscountGroup = document.getElementById('max-discount-group');
+      if(type === 'percent') {
+        maxDiscountGroup.style.display = 'block';
+      } else {
+        maxDiscountGroup.style.display = 'none';
+        document.getElementById('coupon-max-discount').value = '';
+      }
+    }
+
+    // TOGGLE SPECIFIC CUSTOMER SELECT FIELD
+    window.toggleCustomerSelectField = function() {
+      const targetType = document.getElementById('coupon-target-type').value;
+      const customerGroup = document.getElementById('specific-customer-group');
+      if(targetType === 'specific') {
+        customerGroup.style.display = 'block';
+        loadCustomersDropdown();
+      } else {
+        customerGroup.style.display = 'none';
+        document.getElementById('coupon-customer-phone').value = '';
+      }
+    }
+
+    // LOAD CUSTOMERS FROM GUEST MANAGEMENT COLLECTION
+    async function loadCustomersDropdown(selectedPhone = '') {
+      const customerSelect = document.getElementById('coupon-customer-phone');
+      customerSelect.innerHTML = `<option value="">গ্রাহক নির্বাচন করুন...</option>`;
+      
+      try {
+        const querySnapshot = await getDocs(collection(db, "saffron", "mirpur10", "guests"));
+        querySnapshot.forEach((docSnap) => {
+          const guest = docSnap.data();
+          const phone = guest.phone || docSnap.id;
+          const name = guest.name || 'নামহীন গ্রাহক';
+          
+          const isSelected = (phone === selectedPhone) ? 'selected' : '';
+          customerSelect.innerHTML += `<option value="${phone}" ${isSelected}>${name} (${phone})</option>`;
+        });
+      } catch (e) {
+        console.error("Error loading guests:", e);
+        customerSelect.innerHTML = `<option value="">গ্রাহক লোড করতে সমস্যা হয়েছে</option>`;
+      }
+    }
+
+    // --- 1. VAT RATE LOGIC ---
+    function syncVatRate() {
+      onSnapshot(doc(db, "saffron", "mirpur10", "settings", "vat_config"), (docSnap) => {
+        if(docSnap.exists()) {
+          const rate = docSnap.data().rate || 0;
+          document.getElementById('vat-rate-input').value = rate;
+          document.getElementById('current-vat-display').innerText = `${rate}%`;
+        }
+      });
+    }
+
+    window.saveVatRate = async function() {
+      const rate = Number(document.getElementById('vat-rate-input').value) || 0;
+      try {
+        await setDoc(doc(db, "saffron", "mirpur10", "settings", "vat_config"), { rate: rate });
+        alert("ভ্যাট শতকরা সেভ হয়েছে!");
+      } catch(e) {
+        alert("এরর: " + e.message);
+      }
+    }
+
+    // --- 2. TABLE SETTINGS LOGIC ---
+    function syncTables() {
+      onSnapshot(collection(db, "saffron", "mirpur10", "tables"), (snapshot) => {
+        const tbody = document.getElementById('tables-list-body');
+        tbody.innerHTML = '';
+
+        if(snapshot.empty) {
+          tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:#94a3b8;">কোনো টেবিল নেই</td></tr>`;
+          return;
+        }
+
+        snapshot.docs.forEach(docSnap => {
+          const tableName = docSnap.id;
+          tbody.innerHTML += `
+            <tr>
+              <td><b>${tableName}</b></td>
+              <td style="text-align: right;">
+                <button class="btn-del" onclick="deleteTable('${tableName}')">Delete</button>
+              </td>
+            </tr>
+          `;
+        });
+      });
+    }
+
+    window.addTable = async function() {
+      const tableName = document.getElementById('table-name-input').value.trim();
+      if(!tableName) return alert("টেবিলের নাম লিখুন!");
+
+      try {
+        await setDoc(doc(db, "saffron", "mirpur10", "tables", tableName), { name: tableName });
+        document.getElementById('table-name-input').value = '';
+      } catch(e) {
+        alert("এরর: " + e.message);
+      }
+    }
+
+    window.deleteTable = async function(id) {
+      if(confirm(`"${id}" টেবিলটি মুছে ফেলতে চান?`)) {
+        try {
+          await deleteDoc(doc(db, "saffron", "mirpur10", "tables", id));
+        } catch(e) {
+          alert("এরর: " + e.message);
+        }
+      }
+    }
+
+    // --- 3. PAYMENT METHOD LOGIC ---
+    function syncPaymentMethods() {
+      onSnapshot(collection(db, "saffron", "mirpur10", "payment_methods"), (snapshot) => {
+        const tbody = document.getElementById('payments-list-body');
+        tbody.innerHTML = '';
+
+        if(snapshot.empty) {
+          tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:#94a3b8;">কোনো পেমেন্ট মেথড নেই</td></tr>`;
+          return;
+        }
+
+        snapshot.docs.forEach(docSnap => {
+          const payName = docSnap.id;
+          tbody.innerHTML += `
+            <tr>
+              <td><b>${payName}</b></td>
+              <td style="text-align: right;">
+                <button class="btn-del" onclick="deletePaymentMethod('${payName}')">Delete</button>
+              </td>
+            </tr>
+          `;
+        });
+      });
+    }
+
+    window.addPaymentMethod = async function() {
+      const payName = document.getElementById('payment-name-input').value.trim();
+      if(!payName) return alert("পেমেন্ট মেথডের নাম লিখুন!");
+
+      try {
+        await setDoc(doc(db, "saffron", "mirpur10", "payment_methods", payName), { name: payName });
+        document.getElementById('payment-name-input').value = '';
+      } catch(e) {
+        alert("এরর: " + e.message);
+      }
+    }
+
+    window.deletePaymentMethod = async function(id) {
+      if(confirm(`"${id}" পেমেন্ট মেথডটি মুছে ফেলতে চান?`)) {
+        try {
+          await deleteDoc(doc(db, "saffron", "mirpur10", "payment_methods", id));
+        } catch(e) {
+          alert("এরর: " + e.message);
+        }
+      }
+    }
+
+    // --- 4. COUPON LOGIC ---
+    let couponsData = {};
+
+    function syncCoupons() {
+      onSnapshot(collection(db, "saffron", "mirpur10", "coupons"), (snapshot) => {
+        const tbody = document.getElementById('coupons-list-body');
+        tbody.innerHTML = '';
+        couponsData = {};
+
+        if(snapshot.empty) {
+          tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#94a3b8;">কোনো কুপন নেই</td></tr>`;
+          return;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+
+        snapshot.docs.forEach(docSnap => {
+          const docId = docSnap.id;
+          const data = docSnap.data();
+          couponsData[docId] = data;
+
+          const unit = data.type === 'flat' ? '৳' : '%';
+          const maxDiscountText = data.type === 'percent' && data.maxDiscount ? `৳${data.maxDiscount}` : 'সীমা নেই';
+          const minOrderText = data.minOrderValue ? `৳${data.minOrderValue}` : 'সীমা নেই';
+          
+          let targetText = '<span style="color:#2563eb; font-weight:600;">সকলের জন্য (All)</span>';
+          if(data.targetType === 'specific' && data.customerPhone) {
+            targetText = `<span style="color:#d97706; font-weight:600;">স্পেসিফিক (${data.customerPhone})</span>`;
+          }
+
+          const usedCount = data.usedCount || 0;
+          const maxUses = data.maxUses !== undefined && data.maxUses !== null && data.maxUses !== '' ? Number(data.maxUses) : null;
+          const usageText = maxUses !== null ? `${usedCount} / ${maxUses}` : `${usedCount} / অসীম`;
+
+          let isExpired = false;
+          if(data.expireDate && data.expireDate < today) {
+            isExpired = true;
+          }
+
+          let isExhausted = false;
+          if(maxUses !== null && usedCount >= maxUses) {
+            isExhausted = true;
+          }
+
+          let badgeClass = 'badge-active';
+          let badgeText = 'অ্যাক্টিভ';
+          if(isExpired) {
+            badgeClass = 'badge-expired';
+            badgeText = 'মেয়াদোত্তীর্ণ';
+          } else if(isExhausted) {
+            badgeClass = 'badge-exhausted';
+            badgeText = 'লিমিট শেষ';
+          }
+
+          tbody.innerHTML += `
+            <tr>
+              <td><b style="color:#0284c7;">${docId}</b></td>
+              <td>${targetText}</td>
+              <td>${data.amount}${unit} ছাড়</td>
+              <td>${minOrderText}</td>
+              <td>${maxDiscountText}</td>
+              <td><b>${usageText}</b></td>
+              <td style="font-size:12px; color:#64748b;">${data.startDate || 'N/A'} হতে ${data.expireDate || 'N/A'}</td>
+              <td>
+                <span class="badge ${badgeClass}">
+                  ${badgeText}
+                </span>
+              </td>
+              <td style="text-align: right;">
+                <button class="btn-edit" onclick="editCoupon('${docId}')">Edit</button>
+                <button class="btn-del" onclick="deleteCoupon('${docId}')">Delete</button>
+              </td>
+            </tr>
+          `;
+        });
+      });
+    }
+
+    window.addOrUpdateCoupon = async function() {
+      const code = document.getElementById('coupon-code-input').value.trim().toUpperCase();
+      const targetType = document.getElementById('coupon-target-type').value;
+      const customerPhone = targetType === 'specific' ? document.getElementById('coupon-customer-phone').value : '';
+      const type = document.getElementById('coupon-type').value;
+      const amount = Number(document.getElementById('coupon-amount').value) || 0;
+      const minOrderValue = Number(document.getElementById('coupon-min-order').value) || 0;
+      const maxDiscount = type === 'percent' ? (Number(document.getElementById('coupon-max-discount').value) || null) : null;
+      const maxUsesInput = document.getElementById('coupon-max-uses').value;
+      const maxUses = maxUsesInput !== '' ? Number(maxUsesInput) : null;
+      const usedCount = Number(document.getElementById('coupon-used-count').value) || 0;
+      const startDate = document.getElementById('coupon-start-date').value;
+      let expireDate = document.getElementById('coupon-expire-date').value;
+
+      if(!code || amount <= 0) return alert("সঠিক কুপন কোড ও মান দিন!");
+      if(targetType === 'specific' && !customerPhone) return alert("দয়া করে একজন নির্দিষ্ট গ্রাহক নির্বাচন করুন!");
+      if(!startDate || !expireDate) return alert("শুরুর ও মেয়াদের শেষ তারিখ নির্বাচন করুন!");
+      if(startDate > expireDate) return alert("শুরুর তারিখ এক্সপায়ার ডেটের চেয়ে বড় হতে পারবে না!");
+
+      // অটো-এক্সপায়ারিং লজিক: লিমিট শেষ বা পার হয়ে গেলে মেয়াদ আজকের দিনে সেট করে দেওয়া হবে
+      const today = new Date().toISOString().split('T')[0];
+      if (maxUses !== null && usedCount >= maxUses) {
+        expireDate = today;
+      }
+
+      try {
+        await setDoc(doc(db, "saffron", "mirpur10", "coupons", code), {
+          code: code,
+          targetType: targetType,
+          customerPhone: customerPhone,
+          type: type,
+          amount: amount,
+          minOrderValue: minOrderValue,
+          maxDiscount: maxDiscount,
+          maxUses: maxUses,
+          usedCount: usedCount,
+          startDate: startDate,
+          expireDate: expireDate,
+          active: true,
+          createdAt: new Date().toISOString()
+        });
+
+        document.getElementById('coupon-code-input').value = '';
+        document.getElementById('coupon-target-type').value = 'all';
+        document.getElementById('coupon-customer-phone').value = '';
+        document.getElementById('coupon-type').value = 'flat';
+        document.getElementById('coupon-amount').value = '';
+        document.getElementById('coupon-min-order').value = '';
+        document.getElementById('coupon-max-discount').value = '';
+        document.getElementById('coupon-max-uses').value = '';
+        document.getElementById('coupon-used-count').value = '0';
+        document.getElementById('coupon-start-date').value = '';
+        document.getElementById('coupon-expire-date').value = '';
+        
+        toggleMaxDiscountField();
+        toggleCustomerSelectField();
+
+        alert(`কুপন "${code}" ফায়ারবেসে সফলভাবে সেভ/আপডেট করা হয়েছে!`);
+      } catch(e) {
+        alert("এরর: " + e.message);
+      }
+    }
+
+    window.editCoupon = async function(docId) {
+      const item = couponsData[docId];
+      if(!item) return;
+
+      document.getElementById('coupon-code-input').value = docId;
+      document.getElementById('coupon-target-type').value = item.targetType || 'all';
+      
+      toggleCustomerSelectField();
+      if(item.targetType === 'specific') {
+        await loadCustomersDropdown(item.customerPhone || '');
+      }
+
+      document.getElementById('coupon-type').value = item.type || 'flat';
+      document.getElementById('coupon-amount').value = item.amount || '';
+      document.getElementById('coupon-min-order').value = item.minOrderValue || '';
+      document.getElementById('coupon-max-discount').value = item.maxDiscount || '';
+      document.getElementById('coupon-max-uses').value = item.maxUses !== undefined && item.maxUses !== null ? item.maxUses : '';
+      document.getElementById('coupon-used-count').value = item.usedCount !== undefined ? item.usedCount : 0;
+      document.getElementById('coupon-start-date').value = item.startDate || '';
+      document.getElementById('coupon-expire-date').value = item.expireDate || '';
+      
+      toggleMaxDiscountField();
+      window.scrollTo({ top: document.querySelector('.card-title').offsetTop, behavior: 'smooth' });
+    }
+
+    window.deleteCoupon = async function(docId) {
+      if(confirm(`"${docId}" কুপনটি মুছে ফেলতে চান?`)) {
+        try {
+          await deleteDoc(doc(db, "saffron", "mirpur10", "coupons", docId));
+        } catch(e) {
+          alert("এরর: " + e.message);
+        }
+      }
+    }
+
+    // INIT SYNCS
+    syncVatRate();
+    syncTables();
+    syncPaymentMethods();
+    syncCoupons();
+  </script>
+</body>
+</html>

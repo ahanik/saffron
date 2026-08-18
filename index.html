@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saffron - Portal Access</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background: #0f172a; color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    .brand-container { text-align: center; margin-bottom: 40px; }
+    .brand-logo { width: 160px; height: 70px; object-fit: contain; margin-bottom: 10px; }
+    .branch-tag { color: #94a3b8; font-size: 14px; letter-spacing: 1px; }
+    .portal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; width: 100%; max-width: 900px; }
+    .portal-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 30px 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .portal-card:hover { transform: translateY(-8px); border-color: #f59e0b; box-shadow: 0 10px 20px rgba(245, 158, 11, 0.15); }
+    .portal-icon { font-size: 45px; margin-bottom: 15px; display: block; }
+    .portal-title { font-size: 20px; font-weight: 600; color: #f8fafc; margin-bottom: 8px; }
+    .portal-desc { font-size: 13px; color: #94a3b8; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1000; }
+    .modal-overlay.active { opacity: 1; pointer-events: all; }
+    .login-card { background: #1e293b; border: 1px solid #334155; padding: 30px; border-radius: 12px; width: 100%; max-width: 380px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); position: relative; }
+    .close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; }
+    .close-btn:hover { color: #fff; }
+    .login-title { font-size: 20px; margin-bottom: 20px; color: #f59e0b; text-align: center; }
+    .form-group { margin-bottom: 15px; text-align: left; }
+    .form-group label { font-size: 13px; color: #cbd5e1; display: block; margin-bottom: 6px; }
+    .form-control { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #fff; outline: none; font-size: 14px; }
+    .form-control:focus { border-color: #f59e0b; }
+    .btn-login { width: 100%; padding: 12px; background: #f59e0b; color: #fff; border: none; border-radius: 6px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
+    .btn-login:hover { background: #d97706; }
+    .error-msg { color: #ef4444; font-size: 12px; margin-top: 10px; text-align: center; display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="brand-container">
+    <img src="logo.png" alt="Saffron Logo" class="brand-logo" onerror="this.onerror=null; this.src='https://via.placeholder.com/160x70?text=Saffron+Logo';">
+    <div class="branch-tag">Mirpur 10 Branch • Restaurant Management</div>
+  </div>
+
+  <div class="portal-grid">
+    <div class="portal-card" onclick="openLoginModal('admin')">
+      <span class="portal-icon">👑</span>
+      <div class="portal-title">এডমিন প্যানেল</div>
+      <div class="portal-desc">ইনভেন্টরি, ফুড মেনু ও ইউজার এক্সেস</div>
+    </div>
+
+    <div class="portal-card" onclick="openLoginModal('manager')">
+      <span class="portal-icon">👔</span>
+      <div class="portal-title">ম্যানেজার প্যানেল</div>
+      <div class="portal-desc">স্টক মনিটরিং ও ডেইলি রিপোর্ট ড্যাশবোর্ড</div>
+    </div>
+
+    <div class="portal-card" onclick="openLoginModal('cashier')">
+      <span class="portal-icon">🖥️</span>
+      <div class="portal-title">ক্যাশিয়ার প্যানেল</div>
+      <div class="portal-desc">কাস্টমার অর্ডার ইনপুট ও বিল প্রিন্টিং</div>
+    </div>
+  </div>
+
+  <!-- LOGIN MODAL -->
+  <div class="modal-overlay" id="login-modal">
+    <div class="login-card">
+      <button class="close-btn" onclick="closeLoginModal()">✕</button>
+      <div class="login-title" id="modal-title">🔐 এডমিন লগইন</div>
+      
+      <form id="portal-login-form">
+        <input type="hidden" id="login-role-type">
+
+        <!-- Admin Inputs -->
+        <div id="admin-inputs">
+          <div class="form-group">
+            <label>ইমেইল এড্রেস / ফোন</label>
+            <input type="text" id="admin-email" class="form-control" placeholder="ইমেইল বা ফোন লিখুন">
+          </div>
+          
+          <div class="form-group">
+            <label>পাসওয়ার্ড</label>
+            <input type="password" id="admin-password" class="form-control" placeholder="পাসওয়ার্ড লিখুন">
+          </div>
+        </div>
+
+        <!-- Staff / Manager / Cashier Inputs -->
+        <div id="staff-inputs" style="display: none;">
+          <div class="form-group">
+            <label>ফোন নম্বর</label>
+            <input type="text" id="staff-phone" class="form-control" placeholder="017xxxxxxxx">
+          </div>
+          
+          <div class="form-group">
+            <label>লগইন পিন (PIN)</label>
+            <input type="password" id="staff-pin" class="form-control" placeholder="৪ ডিজিটের পিন">
+          </div>
+        </div>
+
+        <div id="error-message" class="error-msg">তথ্য সঠিক নয়! অনুগ্রহ করে আবার চেষ্টা করুন।</div>
+
+        <button type="submit" class="btn-login" id="login-btn">লগইন করুন</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- FIREBASE MODULE SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+    import { 
+      initializeFirestore, 
+      persistentLocalCache, 
+      persistentMultipleTabManager,
+      collection, 
+      onSnapshot 
+    } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAq_vQ7ARn1TdMOOp1rtJqFOd1K4yUupP4",
+      authDomain: "saffron-65736.firebaseapp.com",
+      databaseURL: "https://saffron-65736-default-rtdb.firebaseio.com",
+      projectId: "saffron-65736",
+      storageBucket: "saffron-65736.firebasestorage.app",
+      messagingSenderId: "599450614604",
+      appId: "1:599450614604:web:e6be0bc5cb56dc867cede9",
+      measurementId: "G-FC5894HZEM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    let db;
+    try {
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager()
+        })
+      });
+    } catch (e) { console.warn("Cache error", e); }
+
+    const usersRef = collection(db, "saffron", "mirpur10", "users");
+    let usersList = [];
+
+    // Realtime Firebase Data Sync
+    onSnapshot(usersRef, (snapshot) => {
+      usersList = [];
+      snapshot.docs.forEach((doc) => {
+        usersList.push(doc.data());
+      });
+    });
+
+    const modal = document.getElementById('login-modal');
+    const loginForm = document.getElementById('portal-login-form');
+    const errorMsg = document.getElementById('error-message');
+
+    window.openLoginModal = function(role) {
+      document.getElementById('login-role-type').value = role;
+      errorMsg.style.display = 'none';
+
+      if (role === 'admin') {
+        document.getElementById('modal-title').innerText = '🔐 এডমিন লগইন';
+        document.getElementById('admin-inputs').style.display = 'block';
+        document.getElementById('staff-inputs').style.display = 'none';
+      } else {
+        document.getElementById('modal-title').innerText = role === 'manager' ? '👔 ম্যানেজার লগইন' : '🖥️ ক্যাশিয়ার লগইন';
+        document.getElementById('admin-inputs').style.display = 'none';
+        document.getElementById('staff-inputs').style.display = 'block';
+      }
+
+      modal.classList.add('active');
+    };
+
+    window.closeLoginModal = function() {
+      modal.classList.remove('active');
+      errorMsg.style.display = 'none';
+      loginForm.reset();
+    };
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeLoginModal();
+    });
+
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const role = document.getElementById('login-role-type').value;
+
+      if (role === 'admin') {
+        const identifier = document.getElementById('admin-email').value.trim();
+        const password = document.getElementById('admin-password').value.trim();
+
+        // 1. ফায়ারবেসে চেক করা
+        const foundAdmin = usersList.find(u => 
+          u.position === "এডমিন/ওউনার" && 
+          (u.email === identifier || u.phone === identifier) && 
+          u.adminPassword === password
+        );
+
+        // 2. ডিফল্ট ব্যাকআপ ইমেইল
+        if (foundAdmin || (identifier === "11@g" && password === "11")) {
+          const userObj = foundAdmin || { name: 'Admin', position: 'এডমিন/ওউনার', email: identifier };
+          setSessionAndRedirect('admin', userObj, "admin_inventory.html");
+        } else {
+          showError('ইমেইল/ফোন অথবা পাসওয়ার্ড সঠিক নয়!');
+        }
+
+      } else {
+        const phone = document.getElementById('staff-phone').value.trim();
+        const pin = document.getElementById('staff-pin').value.trim();
+
+        const targetPos = role === 'manager' ? 'ম্যানেজার' : 'ক্যাশিয়ার';
+        const foundStaff = usersList.find(u => 
+          u.position === targetPos && 
+          u.phone === phone && 
+          u.loginPin === pin
+        );
+
+        if (foundStaff) {
+          const targetPage = role === 'manager' ? 'manager_inventory.html' : 'cashier_pos.html';
+          setSessionAndRedirect(role, foundStaff, targetPage);
+        } else {
+          showError('ফোন নম্বর অথবা লগইন পিন মিলছে না!');
+        }
+      }
+    });
+
+    function showError(msg) {
+      errorMsg.innerText = msg;
+      errorMsg.style.display = 'block';
+    }
+
+    function setSessionAndRedirect(role, userData, targetPage) {
+      // Local Storage এবং Session Storage দুটোতেই তথ্য সেভ রাখা হচ্ছে
+      localStorage.setItem('saffron_admin_logged_in', 'true');
+      localStorage.setItem('saffron_user_logged_in', 'true');
+      localStorage.setItem('saffron_user_role', role);
+      
+      sessionStorage.setItem('loggedInUser', JSON.stringify(userData));
+      localStorage.setItem('saffron_user_info', JSON.stringify(userData));
+
+      // লুপ বন্ধ করার জন্য replace ব্যবহার করা হয়েছে
+      window.location.replace(targetPage);
+    }
+  </script>
+</body>
+</html>

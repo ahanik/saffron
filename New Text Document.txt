@@ -1,0 +1,22 @@
+<script>
+    if (localStorage.getItem('saffron_admin_logged_in') !== 'true') {
+      window.location.href = "index.html";
+    }
+
+    // --- এখানে কাস্টম বা ফলস পাথ (Custom / False Path) কোডটি যোগ করা হয়েছে ---
+    window.addEventListener('DOMContentLoaded', () => {
+      try {
+        // ব্রাউজারের অ্যাড্রেস বারে এই পাথটি দেখাবে (আপনি চাইলে আপনার মতো পরিবর্তন করতে পারেন)
+        const customPath = "/admin/secure/stock-panel"; 
+        window.history.replaceState({ page: "stock_management" }, "Stock Management", customPath);
+      } catch (e) {
+        console.warn("History API error:", e);
+      }
+    });
+  </script>
+
+
+
+
+
+বাটন একটিভ করার ক্ষেত্রে শুধুমাত্র বাটগুলার কোড থেকে style=visibility:hidden রিমুভ করে দিতে হবে

@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saffron - Sales History & Reports</title>
+  
+  <!-- SECURITY CHECK: Redirect if not logged in -->
+  <script>
+    if (localStorage.getItem('saffron_admin_logged_in') !== 'true') {
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { display: flex; height: 100vh; background-color: #f4f6f9; color: #333; }
+    
+    /* Sidebar Layout */
+    .sidebar { width: 250px; background-color: #1e293b; color: #fff; display: flex; flex-direction: column; justify-content: space-between; }
+    .brand { padding: 20px 15px; text-align: center; background: #0f172a; border-bottom: 1px solid #334155; display: flex; flex-direction: column; align-items: center; }
+    .brand-logo { width: 180px; height: 50px; margin-bottom: 6px; display: block; }
+    .branch-tag { display: block; font-size: 12px; color: #94a3b8; font-weight: normal; margin-top: 4px; }
+    
+    .sidebar a { text-decoration: none !important; }
+    .nav-links { list-style: none; padding: 20px 0; }
+    .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; transition: 0.2s; color: #cbd5e1; }
+    .nav-item:hover, .nav-item.active { background-color: #334155; color: #fff; border-left: 4px solid #f59e0b; }
+    
+    .logout-btn { color: #ef4444; border-top: 1px solid #334155; padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; text-decoration: none; }
+    .logout-btn:hover { background-color: #334155; color: #f87171; }
+
+    /* Main Content Area */
+    .main-content { flex: 1; padding: 25px; overflow-y: auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .status-online { background: #dcfce7; color: #166534; }
+
+    /* Cards & Forms */
+    .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .card-title { font-size: 16px; font-weight: 600; margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    
+    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 15px; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label { font-size: 12px; font-weight: 600; color: #475569; }
+    .form-control { padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; outline: none; }
+    .form-control:focus { border-color: #f59e0b; }
+
+    .btn { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+    .btn-primary { background: #f59e0b; color: #fff; }
+    .btn-primary:hover { background: #d97706; }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-warning { background: #3b82f6; color: #fff; }
+    .btn-dark { background: #1e293b; color: #fff; }
+
+    /* Summary Metrics */
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .metric-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; }
+    .metric-card h4 { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+    .metric-card p { font-size: 20px; font-weight: bold; color: #0f172a; margin-top: 5px; }
+
+    /* Table Styling */
+    .table-responsive { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+    th { background: #f8fafc; color: #475569; font-weight: 600; }
+    .action-btns { display: flex; gap: 6px; }
+
+    /* Modals */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
+    .modal-content { background: #fff; border-radius: 8px; width: 650px; max-width: 95%; padding: 20px; max-height: 90vh; overflow-y: auto; }
+
+    /* Hidden Containers for Printing */
+    #pos-receipt-print, #statement-print-area { display: none; }
+
+    /* PRINT STYLING RULES */
+    @media print {
+@page {
+        size: auto;
+        margin: 5mm; 
+      }
+      body * { visibility: hidden; }
+
+      /* MODE 1: MODERN STATEMENT / PDF REPORT PRINT */
+      body.print-list-mode #statement-print-area, 
+      body.print-list-mode #statement-print-area * { 
+        visibility: visible; 
+      }
+      body.print-list-mode #statement-print-area {
+        display: block !important;
+        position: absolute; left: 0; top: 0; width: 100%;
+        padding: 25px; background: #fff; font-size: 11px; color: #1e293b;
+      }
+
+      /* MODERN STATEMENT LAYOUT STYLES */
+      .stmt-top-bar { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 20px; }
+      .stmt-logo-group { display: flex; align-items: center; gap: 15px; }
+      .stmt-logo { max-width: 140px; height: auto; }
+      .stmt-brand-title { font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: 1px; text-transform: uppercase; }
+      .stmt-report-badge { background: #0f172a; color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+      .stmt-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f8fafc; padding: 12px 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
+      .stmt-meta-item { display: flex; gap: 6px; font-size: 11px; color: #475569; }
+      .stmt-meta-item strong { color: #0f172a; }
+
+      /* Summary Box Cards */
+      .stmt-summary-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 25px; }
+      .stmt-card { background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; text-align: center; }
+      .stmt-card.highlight { background: #0f172a; color: #fff; border-color: #0f172a; }
+      .stmt-card-label { font-size: 10px; text-transform: uppercase; font-weight: 700; color: #64748b; margin-bottom: 4px; }
+      .stmt-card.highlight .stmt-card-label { color: #94a3b8; }
+      .stmt-card-val { font-size: 13px; font-weight: 700; color: #0f172a; }
+      .stmt-card.highlight .stmt-card-val { color: #38bdf8; font-size: 14px; }
+
+      /* Transaction Table */
+      .stmt-table-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 10px; border-left: 3px solid #f59e0b; padding-left: 8px; text-transform: uppercase; }
+      .stmt-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 30px; }
+      .stmt-table th { background: #f1f5f9; color: #334155; font-weight: 700; padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; border-bottom: 2px solid #cbd5e1; }
+      .stmt-table td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; color: #334155; font-size: 11px; }
+      .stmt-table tbody tr:nth-child(even) { background-color: #f8fafc; }
+
+      /* Footer & Signature */
+      .stmt-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+      .stmt-sign-box { text-align: center; width: 180px; }
+      .stmt-sign-line { border-top: 1px dashed #64748b; margin-bottom: 4px; }
+      .stmt-sign-text { font-size: 10px; color: #64748b; font-weight: 600; }
+
+      /* MODE 2: POS RECEIPT PRINT */
+      body.print-pos-mode #pos-receipt-print, 
+      body.print-pos-mode #pos-receipt-print * { 
+        visibility: visible; 
+      }
+      body.print-pos-mode #pos-receipt-print {
+        display: block !important; position: absolute; left: 0; top: 0; width: 72mm; margin: 0; padding: 4mm 2mm;
+        font-family: 'Courier New', Courier, monospace; color: #000; background: #fff;
+      }
+    }
+
+    /* Thermal receipt layout styling inside #pos-receipt-print */
+    .receipt-logo { max-width: 120px; max-height: 50px; margin: 0 auto 5px auto; display: block; filter: grayscale(100%); }
+    .receipt-title { font-size: 16px; font-weight: bold; text-align: center; text-transform: uppercase; }
+    .receipt-subtitle { font-size: 11px; text-align: center; margin-bottom: 5px; }
+    .receipt-divider { border-top: 1px dashed #000; margin: 5px 0; }
+    .receipt-info { font-size: 11px; line-height: 1.3; }
+    .receipt-table { width: 100%; border-collapse: collapse; margin: 5px 0; font-size: 11px; }
+    .receipt-table th { text-align: left; border-bottom: 1px dashed #000; padding-bottom: 3px; }
+    .receipt-table td { padding: 3px 0; vertical-align: top; }
+    .text-right { text-align: right; }
+    .receipt-totals { font-size: 11px; margin-top: 4px; line-height: 1.4; }
+    .receipt-totals .grand-total { font-size: 14px; font-weight: bold; border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 3px 0; margin-top: 3px; }
+    .offer-box { border: 1px dashed #000; padding: 6px; margin: 8px 0 5px 0; font-size: 10px; }
+    .offer-box-title { font-weight: bold; text-align: center; margin-bottom: 4px; }
+    .receipt-footer { text-align: center; font-size: 10px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div>
+      <div class="brand">
+        <img src="logo.png" alt="Saffron Logo" class="brand-logo" onerror="this.onerror=null; this.src='https://via.placeholder.com/180x50?text=SAFFRON';">
+        <span class="branch-tag">Mirpur 10 Branch</span>
+      </div>
+      <ul class="nav-links">
+<li><a href="admin_inventory.html" class="nav-item">Stock Management</a></li>
+      <li><a href="admin_food.html" class="nav-item">Food Management</a></li>
+	<li><a href="admin_employees.html" class="nav-item">Employee Management</a></li>
+	<li><a href="admin_guestmanagement.html" class="nav-item">Guest Management</a></li>
+	<li><a href="admin_coupon.html" class="nav-item">Coupon & Others</a></li>
+	<li><a href="admin_employeeexpense.html" class="nav-item">Employee Expense</a></li>
+      <li><a href="admin_otherexpense.html" class="nav-item ">Other Expense</a></li>
+	<li><a href="admin_salesmanagement.html" class="nav-item ">Employee Sales report</a></li>
+      <li><a href="admin_salesreport.html" class="nav-item active">Sales History & Report</a></li>
+<li><a href="admin_costreport.html" class="nav-item">Operating Cost Report</a></li>
+<li><a href="admin_pos.html" class="nav-item">POS System</a></li>
+
+      </ul>
+    </div>
+    <a href="#" class="logout-btn" onclick="logoutAdmin()">🚪 লগআউট (Logout)</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="header">
+      <h2>📊 সেলস হিস্টোরি ও রিপোর্টস</h2>
+      <div id="net-status" class="status-badge status-online">🟢 অনলাইন (Auto Syncing)</div>
+    </div>
+
+    <!-- Metrics Header -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <h4>মোট অর্ডার</h4>
+        <p id="metric-orders-count">0</p>
+      </div>
+      <div class="metric-card">
+        <h4>মোট বিক্রয় (Net Sales)</h4>
+        <p id="metric-total-sales">0 TK</p>
+      </div>
+      <div class="metric-card">
+        <h4>মোট ডিসকাউন্ট</h4>
+        <p id="metric-total-discount">0 TK</p>
+      </div>
+      <div class="metric-card">
+        <h4>মোট ভ্যাট (VAT)</h4>
+        <p id="metric-total-vat">0 TK</p>
+      </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>🔍 অ্যাডভান্সড ফিল্টারিং</span>
+        <button class="btn btn-dark" onclick="printReportStatement()">📄 স্টেটমেন্ট ডাউনলোড (PDF / Print)</button>
+      </div>
+      <div class="filter-grid">
+        <div class="form-group">
+          <label>ডেট ফিল্টার</label>
+          <select id="filter-date-preset" class="form-control" onchange="handlePresetDateChange()">
+            <option value="today">আজ (Today)</option>
+            <option value="yesterday">গতকাল (Yesterday)</option>
+            <option value="this_week">এই সপ্তাহ</option>
+            <option value="this_month">এই মাস</option>
+            <option value="custom">কাস্টম ডেট রেঞ্জ</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>শুরু (Start Date)</label>
+          <input type="date" id="filter-start-date" class="form-control" disabled>
+        </div>
+        <div class="form-group">
+          <label>শেষ (End Date)</label>
+          <input type="date" id="filter-end-date" class="form-control" disabled>
+        </div>
+        <div class="form-group">
+          <label>সার্চ (Order ID / Phone)</label>
+          <input type="text" id="filter-search" class="form-control" placeholder="যেমন: 260308101 বা 017...">
+        </div>
+        <div class="form-group">
+          <label>পেমেন্ট মেথড</label>
+          <select id="filter-payment" class="form-control">
+            <option value="ALL">সবগুলো</option>
+            <option value="Cash">Cash</option>
+            <option value="Bkash">Bkash</option>
+            <option value="Card">Card</option>
+          </select>
+        </div>
+        <!-- CASHIER FILTER DROPDOWN -->
+        <div class="form-group">
+          <label>ক্যাশিয়ার (Served By)</label>
+          <select id="filter-cashier" class="form-control">
+            <option value="ALL">সকল ক্যাশিয়ার</option>
+          </select>
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button class="btn btn-primary" onclick="applyFilters()">ফিল্টার প্রয়োগ করুন</button>
+        <button class="btn" style="background:#cbd5e1" onclick="resetFilters()">রিসেট</button>
+      </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card">
+      <div class="card-title">সম্পূর্ণ সেলস হিস্টোরি</div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>ইনভয়েস #</th>
+              <th>তারিখ ও সময়</th>
+              <th>টেবিল</th>
+              <th>কাস্টমার তথ্য</th>
+              <th>আইটেম সংখ্যা</th>
+              <th>পেমেন্ট</th>
+              <th>মোট টাকা</th>
+              <th>ক্যাশিয়ার</th>
+              <th>অ্যাকশন</th>
+            </tr>
+          </thead>
+          <tbody id="sales-table-body">
+            <tr><td colspan="9" style="text-align:center;">ডাটা লোড হচ্ছে...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP MODAL: ORDER DETAILS & EDIT -->
+  <div id="edit-order-modal" class="modal">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #cbd5e1; padding-bottom:8px;">
+        <h3>📋 অর্ডারের বিস্তারিত ও সম্পাদনা (#<span id="edit-modal-order-id"></span>)</h3>
+        <button onclick="closeEditModal()" style="background:none; border:none; font-size:20px; cursor:pointer;">✕</button>
+      </div>
+      <form id="edit-order-form">
+        <input type="hidden" id="edit-doc-id">
+        <div class="filter-grid" style="grid-template-columns: 1fr 1fr;">
+          <div class="form-group">
+            <label>কাস্টমারের নাম</label>
+            <input type="text" id="edit-cust-name" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>ফোন নম্বর</label>
+            <input type="text" id="edit-cust-phone" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>টেবিল</label>
+            <input type="text" id="edit-table" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>পেমেন্ট মেথড</label>
+            <select id="edit-payment-method" class="form-control">
+              <option value="Cash">Cash</option>
+              <option value="Bkash">Bkash</option>
+              <option value="Card">Card</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>ডিসকাউন্ট (TK)</label>
+            <input type="number" id="edit-discount" class="form-control" step="any">
+          </div>
+          <div class="form-group">
+            <label>সম্পাদনার কারণ (Reason)</label>
+            <input type="text" id="edit-reason" class="form-control" placeholder="যেমন: ভুল আইটেম পরিবর্তন" required>
+          </div>
+        </div>
+
+        <div style="margin-top:15px;">
+          <label style="font-weight:bold; font-size:13px; color:#0f172a;">🍔 অর্ডারকৃত ফুড আইটেমসমূহ:</label>
+          <div id="edit-items-container" style="margin-top:8px; max-height:200px; overflow-y:auto; border:1px solid #cbd5e1; border-radius:6px; padding:10px; background:#f8fafc;">
+            <!-- Dynamic Item Rows with Price and Qty -->
+          </div>
+        </div>
+
+        <div style="margin-top:15px; background:#e2e8f0; padding:10px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-weight:bold;">সর্বমোট হিসাব:</span>
+          <span id="modal-calculated-total" style="font-weight:bold; font-size:16px; color:#166534;">0 TK</span>
+        </div>
+
+        <div style="margin-top:15px; display:flex; justify-content:flex-end; gap:10px;">
+          <button type="submit" class="btn btn-success">💾 সেভ করুন (Save Changes)</button>
+          <button type="button" class="btn" style="background:#cbd5e1" onclick="closeEditModal()">বন্ধ করুন (Close)</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DEDICATED STATEMENT PRINT CONTAINER -->
+  <div id="statement-print-area"></div>
+
+  <!-- POS THERMAL RECEIPT CONTAINER -->
+  <div id="pos-receipt-print"></div>
+
+  <!-- Javascript Logic -->
+  <script>
+    function logoutAdmin() {
+      if (confirm("আপনি কি নিশ্চিত যে লগআউট করতে চান?")) {
+        localStorage.removeItem('saffron_admin_logged_in');
+        window.location.href = "index.html";
+      }
+    }
+  </script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+    import { 
+      initializeFirestore, 
+      persistentLocalCache, 
+      persistentMultipleTabManager,
+      collection, 
+      onSnapshot, 
+      doc, 
+      updateDoc 
+    } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAq_vQ7ARn1TdMOOp1rtJqFOd1K4yUupP4",
+      authDomain: "saffron-65736.firebaseapp.com",
+      databaseURL: "https://saffron-65736-default-rtdb.firebaseio.com",
+      projectId: "saffron-65736",
+      storageBucket: "saffron-65736.firebasestorage.app",
+      messagingSenderId: "599450614604",
+      appId: "1:599450614604:web:e6be0bc5cb56dc867cede9",
+      measurementId: "G-FC5894HZEM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    let db;
+    try {
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+      });
+    } catch (e) {
+      console.warn("Offline cache failed", e);
+    }
+
+    const salesRef = collection(db, "saffron", "mirpur10", "sales");
+
+    let masterSalesList = [];
+    let filteredSalesList = [];
+
+    // Realtime Listener
+    onSnapshot(salesRef, (snapshot) => {
+      masterSalesList = [];
+      snapshot.docs.forEach((d) => {
+        masterSalesList.push({ id: d.id, ...d.data() });
+      });
+
+      masterSalesList.sort((a, b) => new Date(b.completedAt || 0) - new Date(a.completedAt || 0));
+      populateCashierDropdown();
+      window.applyFilters();
+    }, (error) => {
+      console.error("Firestore Sales Error: ", error);
+    });
+
+    // POPULATE DYNAMIC CASHIER DROPDOWN
+    function populateCashierDropdown() {
+      const cashierSelect = document.getElementById("filter-cashier");
+      const selectedVal = cashierSelect.value;
+      const cashiers = new Set();
+
+      masterSalesList.forEach(item => {
+        const name = item.createdBy || item.completedBy;
+        if (name) cashiers.add(name);
+      });
+
+      cashierSelect.innerHTML = `<option value="ALL">সকল ক্যাশিয়ার</option>`;
+      cashiers.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c;
+        opt.textContent = c;
+        cashierSelect.appendChild(opt);
+      });
+
+      cashierSelect.value = selectedVal || "ALL";
+    }
+
+    window.handlePresetDateChange = function() {
+      const preset = document.getElementById("filter-date-preset").value;
+      const startInput = document.getElementById("filter-start-date");
+      const endInput = document.getElementById("filter-end-date");
+
+      if (preset === 'custom') {
+        startInput.disabled = false;
+        endInput.disabled = false;
+      } else {
+        startInput.disabled = true;
+        endInput.disabled = true;
+        startInput.value = '';
+        endInput.value = '';
+      }
+      window.applyFilters();
+    };
+
+    window.applyFilters = function() {
+      const preset = document.getElementById("filter-date-preset").value;
+      const search = (document.getElementById("filter-search").value || '').toLowerCase().trim();
+      const payment = document.getElementById("filter-payment").value;
+      const cashier = document.getElementById("filter-cashier").value;
+
+      const now = new Date();
+      let startDate = null;
+      let endDate = null;
+
+      if (preset === 'today') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      } else if (preset === 'yesterday') {
+        const y = new Date(now);
+        y.setDate(y.getDate() - 1);
+        startDate = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 0, 0, 0);
+        endDate = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 23, 59, 59);
+      } else if (preset === 'this_week') {
+        const firstDay = now.getDate() - now.getDay();
+        startDate = new Date(now.getFullYear(), now.getMonth(), firstDay, 0, 0, 0);
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      } else if (preset === 'this_month') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+      } else if (preset === 'custom') {
+        const sVal = document.getElementById("filter-start-date").value;
+        const eVal = document.getElementById("filter-end-date").value;
+        if (sVal) startDate = new Date(sVal + "T00:00:00");
+        if (eVal) endDate = new Date(eVal + "T23:59:59");
+      }
+
+      filteredSalesList = masterSalesList.filter(item => {
+        const itemDate = new Date(item.completedAt || item.createdAt || 0);
+
+        if (startDate && itemDate < startDate) return false;
+        if (endDate && itemDate > endDate) return false;
+
+        const idMatch = (item.id || item.orderId || '').toLowerCase().includes(search);
+        const phoneMatch = (item.customerPhone || item.phone || '').toLowerCase().includes(search);
+        const nameMatch = (item.customerName || '').toLowerCase().includes(search);
+        if (search && !idMatch && !phoneMatch && !nameMatch) return false;
+
+        if (payment !== 'ALL' && (item.paymentMethod || 'Cash') !== payment) return false;
+
+        const itemCashier = item.createdBy || item.completedBy || 'Cashier';
+        if (cashier !== 'ALL' && itemCashier !== cashier) return false;
+
+        return true;
+      });
+
+      renderMetrics();
+      renderTable();
+    };
+
+    window.resetFilters = function() {
+      document.getElementById("filter-date-preset").value = "today";
+      document.getElementById("filter-search").value = "";
+      document.getElementById("filter-payment").value = "ALL";
+      document.getElementById("filter-cashier").value = "ALL";
+      handlePresetDateChange();
+    };
+
+    function renderMetrics() {
+      let count = filteredSalesList.length;
+      let totalSales = 0;
+      let totalDiscount = 0;
+      let totalVat = 0;
+
+      filteredSalesList.forEach(item => {
+        totalSales += Number(item.grandTotal || 0);
+        totalDiscount += Number(item.discountAmount || 0);
+        totalVat += Number(item.vatAmount || 0);
+      });
+
+      document.getElementById("metric-orders-count").innerText = count;
+      document.getElementById("metric-total-sales").innerText = `${totalSales.toFixed(1)} TK`;
+      document.getElementById("metric-total-discount").innerText = `${totalDiscount.toFixed(1)} TK`;
+      document.getElementById("metric-total-vat").innerText = `${totalVat.toFixed(1)} TK`;
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById("sales-table-body");
+      tbody.innerHTML = "";
+
+      if (filteredSalesList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">কোনো সেলস রেকর্ড পাওয়া যায়নি।</td></tr>`;
+        return;
+      }
+
+      filteredSalesList.forEach(item => {
+        const orderId = item.id || item.orderId;
+        const dateStr = item.completedAt ? new Date(item.completedAt).toLocaleString('bn-BD') : 'N/A';
+        const itemCount = (item.items || []).reduce((s, i) => s + (i.qty || 1), 0);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>#${orderId}</strong></td>
+          <td>${dateStr}</td>
+          <td>${item.table || 'N/A'}</td>
+          <td>${item.customerName || 'গেস্ট'}<br><small style="color:#64748b;">${item.customerPhone || item.phone || 'N/A'}</small></td>
+          <td>${itemCount} টি আইটেম</td>
+          <td><span class="status-badge" style="background:#e0f2fe; color:#0369a1;">${item.paymentMethod || 'Cash'}</span></td>
+          <td><strong>${item.grandTotal || 0} TK</strong></td>
+          <td>${item.createdBy || item.completedBy || 'Cashier'}</td>
+          <td class="action-btns">
+            <button class="btn btn-warning" style="padding:4px 8px; font-size:11px;" onclick="openEditModal('${orderId}')">👁️ বিস্তারিত/এডিট</button>
+            <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="reprintPosReceipt('${orderId}')">🖨️ POS রসিদ</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // PRINT MODERN STATEMENT PDF
+    window.printReportStatement = function() {
+      let count = filteredSalesList.length;
+      let totalGrandSales = 0;
+      let totalDiscount = 0;
+      let totalVat = 0;
+
+      filteredSalesList.forEach(item => {
+        totalGrandSales += Number(item.grandTotal || 0);
+        totalDiscount += Number(item.discountAmount || 0);
+        totalVat += Number(item.vatAmount || 0);
+      });
+
+      let totalSalesWithoutVat = totalGrandSales - totalVat;
+
+      const presetText = document.getElementById("filter-date-preset").options[document.getElementById("filter-date-preset").selectedIndex].text;
+      const cashierText = document.getElementById("filter-cashier").value;
+      
+      let rowsHTML = '';
+      filteredSalesList.forEach(item => {
+        const dateStr = item.completedAt ? new Date(item.completedAt).toLocaleString('bn-BD') : 'N/A';
+        const withoutVat = (Number(item.grandTotal || 0) - Number(item.vatAmount || 0)).toFixed(1);
+        const cashierName = item.createdBy || item.completedBy || 'Cashier';
+        
+        rowsHTML += `
+          <tr>
+            <td><strong>#${item.id || item.orderId}</strong></td>
+            <td>${dateStr}</td>
+            <td>${item.customerName || 'Guest'} (${item.customerPhone || 'N/A'})</td>
+            <td><strong>${cashierName}</strong></td>
+            <td><span style="background:#e2e8f0; padding:2px 6px; border-radius:4px; font-weight:600;">${item.paymentMethod || 'Cash'}</span></td>
+            <td>${item.discountAmount || 0} TK</td>
+            <td>${item.vatAmount || 0} TK</td>
+            <td>${withoutVat} TK</td>
+            <td><strong>${item.grandTotal || 0} TK</strong></td>
+          </tr>
+        `;
+      });
+
+      const stmtContainer = document.getElementById('statement-print-area');
+      stmtContainer.innerHTML = `
+        <div class="stmt-top-bar">
+          <div class="stmt-logo-group">
+            <img src="logo.png" class="stmt-logo" alt="Saffron" onerror="this.style.display='none'">
+            <div>
+              <div class="stmt-brand-title">SAFFRON</div>
+              <div style="color:#64748b; font-size:11px;">Official Sales Performance Statement</div>
+            </div>
+          </div>
+          <div class="stmt-report-badge">Sales Report</div>
+        </div>
+
+        <div class="stmt-meta-grid">
+          <div class="stmt-meta-item"><span>Filter Range:</span> <strong>${presetText}</strong></div>
+          <div class="stmt-meta-item"><span>Cashier Filter:</span> <strong>${cashierText}</strong></div>
+          <div class="stmt-meta-item"><span>Generated Date:</span> <strong>${new Date().toLocaleString('bn-BD')}</strong></div>
+          <div class="stmt-meta-item"><span>Status:</span> <strong style="color:#166534;">Verified</strong></div>
+        </div>
+
+        <!-- Summary Metric Cards -->
+        <div class="stmt-summary-cards">
+          <div class="stmt-card">
+            <div class="stmt-card-label">Total Orders</div>
+            <div class="stmt-card-val">${count} Nos</div>
+          </div>
+          <div class="stmt-card">
+            <div class="stmt-card-label">Total Discount</div>
+            <div class="stmt-card-val">${totalDiscount.toFixed(1)} TK</div>
+          </div>
+          <div class="stmt-card">
+            <div class="stmt-card-label">Total VAT</div>
+            <div class="stmt-card-val">${totalVat.toFixed(1)} TK</div>
+          </div>
+          <div class="stmt-card">
+            <div class="stmt-card-label">Sales (Without VAT)</div>
+            <div class="stmt-card-val">${totalSalesWithoutVat.toFixed(1)} TK</div>
+          </div>
+          <div class="stmt-card highlight">
+            <div class="stmt-card-label">Sales (With VAT)</div>
+            <div class="stmt-card-val">${totalGrandSales.toFixed(1)} TK</div>
+          </div>
+        </div>
+
+        <!-- Transaction Details Table -->
+        <div class="stmt-table-title">Transaction Breakdown</div>
+        <table class="stmt-table">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Date & Time</th>
+              <th>Customer</th>
+              <th>Cashier</th>
+              <th>Payment</th>
+              <th>Discount</th>
+              <th>VAT</th>
+              <th>Excl. VAT</th>
+              <th>Grand Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHTML.length > 0 ? rowsHTML : '<tr><td colspan="9" style="text-align:center;">No records found.</td></tr>'}
+          </tbody>
+        </table>
+
+        <!-- Footer Signatures -->
+        <div class="stmt-footer">
+          <div class="stmt-sign-box">
+            <div class="stmt-sign-line"></div>
+            <div class="stmt-sign-text">Prepared By</div>
+          </div>
+          <div class="stmt-sign-box">
+            <div class="stmt-sign-line"></div>
+            <div class="stmt-sign-text">Authorized Signature</div>
+          </div>
+        </div>
+      `;
+
+      document.body.className = 'print-list-mode';
+      window.print();
+      document.body.className = '';
+    };
+
+    // POS THERMAL RECEIPT PRINT
+    window.reprintPosReceipt = function(orderId) {
+      const order = masterSalesList.find(o => o.id === orderId || o.orderId === orderId);
+      if (!order) return alert("অর্ডার তথ্য পাওয়া যায়নি!");
+
+      const printDiv = document.getElementById('pos-receipt-print');
+      let itemsHTML = '';
+      (order.items || []).forEach(i => {
+        itemsHTML += `
+          <tr>
+            <td>${i.name}<br><small>${i.price} x ${i.qty}</small></td>
+            <td class="text-right">${(i.price * i.qty).toFixed(1)} TK</td>
+          </tr>
+        `;
+      });
+
+      let discountLine = order.discountAmount > 0 ? `<div style="display:flex; justify-content:space-between;"><span>Discount:</span><span>- ${order.discountAmount} TK</span></div>` : '';
+
+      printDiv.innerHTML = `
+        <img src="logo.png" class="receipt-logo" alt="Logo" onerror="this.style.display='none'">
+        <div class="receipt-title">SAFFRON</div>
+        <div class="receipt-subtitle">Restaurant & Dining</div>
+        <div class="receipt-divider"></div>
+        <div class="receipt-info">
+          <div><strong>Inv #:</strong> ${orderId} | <strong>Table:</strong> ${order.table || 'N/A'}</div>
+          <div><strong>Date:</strong> ${new Date(order.completedAt || Date.now()).toLocaleString()}</div>
+          <div><strong>Name:</strong> ${order.customerName || 'Valued Guest'}</div>
+          <div><strong>Phone:</strong> ${order.customerPhone || order.phone || 'N/A'}</div>
+          <div><strong>Served By:</strong> ${order.createdBy || order.completedBy || 'Cashier'}</div>
+        </div>
+        <div class="receipt-divider"></div>
+        <table class="receipt-table">
+          <thead>
+            <tr><th>Item Description</th><th class="text-right">Price</th></tr>
+          </thead>
+          <tbody>${itemsHTML}</tbody>
+        </table>
+        <div class="receipt-divider"></div>
+        <div class="receipt-totals">
+          <div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>${order.subtotal || order.grandTotal} TK</span></div>
+          <div style="display:flex; justify-content:space-between;"><span>VAT (${order.vatRate || 0}%):</span><span>${order.vatAmount || 0} TK</span></div>
+          ${discountLine}
+          <div class="receipt-totals grand-total">
+            <div style="display:flex; justify-content:space-between;"><span>GRAND TOTAL:</span><span>${order.grandTotal} TK</span></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:3px;"><span>Pay Method:</span><span>${order.paymentMethod || 'Cash'}</span></div>
+        </div>
+        <div class="receipt-divider"></div>
+        <div class="offer-box">
+          <div class="offer-box-title">To know about various offers, please provide your info:</div>
+          <div>Name: ______________________</div>
+          <div style="margin-top:4px;">Phone: _____________________</div>
+        </div>
+        <div class="receipt-footer">
+          <p style="font-weight:bold;">Thank You For Dining With Us!</p>
+          <p>Please Come Again</p>
+        </div>
+      `;
+
+      document.body.className = 'print-pos-mode';
+      window.print();
+      document.body.className = '';
+    };
+
+    // OPEN POPUP MODAL FOR VIEW / EDIT
+    window.openEditModal = function(orderId) {
+      const order = masterSalesList.find(o => o.id === orderId || o.orderId === orderId);
+      if (!order) return;
+
+      document.getElementById("edit-modal-order-id").innerText = orderId;
+      document.getElementById("edit-doc-id").value = orderId;
+      document.getElementById("edit-cust-name").value = order.customerName || '';
+      document.getElementById("edit-cust-phone").value = order.customerPhone || order.phone || '';
+      document.getElementById("edit-table").value = order.table || '';
+      document.getElementById("edit-payment-method").value = order.paymentMethod || 'Cash';
+      document.getElementById("edit-discount").value = order.manualDiscount || order.discountAmount || 0;
+      document.getElementById("edit-reason").value = '';
+
+      const itemsContainer = document.getElementById("edit-items-container");
+      itemsContainer.innerHTML = '';
+      
+      (order.items || []).forEach((item) => {
+        itemsContainer.innerHTML += `
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; background:#fff; padding:6px; border-radius:4px; border:1px solid #cbd5e1;">
+            <input type="text" value="${item.name}" class="form-control item-edit-name" style="flex:2;" readonly>
+            <label style="font-size:11px;">পরিমাণ:</label>
+            <input type="number" value="${item.qty}" class="form-control item-edit-qty" style="width:65px;" min="1" onchange="calculateModalTotal()">
+            <span style="font-weight:bold; font-size:12px; width:90px; text-align:right;">${item.price} TK/টি</span>
+          </div>
+        `;
+      });
+
+      calculateModalTotal(order);
+      document.getElementById("edit-order-modal").style.display = "flex";
+    };
+
+    window.calculateModalTotal = function(existingOrder = null) {
+      const docId = document.getElementById("edit-doc-id").value;
+      const orderObj = existingOrder || masterSalesList.find(o => o.id === docId);
+      if (!orderObj) return;
+
+      const qtyInputs = document.querySelectorAll(".item-edit-qty");
+      let subtotal = 0;
+
+      (orderObj.items || []).forEach((item, idx) => {
+        const qty = parseFloat(qtyInputs[idx]?.value) || item.qty || 1;
+        subtotal += item.price * qty;
+      });
+
+      const manualDiscount = parseFloat(document.getElementById("edit-discount").value) || 0;
+      const vatRate = orderObj.vatRate || 0;
+      const vatAmount = (subtotal * vatRate) / 100;
+      const grandTotal = Math.max(0, (subtotal - manualDiscount) + vatAmount);
+
+      document.getElementById("modal-calculated-total").innerText = `${grandTotal.toFixed(1)} TK`;
+    };
+
+    window.closeEditModal = function() {
+      document.getElementById("edit-order-modal").style.display = "none";
+    };
+
+    // SAVE EDITED ORDER
+    document.getElementById("edit-order-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const docId = document.getElementById("edit-doc-id").value;
+      const reason = document.getElementById("edit-reason").value.trim();
+
+      if (!reason) return alert("আপডেটের কারণ লিখুন!");
+
+      const orderRef = doc(db, "saffron", "mirpur10", "sales", docId);
+      const orderObj = masterSalesList.find(o => o.id === docId);
+
+      const qtyInputs = document.querySelectorAll(".item-edit-qty");
+      let updatedItems = [...(orderObj.items || [])];
+      let subtotal = 0;
+
+      updatedItems.forEach((item, idx) => {
+        const newQty = parseFloat(qtyInputs[idx].value) || 1;
+        item.qty = newQty;
+        subtotal += item.price * newQty;
+      });
+
+      const manualDiscount = parseFloat(document.getElementById("edit-discount").value) || 0;
+      const vatRate = orderObj.vatRate || 0;
+      const vatAmount = (subtotal * vatRate) / 100;
+      const grandTotal = Math.max(0, (subtotal - manualDiscount) + vatAmount);
+
+      try {
+        await updateDoc(orderRef, {
+          customerName: document.getElementById("edit-cust-name").value.trim(),
+          customerPhone: document.getElementById("edit-cust-phone").value.trim(),
+          phone: document.getElementById("edit-cust-phone").value.trim(),
+          table: document.getElementById("edit-table").value.trim(),
+          paymentMethod: document.getElementById("edit-payment-method").value,
+          manualDiscount: manualDiscount,
+          discountAmount: manualDiscount,
+          items: updatedItems,
+          subtotal: subtotal,
+          vatAmount: vatAmount,
+          grandTotal: grandTotal,
+          updateReason: reason,
+          updatedBy: "Admin",
+          updatedAt: new Date().toISOString()
+        });
+
+        alert("অর্ডার সফলতা সহ আপডেট করা হয়েছে!");
+        closeEditModal();
+      } catch (err) {
+        console.error("Error updating order: ", err);
+        alert("আপডেট করতে সমস্যা হয়েছে: " + err.message);
+      }
+    });
+
+    // Auto Run
+    handlePresetDateChange();
+  </script>
+</body>
+</html>

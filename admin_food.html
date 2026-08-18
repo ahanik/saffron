@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saffron (Mirpur 10) - Food Menu Management</title>
+  
+  <!-- SECURITY CHECK: Redirect if not logged in -->
+  <script>
+    if (localStorage.getItem('saffron_admin_logged_in') !== 'true') {
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { display: flex; height: 100vh; background-color: #f4f6f9; color: #333; }
+    
+    /* Sidebar Layout & Fixed Logo Styling */
+    .sidebar { width: 250px; background-color: #1e293b; color: #fff; display: flex; flex-direction: column; justify-content: space-between; }
+    
+    .brand { 
+      padding: 20px 15px; 
+      text-align: center; 
+      background: #0f172a; 
+      border-bottom: 1px solid #334155; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-logo {
+      width: 120px;
+      height: 50px;
+      object-fit: contain;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .branch-tag { display: block; font-size: 12px; color: #94a3b8; font-weight: normal; }
+    
+    .nav-links { list-style: none; padding: 20px 0; }
+    .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; transition: 0.2s; color: #cbd5e1; text-decoration: none; }
+    .nav-item:hover, .nav-item.active { background-color: #334155; color: #fff; border-left: 4px solid #f59e0b; }
+    
+    .logout-item { color: #ef4444; border-top: 1px solid #334155; padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; text-decoration: none; }
+    .logout-item:hover { background-color: #334155; color: #f87171; }
+
+    /* Main Content Area */
+    .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .user-info-badge { background: #f1f5f9; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #1e293b; border: 1px solid #cbd5e1; }
+    .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .status-online { background: #dcfce7; color: #166534; }
+    .status-offline { background: #fee2e2; color: #991b1b; }
+
+    /* Card & Forms */
+    .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .card-title { font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; font-weight: 600; color: #475569; }
+    .form-control { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; }
+    .form-control:focus { border-color: #f59e0b; }
+
+    .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 14px; }
+    .btn-primary { background: #f59e0b; color: #fff; }
+    .btn-primary:hover { background: #d97706; }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-warning { background: #0284c7; color: #fff; }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-cancel { background: #64748b; color: #fff; padding: 4px 10px; font-size: 12px; border-radius: 4px; }
+
+    /* Variant Block */
+    .variant-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+    .recipe-row { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
+
+    /* Table Styling */
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    th { background: #f8fafc; color: #475569; font-weight: 600; font-size: 14px; }
+    td { font-size: 14px; }
+    .variant-badge { display: inline-block; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-bottom: 4px; }
+    
+    .action-btns { display: flex; gap: 6px; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div>
+      <div class="brand">
+        <img src="logo.png" alt="Saffron Logo" class="brand-logo" onerror="this.onerror=null; this.src='https://via.placeholder.com/120x50?text=Saffron+Logo';">
+        <span class="branch-tag">Mirpur 10 Branch</span>
+      </div>
+      <!-- নেভিগেশন লিঙ্ক সেকশন -->
+      <ul class="nav-links">
+        <li><a href="admin_inventory.html" class="nav-item">Stock Management</a></li>
+        <li><a href="admin_food.html" class="nav-item active">Food Management</a></li>
+        <li><a href="admin_employees.html" class="nav-item">Employee Management</a></li>
+        <li><a href="admin_guestmanagement.html" class="nav-item">Guest Management</a></li>
+        <li><a href="admin_coupon.html" class="nav-item">Coupon & Others</a></li>
+        <li><a href="admin_employeeexpense.html" class="nav-item">Employee Expense</a></li>
+        <li><a href="admin_otherexpense.html" class="nav-item">Other Expense</a></li>
+        <li><a href="admin_salesmanagement.html" class="nav-item">Employee Sales report</a></li>
+        <li><a href="admin_salesreport.html" class="nav-item">Sales History & Report</a></li>
+        <li><a href="admin_costreport.html" class="nav-item">Operating Cost Report</a></li>
+        <li><a href="admin_pos.html" class="nav-item">POS System</a></li>
+      </ul>
+    </div>
+    
+    <!-- Logout Button -->
+    <a href="#" class="logout-item" onclick="logoutAdmin()">🚪 লগআউট (Logout)</a>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    
+    <div class="header">
+      <h2>ফুড মেকার ও মেনু ম্যানেজমেন্ট</h2>
+      <div class="header-right">
+        <!-- ইউজার ইনফো ব্যাজ -->
+        <div id="logged-user-badge" class="user-info-badge">👤 ইউজার: লোড হচ্ছে...</div>
+        <div id="net-status" class="status-badge status-online">🟢 অনলাইন (Auto Syncing)</div>
+      </div>
+    </div>
+
+    <!-- Add/Edit Food Item Form -->
+    <div class="card">
+      <div class="card-title">
+        <span id="form-header-title">১. নতুন ফুড মেনু আইটেম তৈরি করুন</span>
+        <button type="button" id="cancel-edit-btn" class="btn btn-cancel" style="display: none;" onclick="resetFoodForm()">✕ এডিট বাতিল করুন</button>
+      </div>
+      <form id="food-form">
+        <input type="hidden" id="editing-food-id" value="">
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>ফুড আইটেমের নাম</label>
+            <input type="text" id="food-name" class="form-control" placeholder="যেমন: পিজ্জা, বার্গার, চাউমিন" required>
+          </div>
+          
+          <div class="form-group">
+            <label>ক্যাটাগরি</label>
+            <select id="food-category" class="form-control" onchange="toggleCustomCategoryInput(this)">
+              <option value="Fast Food">Fast Food</option>
+              <option value="Pizza">Pizza</option>
+              <option value="Chinese">Chinese</option>
+              <option value="Beverage">Beverage</option>
+              <option value="NEW_CATEGORY" style="font-weight: bold; color: #d97706;">+ নতুন ক্যাটাগরি যোগ করুন</option>
+            </select>
+            <input type="text" id="custom-category-input" class="form-control" placeholder="নতুন ক্যাটারগরির নাম লিখুন" style="display: none; margin-top: 8px;">
+          </div>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="font-size: 14px; font-weight: 600; color: #475569;">সাইজ/কোয়ান্টিটি ভেরিয়েন্ট ও ইনভেন্টরি রেসিপি সেটআপ:</label>
+        </div>
+
+        <div id="variants-container"></div>
+
+        <button type="button" class="btn btn-success" onclick="addVariantBlock()" style="margin-bottom: 20px;">+ আরো সাইজ/কোয়ান্টিটি যোগ করুন</button>
+
+        <div>
+          <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 16px;">ফুড আইটেম সেভ করুন</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Food List Table -->
+    <div class="card">
+      <div class="card-title">২. বর্তমান ফুড মেনু লিস্ট</div>
+      <table>
+        <thead>
+          <tr>
+            <th>ফুডের নাম</th>
+            <th>ক্যাটাগরি</th>
+            <th>সাইজ / কোয়ান্টিটি ও দাম</th>
+            <th>প্রয়োজনীয় ইনভেন্টরি কাঁচামাল ও খরচ</th>
+            <th>অ্যাকশন</th>
+          </tr>
+        </thead>
+        <tbody id="food-table-body">
+          <tr><td colspan="5">ডাটা লোড হচ্ছে...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    function logoutAdmin() {
+      if (confirm("আপনি কি নিশ্চিত যে লগআউট করতে চান?")) {
+        localStorage.removeItem('saffron_admin_logged_in');
+        localStorage.removeItem('saffron_logged_user_phone');
+        window.location.href = "index.html";
+      }
+    }
+  </script>
+
+  <!-- FIREBASE MODULE SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+    import { 
+      initializeFirestore, 
+      persistentLocalCache, 
+      persistentMultipleTabManager,
+      collection, 
+      getDocs,
+      onSnapshot, 
+      doc, 
+      setDoc,
+      deleteDoc,
+      serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAq_vQ7ARn1TdMOOp1rtJqFOd1K4yUupP4",
+      authDomain: "saffron-65736.firebaseapp.com",
+      databaseURL: "https://saffron-65736-default-rtdb.firebaseio.com",
+      projectId: "saffron-65736",
+      storageBucket: "saffron-65736.firebasestorage.app",
+      messagingSenderId: "599450614604",
+      appId: "1:599450614604:web:e6be0bc5cb56dc867cede9",
+      measurementId: "G-FC5894HZEM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    let db;
+    try {
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager()
+        })
+      });
+    } catch (e) {
+      console.warn("Offline cache error", e);
+    }
+
+    const inventoryRef = collection(db, "saffron", "mirpur10", "inventory");
+    const foodRef = collection(db, "saffron", "mirpur10", "foods");
+    const usersRef = collection(db, "saffron", "mirpur10", "users");
+
+    let availableInventory = [];
+    let foodListCache = {};
+    let variantCount = 0;
+
+    window.addEventListener('online', updateNetStatus);
+    window.addEventListener('offline', updateNetStatus);
+
+    function updateNetStatus() {
+      const netBadge = document.getElementById("net-status");
+      if (navigator.onLine) {
+        netBadge.className = "status-badge status-online";
+        netBadge.innerHTML = "🟢 অনলাইন (Auto Syncing)";
+      } else {
+        netBadge.className = "status-badge status-offline";
+        netBadge.innerHTML = "🔴 অফলাইন (Saved Locally)";
+      }
+    }
+
+    // LOAD LOGGED USER INFO FUNCTION
+    async function loadLoggedUserInfo() {
+      try {
+        const querySnapshot = await getDocs(usersRef);
+        const loggedPhone = localStorage.getItem('saffron_logged_user_phone');
+        
+        let currentUser = null;
+        querySnapshot.forEach((docSnap) => {
+          const userData = docSnap.data();
+          if (loggedPhone && userData.phone === loggedPhone) {
+            currentUser = userData;
+          }
+        });
+
+        if (!currentUser && !querySnapshot.empty) {
+          currentUser = querySnapshot.docs[0].data(); 
+        }
+
+        if (currentUser) {
+          const name = currentUser.name || "অজানা ইউজার";
+          const role = currentUser.position || "";
+          document.getElementById("logged-user-badge").innerText = `👤 ${name} (${role})`;
+        } else {
+          document.getElementById("logged-user-badge").innerText = `👤 অ্যাডমিন`;
+        }
+      } catch (err) {
+        console.error("User info load error: ", err);
+        document.getElementById("logged-user-badge").innerText = `👤 ইউজার লোড হয়নি`;
+      }
+    }
+
+    // Call user info loader
+    loadLoggedUserInfo();
+
+    window.toggleCustomCategoryInput = function(selectElem) {
+      const customInput = document.getElementById("custom-category-input");
+      if (selectElem.value === "NEW_CATEGORY") {
+        customInput.style.display = "block";
+        customInput.focus();
+        customInput.required = true;
+      } else {
+        customInput.style.display = "none";
+        customInput.required = false;
+      }
+    };
+
+    onSnapshot(inventoryRef, (snapshot) => {
+      availableInventory = [];
+      snapshot.docs.forEach((docSnap) => {
+        const item = docSnap.data();
+        if (!item.isDeleted && !docSnap.id.endsWith("-deleted")) {
+          availableInventory.push({ 
+            id: docSnap.id, 
+            name: item.name || docSnap.id, 
+            unit: item.unit || 'Gram',
+            quantity: item.quantity || 0,
+            totalCost: item.totalCost || 0
+          });
+        }
+      });
+
+      document.querySelectorAll(".r-item").forEach(selectElem => {
+        const currentValue = selectElem.value;
+        let options = `<option value="">-- কাঁচামাল বাছুন --</option>`;
+        availableInventory.forEach(inv => {
+          options += `<option value="${inv.name}" data-unit="${inv.unit}" data-qty="${inv.quantity}" data-cost="${inv.totalCost}">${inv.name} (${inv.unit})</option>`;
+        });
+        selectElem.innerHTML = options;
+        selectElem.value = currentValue;
+      });
+
+      if (document.getElementById("variants-container").children.length === 0) {
+        addVariantBlock();
+      }
+    });
+
+    window.addVariantBlock = function(sizeVal = '', priceVal = '') {
+      variantCount++;
+      const container = document.getElementById("variants-container");
+      
+      const vCard = document.createElement("div");
+      vCard.className = "variant-card";
+      vCard.id = `variant-card-${variantCount}`;
+
+      vCard.innerHTML = `
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+          <strong>ভেরিয়েন্ট/সাইজ ${variantCount}</strong>
+          ${variantCount > 1 ? `<button type="button" class="btn btn-danger" style="padding: 2px 8px; font-size: 12px;" onclick="removeVariantBlock(${variantCount})">রিমুভ</button>` : ''}
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>সাইজ/কোয়ান্টিটি লেবেল</label>
+            <input type="text" class="form-control v-size" placeholder="যেমন: Regular, 8 inch, 1:2" value="${sizeVal || (variantCount === 1 ? 'Regular' : '')}" required>
+          </div>
+          <div class="form-group">
+            <label>বিক্রয় মূল্য (Price in BDT)</label>
+            <input type="number" step="any" class="form-control v-price" placeholder="0.00" value="${priceVal}" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>প্রয়োজনীয় ইনভেন্টরি কাঁচামাল (Recipe):</label>
+          <div id="recipe-list-${variantCount}"></div>
+          <button type="button" class="btn btn-warning" style="padding: 4px 10px; font-size: 12px; margin-top: 8px;" onclick="addRecipeRow(${variantCount})">+ কাঁচামাল যোগ করুন</button>
+        </div>
+      `;
+      container.appendChild(vCard);
+      return variantCount;
+    };
+
+    window.removeVariantBlock = function(id) {
+      const card = document.getElementById(`variant-card-${id}`);
+      if (card) card.remove();
+    };
+
+    window.addRecipeRow = function(vId, itemVal = '', qtyVal = '') {
+      const recipeContainer = document.getElementById(`recipe-list-${vId}`);
+      const rowId = Date.now() + Math.random();
+
+      let options = `<option value="">-- কাঁচামাল বাছুন --</option>`;
+      availableInventory.forEach(inv => {
+        options += `<option value="${inv.name}" data-unit="${inv.unit}" data-qty="${inv.quantity}" data-cost="${inv.totalCost}">${inv.name} (${inv.unit})</option>`;
+      });
+
+      const div = document.createElement("div");
+      div.className = "recipe-row";
+      div.id = `recipe-row-${rowId}`;
+      div.innerHTML = `
+        <select class="form-control r-item" style="flex: 2;" onchange="validateDuplicateIngredient(this, ${vId})" required>${options}</select>
+        <input type="number" step="any" class="form-control r-qty" placeholder="পরিমাণ" value="${qtyVal}" style="flex: 1;" required>
+        <button type="button" class="btn btn-danger" style="padding: 6px 10px;" onclick="this.parentElement.remove()">✕</button>
+      `;
+      recipeContainer.appendChild(div);
+
+      if (itemVal) {
+        const selectElem = div.querySelector(".r-item");
+        selectElem.value = itemVal;
+      }
+    };
+
+    window.validateDuplicateIngredient = function(selectElem, vId) {
+      const selectedValue = selectElem.value;
+      if (!selectedValue) return;
+
+      const variantCard = document.getElementById(`variant-card-${vId}`);
+      const allSelectsInVariant = variantCard.querySelectorAll(".r-item");
+
+      let count = 0;
+      allSelectsInVariant.forEach(s => {
+        if (s.value === selectedValue) count++;
+      });
+
+      if (count > 1) {
+        alert(`আপনি ইতোমধ্যে "${selectedValue}" কাঁচামালটি এই ভেরিয়েন্টে সংযুক্ত করে ফেলেছেন!`);
+        selectElem.value = "";
+      }
+    };
+
+    document.getElementById("food-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const foodName = document.getElementById("food-name").value.trim();
+      const categorySelect = document.getElementById("food-category");
+      const customCategoryInput = document.getElementById("custom-category-input");
+      
+      let category = categorySelect.value;
+      if (category === "NEW_CATEGORY") {
+        category = customCategoryInput.value.trim();
+        if (category) {
+          const newOption = document.createElement("option");
+          newOption.value = category;
+          newOption.innerText = category;
+          categorySelect.insertBefore(newOption, categorySelect.options[categorySelect.options.length - 1]);
+          categorySelect.value = category;
+        }
+      }
+
+      const editingId = document.getElementById("editing-food-id").value;
+      if (!foodName || !category) return;
+
+      const variantCards = document.querySelectorAll(".variant-card");
+      const variantsData = [];
+
+      variantCards.forEach(card => {
+        const size = card.querySelector(".v-size").value.trim();
+        const price = parseFloat(card.querySelector(".v-price").value) || 0;
+        const recipeRows = card.querySelectorAll(".recipe-row");
+        const ingredients = [];
+        let totalVariantCost = 0;
+
+        recipeRows.forEach(row => {
+          const itemSelect = row.querySelector(".r-item");
+          const itemName = itemSelect.value;
+          const qty = parseFloat(row.querySelector(".r-qty").value) || 0;
+          
+          const selectedOption = itemSelect.options[itemSelect.selectedIndex];
+          const unit = selectedOption?.getAttribute("data-unit") || "Gram";
+          const invTotalQty = parseFloat(selectedOption?.getAttribute("data-qty")) || 0;
+          const invTotalCost = parseFloat(selectedOption?.getAttribute("data-cost")) || 0;
+
+          let ingredientCost = 0;
+          if (invTotalQty > 0 && invTotalCost > 0) {
+            const unitCost = invTotalCost / invTotalQty; 
+            ingredientCost = qty * unitCost;
+          }
+
+          totalVariantCost += ingredientCost;
+
+          if (itemName && qty > 0) {
+            ingredients.push({ 
+              itemName, 
+              qty, 
+              unit, 
+              cost: parseFloat(ingredientCost.toFixed(2)) 
+            });
+          }
+        });
+
+        variantsData.push({ 
+          size, 
+          price, 
+          totalCost: parseFloat(totalVariantCost.toFixed(2)), 
+          ingredients 
+        });
+      });
+
+      if (editingId && editingId !== foodName) {
+        await deleteDoc(doc(db, "saffron", "mirpur10", "foods", editingId));
+      }
+
+      const foodDocRef = doc(db, "saffron", "mirpur10", "foods", foodName);
+
+      try {
+        await setDoc(foodDocRef, {
+          name: foodName,
+          category: category,
+          variants: variantsData,
+          updatedAt: serverTimestamp()
+        });
+
+        alert(editingId ? `"${foodName}" ফুড আইটেমটি সফলভাবে আপডেট হয়েছে!` : `"${foodName}" ফুড আইটেমটি সফলভাবে সেভ হয়েছে!`);
+        resetFoodForm();
+      } catch (err) {
+        console.error("Error saving food item: ", err);
+        alert("ফুড সেভ/আপডেট করতে সমস্যা হয়েছে: " + err.message);
+      }
+    });
+
+    onSnapshot(foodRef, (snapshot) => {
+      const tbody = document.getElementById("food-table-body");
+      const allAdminFoods = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+      localStorage.setItem('saffron_foods_cache', JSON.stringify(allAdminFoods));
+      tbody.innerHTML = "";
+      foodListCache = {};
+
+      if (snapshot.empty) {
+        tbody.innerHTML = `<tr><td colspan="5">কোনো ফুড আইটেম পাওয়া যায়নি। নতুন ফুড যুক্ত করুন।</td></tr>`;
+        return;
+      }
+
+      snapshot.docs.forEach((docSnap) => {
+        const food = docSnap.data();
+        const docId = docSnap.id;
+        foodListCache[docId] = food;
+
+        if (food.category) {
+          const catSelect = document.getElementById("food-category");
+          let exists = Array.from(catSelect.options).some(option => option.value === food.category);
+          if (!exists) {
+            const newOpt = document.createElement("option");
+            newOpt.value = food.category;
+            newOpt.innerText = food.category;
+            catSelect.insertBefore(newOpt, catSelect.options[catSelect.options.length - 1]);
+          }
+        }
+
+        let sizesHtml = "";
+        let ingredientsHtml = "";
+
+        if (food.variants && food.variants.length > 0) {
+          food.variants.forEach(v => {
+            sizesHtml += `<div><span class="variant-badge">${v.size}</span> - ৳${v.price}</div>`;
+            
+            let ingList = (v.ingredients || []).map(i => `${i.itemName}: ${i.qty} ${i.unit} (৳${i.cost || 0})`).join(", ");
+            let variantTotalCost = v.totalCost || 0;
+
+            ingredientsHtml += `<div style="margin-bottom: 6px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
+              <strong>${v.size}:</strong> ${ingList || 'কোনো কাঁচামাল নেই'} <br>
+              <span style="color: #059669; font-weight: bold;">মোট খরচ: ৳${variantTotalCost}</span>
+            </div>`;
+          });
+        }
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${food.name}</strong></td>
+          <td>${food.category}</td>
+          <td>${sizesHtml}</td>
+          <td>${ingredientsHtml}</td>
+          <td>
+            <div class="action-btns">
+              <button class="btn btn-warning" style="padding: 6px 12px; font-size: 13px;" onclick="editFood('${docId}')">✏️ Edit</button>
+              <button class="btn btn-danger" style="padding: 6px 12px; font-size: 13px;" onclick="deleteFood('${docId}')">🗑️ Delete</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+
+    window.editFood = function(id) {
+      const food = foodListCache[id];
+      if (!food) return;
+
+      document.getElementById("form-header-title").innerText = `১. "${food.name}" এডিট করা হচ্ছে`;
+      document.getElementById("cancel-edit-btn").style.display = "inline-block";
+      document.getElementById("submit-btn").innerText = "ফুড আইটেম আপডেট করুন";
+      document.getElementById("submit-btn").style.background = "#0284c7";
+
+      document.getElementById("editing-food-id").value = id;
+      document.getElementById("food-name").value = food.name;
+
+      const catSelect = document.getElementById("food-category");
+      catSelect.value = food.category || "Fast Food";
+      document.getElementById("custom-category-input").style.display = "none";
+      document.getElementById("custom-category-input").required = false;
+
+      document.getElementById("variants-container").innerHTML = "";
+      variantCount = 0;
+
+      if (food.variants && food.variants.length > 0) {
+        food.variants.forEach((v) => {
+          const vId = addVariantBlock(v.size, v.price);
+          if (v.ingredients && v.ingredients.length > 0) {
+            v.ingredients.forEach(i => {
+              addRecipeRow(vId, i.itemName, i.qty);
+            });
+          } else {
+            addRecipeRow(vId);
+          }
+        });
+      } else {
+        addVariantBlock();
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.resetFoodForm = function() {
+      document.getElementById("food-form").reset();
+      document.getElementById("editing-food-id").value = "";
+      document.getElementById("form-header-title").innerText = "১. নতুন ফুড মেনু আইটেম তৈরি করুন";
+      document.getElementById("cancel-edit-btn").style.display = "none";
+      document.getElementById("submit-btn").innerText = "ফুড আইটেম সেভ করুন";
+      document.getElementById("submit-btn").style.background = "#f59e0b";
+
+      document.getElementById("custom-category-input").style.display = "none";
+      document.getElementById("custom-category-input").required = false;
+
+      document.getElementById("variants-container").innerHTML = "";
+      variantCount = 0;
+      addVariantBlock();
+    };
+
+    window.deleteFood = async function(id) {
+      if (confirm(`আপনি কি সত্যিই "${id}" ফুড মেনুটি ফায়ারবেজ থেকে মুছে ফেলতে চান?`)) {
+        try {
+          await deleteDoc(doc(db, "saffron", "mirpur10", "foods", id));
+          alert("ফুড মেনুটি সফলভাবে মুছে ফেলা হয়েছে।");
+          if (document.getElementById("editing-food-id").value === id) {
+            resetFoodForm();
+          }
+        } catch (err) {
+          alert("মুছে ফেলতে সমস্যা হয়েছে: " + err.message);
+        }
+      }
+    };
+  </script>
+</body>
+</html>

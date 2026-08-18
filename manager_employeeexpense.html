@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saffron (Mirpur 10) - Employee Expenses</title>
+  
+  <!-- SECURITY CHECK: Redirect if not logged in -->
+  <script>
+    if (localStorage.getItem('saffron_admin_logged_in') !== 'true') {
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { display: flex; height: 100vh; background-color: #f4f6f9; color: #333; }
+    
+    /* Sidebar Layout */
+    .sidebar { width: 250px; background-color: #1e293b; color: #fff; display: flex; flex-direction: column; justify-content: space-between; flex-shrink: 0; }
+    .brand { 
+      padding: 20px 15px; 
+      text-align: center; 
+      background: #0f172a; 
+      border-bottom: 1px solid #334155; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .brand-logo { width: 120px; height: 50px; object-fit: contain; margin-bottom: 6px; display: block; }
+    .branch-tag { font-size: 12px; color: #94a3b8; }
+    
+    .nav-links { list-style: none; padding: 20px 0; }
+    .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; color: #cbd5e1; text-decoration: none !important; transition: 0.2s; }
+    .nav-item:hover, .nav-item.active { background-color: #334155; color: #fff; border-left: 4px solid #f59e0b; }
+    
+    .logout-item { color: #ef4444 !important; border-top: 1px solid #334155; padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; text-decoration: none !important; }
+    .logout-item:hover { background-color: #334155; color: #f87171 !important; }
+
+    /* Main Content Area */
+    .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .status-online { background: #dcfce7; color: #166534; }
+    .status-offline { background: #fee2e2; color: #991b1b; }
+
+    /* Card & Forms */
+    .card { background: #fff; border-radius: 8px; padding: 25px; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .section-header { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 15px; border-left: 4px solid #f59e0b; padding-left: 10px; }
+    
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; font-weight: 600; color: #475569; }
+    .form-control { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; }
+    .form-control:focus { border-color: #f59e0b; }
+
+    .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; justify-content: center; }
+    .btn-primary { background: #f59e0b; color: #fff; }
+    .btn-primary:hover { background: #d97706; }
+    .btn-warning { background: #0284c7; color: #fff; padding: 6px 12px; font-size: 12px; }
+    .btn-danger { background: #ef4444; color: #fff; padding: 6px 12px; font-size: 12px; }
+    .btn-secondary { background: #64748b; color: #fff; padding: 8px 14px; font-size: 13px; }
+
+    /* Expense Table */
+    .table-responsive { overflow-x: auto; margin-top: 15px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+    th, td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
+    th { background-color: #f8fafc; color: #475569; font-weight: 600; }
+    tr:hover { background-color: #f1f5f9; }
+
+    /* Filter Box Style */
+    .filter-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div>
+      <div class="brand">
+        <img src="logo.png" alt="Saffron Logo" class="brand-logo" onerror="this.onerror=null; this.src='https://via.placeholder.com/120x50?text=Saffron+Logo';">
+        <span class="branch-tag">Mirpur 10 Branch</span>
+      </div>
+
+
+
+ <ul class="nav-links">
+<li><a href="manager_inventory.html" class="nav-item">Stock Management</a></li>
+      <li><a href="manager_guestmanagement.html" class="nav-item">Guest Management</a></li>
+      <li><a href="manager_employeeexpense.html" class="nav-item active">Employee Expense</a></li>
+      <li><a href="manager_otherexpense.html" class="nav-item">Other Expense</a></li>
+      <li><a href="manager_salesmanagement.html" class="nav-item">Employee Sales report</a></li>
+      <li><a href="manager_salesreport.html" class="nav-item">Sales History & Report</a></li>
+      <li><a href="manager_costreport.html" class="nav-item">Operating Cost Report</a></li>
+      <li><a href="manager_pos.html" class="nav-item">POS System</a></li>
+
+    </ul>
+
+
+
+    </div>
+    
+    <a href="#" class="logout-item" onclick="logoutAdmin()">🚪 লগআউট (Logout)</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="header">
+      <h2>Employee Expenses</h2><h3>(কর্মচারীদের বেতনসহ প্রতিদিনের খরচ)</h3>
+      <div id="net-status" class="status-badge status-online">🟢 অনলাইন (Auto Syncing)</div>
+    </div>
+
+    <!-- EXPENSE ENTRY / EDIT FORM -->
+    <div class="card">
+      <div class="section-header" id="form-title">নতুন খরচ এন্ট্রি করুন</div>
+      <form id="expense-form">
+        <input type="hidden" id="editing-expense-id" value="">
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>কর্মচারী সিলেক্ট করুন *</label>
+            <select id="exp-employee" class="form-control" required>
+              <option value="">-- ডাটা লোড হচ্ছে... --</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>খরচের বিবরণ/টাইপ *</label>
+            <input type="text" id="exp-title" class="form-control" placeholder="যেমন: salary, advance, conveyance" required>
+          </div>
+
+          <div class="form-group">
+            <label>টাকার পরিমাণ (BDT) *</label>
+            <input type="number" step="0.01" id="exp-amount" class="form-control" placeholder="0.00" required>
+          </div>
+
+          <div class="form-group">
+            <label>তারিখ *</label>
+            <input type="date" id="exp-date" class="form-control" required>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+          <button type="submit" id="save-expense-btn" class="btn btn-primary" style="flex: 1;">খরচের তথ্য সেভ করুন</button>
+          <button type="button" id="cancel-edit-btn" class="btn btn-secondary" style="display: none;" onclick="resetForm()">ক্যানসেল</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- EXPENSE LIST TABLE & FILTER -->
+    <div class="card">
+      <div class="section-header">সাম্প্রতিক খরচের তালিকা ও ফিল্টার</div>
+      
+      <!-- Filter Controls -->
+      <div class="filter-card">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>কর্মচারী দিয়ে ফিল্টার</label>
+            <select id="filter-employee" class="form-control" onchange="applyFilters()">
+              <option value="">সব কর্মচারী</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>তারিখ দিয়ে ফিল্টার (Day)</label>
+            <input type="date" id="filter-date" class="form-control" onchange="applyFilters()">
+          </div>
+
+          <div class="form-group">
+            <label>মাস দিয়ে ফিল্টার (Month)</label>
+            <input type="month" id="filter-month" class="form-control" onchange="applyFilters()">
+          </div>
+
+          <div class="form-group" style="justify-content: flex-end;">
+            <button class="btn btn-secondary" style="margin-top: auto;" onclick="clearFilters()">ফিল্টার ক্লিয়ার করুন</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>ডকুমেন্ট আইডি</th>
+              <th>তারিখ</th>
+              <th>কর্মচারীর নাম</th>
+              <th>পজিশন</th>
+              <th>বিবরণ</th>
+              <th>পরিমাণ (BDT)</th>
+              <th>অ্যাকশন</th>
+            </tr>
+          </thead>
+          <tbody id="expense-table-body">
+            <tr>
+              <td colspan="7" style="text-align: center;">ডাটা লোড হচ্ছে...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function logoutAdmin() {
+      if (confirm("আপনি কি নিশ্চিত যে লগআউট করতে চান?")) {
+        localStorage.removeItem('saffron_admin_logged_in');
+        window.location.href = "index.html";
+      }
+    }
+
+    // Set today's date in form default
+    document.getElementById('exp-date').valueAsDate = new Date();
+  </script>
+
+  <!-- FIREBASE MODULE SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+    import { 
+      initializeFirestore, 
+      persistentLocalCache, 
+      persistentMultipleTabManager,
+      collection, 
+      onSnapshot, 
+      doc, 
+      setDoc,
+      deleteDoc 
+    } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAq_vQ7ARn1TdMOOp1rtJqFOd1K4yUupP4",
+      authDomain: "saffron-65736.firebaseapp.com",
+      databaseURL: "https://saffron-65736-default-rtdb.firebaseio.com",
+      projectId: "saffron-65736",
+      storageBucket: "saffron-65736.firebasestorage.app",
+      messagingSenderId: "599450614604",
+      appId: "1:599450614604:web:e6be0bc5cb56dc867cede9",
+      measurementId: "G-FC5894HZEM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    let db;
+    try {
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager()
+        })
+      });
+    } catch (e) { console.warn("Offline cache error", e); }
+
+    const usersRef = collection(db, "saffron", "mirpur10", "users");
+    const expensesRef = collection(db, "saffron", "mirpur10", "employee_expenses");
+
+    window.addEventListener('online', updateNetStatus);
+    window.addEventListener('offline', updateNetStatus);
+
+    function updateNetStatus() {
+      const netBadge = document.getElementById("net-status");
+      if (navigator.onLine) {
+        netBadge.className = "status-badge status-online";
+        netBadge.innerHTML = "🟢 অনলাইন (Auto Syncing)";
+      } else {
+        netBadge.className = "status-badge status-offline";
+        netBadge.innerHTML = "🔴 অফলাইন (Saved Locally)";
+      }
+    }
+
+    let usersCache = {};
+    let rawExpensesList = [];
+
+    // 1. FETCH USERS FROM admin_users.html DATABASE COLLECTION
+    onSnapshot(usersRef, (snapshot) => {
+      const selectElem = document.getElementById("exp-employee");
+      const filterElem = document.getElementById("filter-employee");
+      
+      selectElem.innerHTML = '<option value="">-- কর্মচারী সিলেক্ট করুন --</option>';
+      filterElem.innerHTML = '<option value="">সব কর্মচারী</option>';
+      usersCache = {};
+
+      if (snapshot.empty) {
+        selectElem.innerHTML = '<option value="">কোনো কর্মচারী পাওয়া যায়নি</option>';
+        return;
+      }
+
+      snapshot.docs.forEach((docSnap) => {
+        const u = docSnap.data();
+        usersCache[u.id] = u;
+
+        const option = document.createElement("option");
+        option.value = u.id;
+        option.textContent = `${u.name} (${u.position} - ${u.jobId})`;
+        selectElem.appendChild(option);
+
+        const filterOpt = document.createElement("option");
+        filterOpt.value = u.id;
+        filterOpt.textContent = `${u.name} (${u.position})`;
+        filterElem.appendChild(filterOpt);
+      });
+    });
+
+    // Helper: Clean string for ID creation
+    function sanitizeForId(str) {
+      return str.toLowerCase().trim().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_");
+    }
+
+    // 2. SAVE OR UPDATE EXPENSE TO FIREBASE
+    document.getElementById("expense-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const empId = document.getElementById("exp-employee").value;
+      const title = document.getElementById("exp-title").value.trim();
+      const amount = parseFloat(document.getElementById("exp-amount").value);
+      const date = document.getElementById("exp-date").value;
+      const editingId = document.getElementById("editing-expense-id").value;
+
+      if (!empId) {
+        alert("অনুগ্রহ করে কর্মচারী সিলেক্ট করুন!");
+        return;
+      }
+
+      const selectedEmp = usersCache[empId];
+      
+      // Document ID Format: name_title_date (e.g. ariyan_salary_2026-08-08)
+      const cleanName = sanitizeForId(selectedEmp.name);
+      const cleanTitle = sanitizeForId(title);
+      const docId = editingId || `${cleanName}_${cleanTitle}_${date}`;
+
+      const expensePayload = {
+        id: docId,
+        employeeId: empId,
+        employeeName: selectedEmp.name,
+        employeePosition: selectedEmp.position,
+        employeeJobId: selectedEmp.jobId,
+        title: title,
+        amount: amount,
+        date: date,
+        createdAt: new Date().toISOString()
+      };
+
+      try {
+        await setDoc(doc(db, "saffron", "mirpur10", "employee_expenses", docId), expensePayload);
+        alert(editingId ? "ডাটা সফলভাবে আপডেট হয়েছে!" : "নতুন খরচের ডাটা সেভ হয়েছে!");
+        resetForm();
+      } catch (err) {
+        alert("ডাটা সেভ করতে সমস্যা হয়েছে: " + err.message);
+      }
+    });
+
+    // Reset Form State
+    window.resetForm = function() {
+      document.getElementById("expense-form").reset();
+      document.getElementById("editing-expense-id").value = "";
+      document.getElementById("form-title").innerText = "নতুন খরচ এন্ট্রি করুন";
+      document.getElementById("save-expense-btn").innerText = "খরচের তথ্য সেভ করুন";
+      document.getElementById("cancel-edit-btn").style.display = "none";
+      document.getElementById('exp-date').valueAsDate = new Date();
+      document.getElementById("exp-employee").disabled = false;
+    };
+
+    // 3. FETCH EXPENSES AND STORE FOR FILTERING
+    onSnapshot(expensesRef, (snapshot) => {
+      rawExpensesList = [];
+      if (!snapshot.empty) {
+        snapshot.docs.forEach(d => rawExpensesList.push(d.data()));
+      }
+      applyFilters();
+    });
+
+    // 4. FILTER AND RENDER EXPENSES IN TABLE
+    window.applyFilters = function() {
+      const selectedEmp = document.getElementById("filter-employee").value;
+      const selectedDate = document.getElementById("filter-date").value;
+      const selectedMonth = document.getElementById("filter-month").value;
+
+      let filteredList = rawExpensesList.filter(item => {
+        let matchEmp = selectedEmp ? item.employeeId === selectedEmp : true;
+        let matchDate = selectedDate ? item.date === selectedDate : true;
+        let matchMonth = selectedMonth ? item.date.startsWith(selectedMonth) : true;
+        return matchEmp && matchDate && matchMonth;
+      });
+
+      // Sort by date descending
+      filteredList.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      renderTable(filteredList);
+    };
+
+    window.clearFilters = function() {
+      document.getElementById("filter-employee").value = "";
+      document.getElementById("filter-date").value = "";
+      document.getElementById("filter-month").value = "";
+      applyFilters();
+    };
+
+    function renderTable(dataList) {
+      const tbody = document.getElementById("expense-table-body");
+      tbody.innerHTML = "";
+
+      if (dataList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">কোনো খরচের রেকর্ড পাওয়া যায়নি।</td></tr>';
+        return;
+      }
+
+      dataList.forEach((item) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><code>${item.id}</code></td>
+          <td>${item.date}</td>
+          <td><strong>${item.employeeName}</strong> (${item.employeeJobId || ''})</td>
+          <td>${item.employeePosition}</td>
+          <td>${item.title}</td>
+          <td>৳ ${item.amount.toFixed(2)}</td>
+          <td style="display: flex; gap: 6px;">
+            <button style="visibility: hidden;" class="btn btn-warning" onclick="editExpense('${item.id}')">এডিট</button>
+            <button style="visibility: hidden;" class="btn btn-danger" onclick="deleteExpense('${item.id}')">ডিলিট</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 5. EDIT EXPENSE
+    window.editExpense = function(expenseId) {
+      const item = rawExpensesList.find(e => e.id === expenseId);
+      if (!item) return;
+
+      document.getElementById("editing-expense-id").value = item.id;
+      document.getElementById("exp-employee").value = item.employeeId;
+      document.getElementById("exp-title").value = item.title;
+      document.getElementById("exp-amount").value = item.amount;
+      document.getElementById("exp-date").value = item.date;
+
+      document.getElementById("form-title").innerText = "খরচের তথ্য আপডেট করুন (" + item.id + ")";
+      document.getElementById("save-expense-btn").innerText = "আপডেট করুন";
+      document.getElementById("cancel-edit-btn").style.display = "inline-flex";
+      
+      // Smooth scroll to form
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // 6. DELETE EXPENSE
+    window.deleteExpense = async function(expenseId) {
+      if (confirm(`আপনি কি নিশ্চিত যে "${expenseId}" খরচের ডাটা মুছে ফেলতে চান?`)) {
+        try {
+          await deleteDoc(doc(db, "saffron", "mirpur10", "employee_expenses", expenseId));
+          alert("খরচের ডাটা রিমুভ করা হয়েছে।");
+        } catch (err) {
+          alert("রিমুভ করতে সমস্যা হয়েছে: " + err.message);
+        }
+      }
+    };
+  </script>
+</body>
+</html>

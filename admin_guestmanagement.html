@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saffron (Mirpur 10) - Guest Management</title>
+
+  <!-- SECURITY CHECK: Redirect if not logged in -->
+  <script>
+    if (localStorage.getItem('saffron_admin_logged_in') !== 'true') {
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { display: flex; height: 100vh; background-color: #f4f6f9; color: #333; }
+    
+    /* Sidebar Layout */
+    .sidebar { width: 250px; background-color: #1e293b; color: #fff; display: flex; flex-direction: column; position: relative; }
+
+    .brand { 
+      padding: 20px 15px; 
+      text-align: center; 
+      background: #0f172a; 
+      border-bottom: 1px solid #334155; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .brand-logo {
+      width: 180px;            
+      height: 50px;            
+      margin-bottom: 6px;
+      display: block;
+    }
+    .sidebar a { text-decoration: none !important; }
+
+    .logout-btn { color: #ef4444; border-top: 1px solid #334155; padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; text-decoration: none; position: absolute; bottom: 0; width: 100%; }
+    .logout-btn:hover { background-color: #334155; color: #f87171; }
+
+    .branch-tag { display: block; font-size: 12px; color: #94a3b8; font-weight: normal; margin-top: 4px; }
+    
+    .nav-links { list-style: none; padding: 20px 0; }
+    .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 16px; transition: 0.2s; color: #cbd5e1; }
+    .nav-item:hover, .nav-item.active { background-color: #334155; color: #fff; border-left: 4px solid #f59e0b; }
+    
+    /* Main Content Area */
+    .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .status-online { background: #dcfce7; color: #166534; }
+    .status-offline { background: #fee2e2; color: #991b1b; }
+
+    /* Card & Forms */
+    .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .card-title { font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; font-weight: 600; color: #475569; }
+    .form-control { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; }
+    .form-control:focus { border-color: #f59e0b; }
+
+    .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 14px; }
+    .btn-primary { background: #f59e0b; color: #fff; }
+    .btn-primary:hover { background: #d97706; }
+    .btn-secondary { background: #0284c7; color: #fff; }
+    .btn-secondary:hover { background: #0369a1; }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
+
+    .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 15px; }
+    .stat-box { padding: 15px; border-radius: 6px; text-align: center; border: 1px solid #e2e8f0; }
+    .stat-box.indigo { background: #f0fdf4; border-color: #bbf7d0; }
+    .stat-box.emerald { background: #eff6ff; border-color: #bfdbfe; }
+    .stat-box span { font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; }
+    .stat-box p { font-size: 24px; font-weight: bold; margin-top: 5px; color: #0f172a; }
+    
+    /* Table Styling */
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
+    th { background: #f8fafc; color: #475569; font-weight: 600; font-size: 14px; }
+    td { font-size: 14px; }
+
+    /* Modal Styling */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-overlay.active { display: flex; }
+    .modal-box { background: #fff; border-radius: 8px; padding: 25px; width: 100%; max-width: 650px; max-height: 85vh; overflow-y: auto; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .close-modal { position: absolute; top: 15px; right: 20px; font-size: 22px; cursor: pointer; color: #64748b; font-weight: bold; }
+    .close-modal:hover { color: #0f172a; }
+
+    .order-link { color: #2563eb; font-weight: bold; text-decoration: underline; cursor: pointer; }
+    .order-link:hover { color: #1d4ed8; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar Structure -->
+  <div class="sidebar">
+    <div>
+      <div class="brand">
+        <img src="logo.png" alt="Saffron Logo" class="brand-logo" onerror="this.onerror=null; this.src='https://via.placeholder.com/120x50?text=Saffron+Logo';">
+        <span class="branch-tag">Mirpur 10 Branch</span>
+      </div>
+
+      <ul class="nav-links">
+<li><a href="admin_inventory.html" class="nav-item">Stock Management</a></li>
+      <li><a href="admin_food.html" class="nav-item">Food Management</a></li>
+	<li><a href="admin_employees.html" class="nav-item">Employee Management</a></li>
+	<li><a href="admin_guestmanagement.html" class="nav-item active">Guest Management</a></li>
+	<li><a href="admin_coupon.html" class="nav-item">Coupon & Others</a></li>
+	<li><a href="admin_employeeexpense.html" class="nav-item">Employee Expense</a></li>
+      <li><a href="admin_otherexpense.html" class="nav-item ">Other Expense</a></li>
+	<li><a href="admin_salesmanagement.html" class="nav-item ">Employee Sales report</a></li>
+      <li><a href="admin_salesreport.html" class="nav-item">Sales History & Report</a></li>
+<li><a href="admin_costreport.html" class="nav-item">Operating Cost Report</a></li>
+<li><a href="admin_pos.html" class="nav-item">POS System</a></li>
+      </ul>
+    </div>
+    
+    <a href="#" class="logout-btn" onclick="logoutAdmin()">🚪 লগআউট (Logout)</a>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    
+    <div class="header">
+      <h2 id="page-title">গ্রাহক ম্যানেজমেন্ট (Guest Management)</h2>
+      <div id="net-status" class="status-badge status-online">🟢 অনলাইন (Auto Syncing)</div>
+    </div>
+
+    <!-- Section 1: Add New Guest -->
+    <div class="card">
+      <div class="card-title">১. নতুন গ্রাহক / সেলস এন্ট্রি করুন (Add Guest)</div>
+      <form id="add-guest-form" class="form-grid">
+        <div class="form-group">
+          <label>ফোন নম্বর (আইডি হিসেবে সেভ হবে) *</label>
+          <input type="text" id="guest-phone" class="form-control" placeholder="017XXXXXXXX" required>
+        </div>
+        <div class="form-group">
+          <label>সেলস/অর্ডার আইডি * (যেমন: 260808109)</label>
+          <input type="text" id="guest-order-id" class="form-control" placeholder="যেমন: 260808109" required>
+        </div>
+        <div class="form-group">
+          <label>গ্রাহকের নাম (ঐচ্ছিক)</label>
+          <input type="text" id="guest-name" class="form-control" placeholder="খালি রাখলে guest_XXXX সেভ হবে">
+        </div>
+        <div class="form-group" style="justify-content: flex-end;">
+          <button type="submit" id="submit-btn" class="btn btn-primary">সেভ করুন</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Section 2: Search & Stats -->
+    <div class="card">
+      <div class="card-title">২. ফিল্টার ও পরিসংখ্যান (Search & Stats)</div>
+      <div class="form-group">
+        <label>গ্রাহক খুঁজুন (Search Guest)</label>
+        <input type="text" id="search-input" class="form-control" placeholder="নাম বা মোবাইল নম্বর দিয়ে খুঁজুন...">
+      </div>
+      
+      <div class="stats-container">
+        <div class="stat-box indigo">
+          <span>মোট রেজিস্টার্ড গ্রাহক</span>
+          <p id="total-guests-count">-</p>
+        </div>
+        <div class="stat-box emerald">
+          <span>মোট ভিজিট / সেলস</span>
+          <p id="total-visits-count">-</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Guest List Table -->
+    <div class="card">
+      <div class="card-title">
+        <span>৩. সকল গ্রাহকের তালিকা</span>
+        <button id="load-guests-btn" class="btn btn-secondary">👥 সকল গ্রাহক লোড করুন</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>গ্রাহকের নাম / আইডি</th>
+            <th>ফোন নম্বর (ডকুমেন্ট আইডি)</th>
+            <th>প্রথম এন্ট্রির তারিখ</th>
+            <th>মোট ভিজিট</th>
+            <th>মোট কেনাকাটা (Total Spent)</th>
+            <th style="text-align: right;">অ্যাকশন</th>
+          </tr>
+        </thead>
+        <tbody id="guest-table-body">
+          <tr><td colspan="6" style="text-align:center; padding: 25px; color: #64748b;">ডাটা দেখা বন্ধ আছে। লোড করতে খুঁজুন অথবা বাটনে ক্লিক করুন।</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- Modal 1: Visit History Modal -->
+  <div id="history-modal" class="modal-overlay">
+    <div class="modal-box">
+      <span class="close-modal" id="close-history-modal">&times;</span>
+      <h3 id="modal-guest-name" style="font-size: 18px; color: #0f172a; font-weight: 600; margin-bottom: 4px;">গ্রাহকের হিস্ট্রি</h3>
+      <p id="modal-guest-phone" style="font-size: 13px; color: #64748b; margin-bottom: 15px;"></p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>তারিখ</th>
+            <th>অর্ডার আইডি (ক্লিক করুন)</th>
+            <th>বিল (TK)</th>
+            <th style="text-align: right;">অ্যাকশন</th>
+          </tr>
+        </thead>
+        <tbody id="history-table-body">
+          <!-- Dynamic History Rows -->
+        </tbody>
+      </table>
+
+      <!-- মোট টাকার কেনাকাটার সামারি -->
+      <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold; font-size:16px; border-top: 2px solid #e2e8f0; padding-top: 12px; margin-top: 15px;">
+        <span>সর্বমোট কেনাকাটা (Total All Orders):</span>
+        <span id="modal-guest-total-all-orders" style="color: #166534; font-size: 18px;">৳ 0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Food Items Detail Modal -->
+  <div id="items-modal" class="modal-overlay" style="z-index: 1100;">
+    <div class="modal-box" style="max-width: 500px;">
+      <span class="close-modal" id="close-items-modal">&times;</span>
+      <h3 id="modal-order-id" style="font-size: 18px; color: #0f172a; font-weight: 600; margin-bottom: 4px;">অর্ডার বিবরনী</h3>
+      <p id="modal-order-date" style="font-size: 13px; color: #64748b; margin-bottom: 15px;"></p>
+
+      <div style="background: #f8fafc; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+        <table style="margin-top:0;">
+          <thead>
+            <tr>
+              <th>আইটেমের নাম</th>
+              <th style="text-align:center;">পরিমাণ</th>
+              <th style="text-align:right;">মূল্য</th>
+            </tr>
+          </thead>
+          <tbody id="items-table-body">
+            <!-- Items Rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold; font-size:16px; border-top: 2px solid #e2e8f0; padding-top: 10px;">
+        <span>সর্বমোট বিল:</span>
+        <span id="modal-total-bill" style="color: #166534;">৳ 0</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function logoutAdmin() {
+      if (confirm("আপনি কি নিশ্চিত যে লগআউট করতে চান?")) {
+        localStorage.removeItem('saffron_admin_logged_in');
+        window.location.href = "index.html";
+      }
+    }
+  </script>
+
+  <!-- FIREBASE MODULE SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+    import { 
+      initializeFirestore, 
+      persistentLocalCache, 
+      persistentMultipleTabManager,
+      collection, 
+      onSnapshot, 
+      doc, 
+      setDoc,
+      getDoc,
+      getDocs,
+      query,
+      where,
+      increment,
+      serverTimestamp,
+      updateDoc,
+      deleteField
+    } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAq_vQ7ARn1TdMOOp1rtJqFOd1K4yUupP4",
+      authDomain: "saffron-65736.firebaseapp.com",
+      databaseURL: "https://saffron-65736-default-rtdb.firebaseio.com",
+      projectId: "saffron-65736",
+      storageBucket: "saffron-65736.firebasestorage.app",
+      messagingSenderId: "599450614604",
+      appId: "1:599450614604:web:e6be0bc5cb56dc867cede9",
+      measurementId: "G-FC5894HZEM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+
+    let db;
+    try {
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager()
+        })
+      });
+    } catch (e) {
+      console.warn("Offline cache error", e);
+    }
+
+    const guestsRef = collection(db, "saffron", "mirpur10", "guests");
+    const salesRef = collection(db, "saffron", "mirpur10", "sales");
+
+    let guestsData = [];
+    let unsubscribeGuests = null;
+
+    // Date formatting logic
+    function formatDateEnglish(docData, includeTime = false) {
+      if (!docData) return 'N/A';
+
+      let val = docData.timestamp || docData.createdAt || docData.date || docData.time || docData.orderDate || docData.created_at;
+
+      if (!val && docData.id) {
+        const idStr = String(docData.id);
+        if (idStr.length >= 6 && !isNaN(idStr.substring(0, 6))) {
+          const yy = idStr.substring(0, 2);
+          const mm = idStr.substring(2, 4);
+          const dd = idStr.substring(4, 6);
+          val = `20${yy}-${mm}-${dd}`;
+        }
+      }
+
+      if (!val) return 'N/A';
+
+      try {
+        let dateObj = null;
+
+        if (typeof val === 'object' && val !== null) {
+          if (typeof val.toDate === 'function') {
+            dateObj = val.toDate();
+          } else if (val.seconds) {
+            dateObj = new Date(val.seconds * 1000);
+          }
+        } 
+        else if (typeof val === 'number') {
+          dateObj = val < 10000000000 ? new Date(val * 1000) : new Date(val);
+        } 
+        else if (typeof val === 'string') {
+          val = val.replace(/[০-৯]/g, d => "0123456789"["০১২৩৪৫৬৭৮৯".indexOf(d)]).trim();
+
+          if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+            const parts = val.split('-');
+            return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+          }
+
+          if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(val)) {
+            return val; 
+          }
+
+          const parsed = Date.parse(val);
+          if (!isNaN(parsed)) {
+            dateObj = new Date(parsed);
+          } else {
+            return val;
+          }
+        }
+
+        if (dateObj && !isNaN(dateObj.getTime())) {
+          const hasTime = dateObj.getHours() !== 0 || dateObj.getMinutes() !== 0 || dateObj.getSeconds() !== 0;
+
+          if (includeTime && hasTime) {
+            return dateObj.toLocaleString('en-US', { hour12: true });
+          } else {
+            return dateObj.toLocaleDateString('en-GB');
+          }
+        }
+      } catch (err) {
+        console.error("Date formatting error:", err);
+      }
+      return 'N/A';
+    }
+
+    // Network Status Update
+    window.addEventListener('online', updateNetStatus);
+    window.addEventListener('offline', updateNetStatus);
+
+    function updateNetStatus() {
+      const netBadge = document.getElementById("net-status");
+      if (navigator.onLine) {
+        netBadge.className = "status-badge status-online";
+        netBadge.innerHTML = "🟢 অনলাইন (Auto Syncing)";
+      } else {
+        netBadge.className = "status-badge status-offline";
+        netBadge.innerHTML = "🔴 অফলাইন (Saved Locally)";
+      }
+    }
+
+    // --- DATA LOADING LOGIC ---
+    function startListeningGuests(callback = null) {
+      const loadBtn = document.getElementById("load-guests-btn");
+      loadBtn.innerText = "⏳ ডাটা সিঙ্ক হচ্ছে...";
+
+      if (unsubscribeGuests) {
+        unsubscribeGuests();
+      }
+
+      unsubscribeGuests = onSnapshot(guestsRef, (snapshot) => {
+        const tempMap = new Map();
+        let totalVisits = 0;
+
+        snapshot.forEach((docSnap) => {
+          const item = docSnap.data();
+          item.docId = docSnap.id;
+          const phoneKey = String(item.phone || docSnap.id).trim();
+
+          if (!tempMap.has(phoneKey)) {
+            tempMap.set(phoneKey, item);
+            totalVisits += (item.visitCount || 0);
+          }
+        });
+
+        guestsData = Array.from(tempMap.values());
+
+        // Oldest First Sorting
+        guestsData.sort((a, b) => {
+          const timeA = a.createdAt && a.createdAt.seconds ? a.createdAt.seconds : 0;
+          const timeB = b.createdAt && b.createdAt.seconds ? b.createdAt.seconds : 0;
+          return timeA - timeB; 
+        });
+
+        document.getElementById('total-guests-count').innerText = guestsData.length;
+        document.getElementById('total-visits-count').innerText = totalVisits;
+
+        loadBtn.innerText = "🔄 তালিকা হাইড করুন";
+        loadBtn.className = "btn btn-danger";
+
+        if (callback) {
+          callback();
+        } else {
+          renderGuestTable(guestsData);
+        }
+      }, (error) => {
+        console.error("Firestore Guest Fetch Error: ", error);
+        document.getElementById("guest-table-body").innerHTML = `<tr><td colspan="6" style="color:red; text-align:center;">ডাটা লোড করতে সমস্যা হয়েছে!</td></tr>`;
+        loadBtn.innerText = "👥 সকল গ্রাহক লোড করুন";
+        loadBtn.className = "btn btn-secondary";
+      });
+    }
+
+    // "সকল গ্রাহক লোড করুন" বাটন লজিক
+    document.getElementById("load-guests-btn").addEventListener("click", () => {
+      const loadBtn = document.getElementById("load-guests-btn");
+
+      if (unsubscribeGuests) {
+        unsubscribeGuests();
+        unsubscribeGuests = null;
+        loadBtn.innerText = "👥 সকল গ্রাহক লোড করুন";
+        loadBtn.className = "btn btn-secondary";
+        document.getElementById("guest-table-body").innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 25px; color: #64748b;">ডাটা দেখা বন্ধ আছে। লোড করতে খুঁজুন অথবা বাটনে ক্লিক করুন।</td></tr>`;
+        document.getElementById('total-guests-count').innerText = "-";
+        document.getElementById('total-visits-count').innerText = "-";
+        return;
+      }
+
+      document.getElementById("guest-table-body").innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">ডাটা লোড হচ্ছে...</td></tr>`;
+      startListeningGuests();
+    });
+
+    // POS ব্যাকগ্রাউন্ড অটো সিঙ্ক
+    onSnapshot(salesRef, (snapshot) => {
+      snapshot.docChanges().forEach(async (change) => {
+        if (change.type === "added" || change.type === "modified") {
+          const saleData = change.doc.data();
+          const orderId = change.doc.id;
+
+          const phone = saleData.customerPhone || saleData.phone;
+          const name = saleData.customerName || '';
+
+          if (phone && !saleData.guestProcessed) {
+            try {
+              const guestDocRef = doc(db, "saffron", "mirpur10", "guests", String(phone));
+              const guestSnap = await getDoc(guestDocRef);
+
+              if (guestSnap.exists()) {
+                await setDoc(guestDocRef, {
+                  visitCount: increment(1)
+                }, { merge: true });
+              } else {
+                const guestName = name.trim() ? name.trim() : generateNextGuestId();
+                await setDoc(guestDocRef, {
+                  name: guestName,
+                  phone: String(phone),
+                  createdAt: serverTimestamp(),
+                  visitCount: 1
+                });
+              }
+
+              const saleDocRef = doc(db, "saffron", "mirpur10", "sales", orderId);
+              await updateDoc(saleDocRef, {
+                guestProcessed: true
+              });
+            } catch (err) {
+              console.error("Auto Sync POS Sales Error:", err);
+            }
+          }
+        }
+      });
+    });
+
+    // RENDER TABLE WITH TOTAL SPENT (UNIQUE ROWS PROTECTED)
+    let renderSessionId = 0;
+    async function renderGuestTable(data) {
+      const tbody = document.getElementById("guest-table-body");
+      tbody.innerHTML = "";
+
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">কোনো গ্রাহকের ডাটা পাওয়া যায়নি।</td></tr>`;
+        return;
+      }
+
+      const currentSession = ++renderSessionId;
+
+      for (const item of data) {
+        if (currentSession !== renderSessionId) return;
+
+        const createdDate = formatDateEnglish(item, false);
+
+        let totalSpent = 0;
+        let actualVisitCount = item.visitCount || 0; // Fallback
+
+        try {
+          const qSales = query(salesRef, where('customerPhone', '==', String(item.phone)));
+          const snapshot = await getDocs(qSales);
+          
+          // রিয়েল সেলস কাউন্ট গণনা করে ভিজিট সংখ্যা সিংকে রাখলাম যাতে ভুল না দেখায়
+          actualVisitCount = snapshot.size;
+
+          snapshot.forEach(docSnap => {
+            const order = docSnap.data();
+            totalSpent += Number(order.totalAmount || order.totalBill || order.grandTotal || 0);
+          });
+        } catch (err) {
+          console.error("Total spent calculation error:", err);
+        }
+
+        if (currentSession !== renderSessionId) return;
+
+        const tr = document.createElement("tr");
+        
+        const nameTd = document.createElement("td");
+        nameTd.innerHTML = `<strong style="color:#2563eb; cursor:pointer;">${item.name || 'N/A'}</strong>`;
+        nameTd.onclick = () => openHistoryModal(item.phone);
+
+        const phoneTd = document.createElement("td");
+        phoneTd.innerText = item.phone || 'N/A';
+
+        const dateTd = document.createElement("td");
+        dateTd.innerText = createdDate;
+
+        const visitsTd = document.createElement("td");
+        visitsTd.innerHTML = `<span style="background:#e0e7ff; color:#3730a3; padding: 2px 8px; border-radius:12px; font-weight:bold; font-size:12px;">${actualVisitCount} বার</span>`;
+
+        const totalSpentTd = document.createElement("td");
+        totalSpentTd.innerHTML = `<strong style="color:#166534;">৳ ${totalSpent}</strong>`;
+
+        const btn = document.createElement("button");
+        btn.className = "btn btn-primary";
+        btn.style.padding = "6px 12px";
+        btn.style.fontSize = "12px";
+        btn.innerText = "👁️ ডিটেইলস";
+        btn.onclick = () => openHistoryModal(item.phone);
+
+        const tdAction = document.createElement("td");
+        tdAction.style.textAlign = "right";
+        tdAction.appendChild(btn);
+
+        tr.appendChild(nameTd);
+        tr.appendChild(phoneTd);
+        tr.appendChild(dateTd);
+        tr.appendChild(visitsTd);
+        tr.appendChild(totalSpentTd);
+        tr.appendChild(tdAction);
+
+        tbody.appendChild(tr);
+      }
+    }
+
+    function generateNextGuestId() {
+      const randomNum = Math.floor(1000 + Math.random() * 9000);
+      return "guest_" + randomNum;
+    }
+
+    // SAVE / ADD GUEST FORM HANDLER
+    document.getElementById("add-guest-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const phoneInput = document.getElementById("guest-phone");
+      const orderIdInput = document.getElementById("guest-order-id");
+      const nameInput = document.getElementById("guest-name");
+      const submitBtn = document.getElementById("submit-btn");
+
+      const phone = phoneInput.value.trim();
+      const orderId = orderIdInput.value.trim();
+      let name = nameInput.value.trim();
+
+      if (!phone || !orderId) {
+        alert("ফোন নম্বর এবং সেলস/অর্ডার আইডি বাধ্যতামূলক!");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = "যাচাই করা হচ্ছে...";
+
+      try {
+        const saleDocRef = doc(db, "saffron", "mirpur10", "sales", orderId);
+        const saleSnap = await getDoc(saleDocRef);
+
+        if (!saleSnap.exists()) {
+          alert(`❌ এরর: "${orderId}" আইডির কোনো অর্ডার ডাটাবেজে পাওয়া যায়নি!`);
+          submitBtn.disabled = false;
+          submitBtn.innerText = "সেভ করুন";
+          return;
+        }
+
+        const saleData = saleSnap.data();
+
+        if (saleData.customerPhone && saleData.customerPhone !== phone) {
+          alert(`⚠️ এই অর্ডারটি (#${orderId}) ইতোমধ্যে অন্য এক গ্রাহকের (${saleData.customerPhone}) সাথে সংযুক্ত আছে!`);
+          submitBtn.disabled = false;
+          submitBtn.innerText = "সেভ করুন";
+          return;
+        }
+
+        submitBtn.innerText = "সেভ হচ্ছে...";
+
+        const guestDocRef = doc(db, "saffron", "mirpur10", "guests", phone);
+        const guestSnap = await getDoc(guestDocRef);
+
+        if (guestSnap.exists()) {
+          if (saleData.customerPhone !== phone) {
+            await setDoc(guestDocRef, {
+              visitCount: increment(1)
+            }, { merge: true });
+          }
+          alert(`বিদ্যমান গ্রাহক! #${orderId} অর্ডারটি লিঙ্ক করা হয়েছে।`);
+        } else {
+          if (!name) name = generateNextGuestId();
+
+          await setDoc(guestDocRef, {
+            name: name,
+            phone: phone,
+            createdAt: serverTimestamp(),
+            visitCount: 1
+          });
+
+          alert("নতুন গ্রাহক ও অর্ডার সফলভাবে যুক্ত করা হয়েছে!");
+        }
+
+        await setDoc(saleDocRef, {
+          customerPhone: phone,
+          customerName: name || (guestSnap.exists() ? guestSnap.data().name : ''),
+          guestProcessed: true
+        }, { merge: true });
+
+        document.getElementById("add-guest-form").reset();
+
+      } catch (err) {
+        console.error("Save Error: ", err);
+        alert("ত্রুটি: " + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "সেভ করুন";
+      }
+    });
+
+    // --- SMART SEARCH FILTER HANDLER ---
+    document.getElementById("search-input").addEventListener("keyup", (e) => {
+      const queryVal = e.target.value.toLowerCase().trim();
+
+      const performFilter = () => {
+        if (!queryVal) {
+          document.getElementById("guest-table-body").innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 25px; color: #64748b;">ডাটা দেখা বন্ধ আছে। লোড করতে খুঁজুন অথবা বাটনে ক্লিক করুন।</td></tr>`;
+          return;
+        }
+
+        const uniqueFiltered = [];
+        const seenPhones = new Set();
+
+        for (const g of guestsData) {
+          const matchName = g.name && g.name.toLowerCase().includes(queryVal);
+          const matchPhone = g.phone && String(g.phone).includes(queryVal);
+
+          if (matchName || matchPhone) {
+            const pKey = String(g.phone || g.docId).trim();
+            if (!seenPhones.has(pKey)) {
+              seenPhones.add(pKey);
+              uniqueFiltered.push(g);
+            }
+          }
+        }
+
+        renderGuestTable(uniqueFiltered);
+      };
+
+      if (!unsubscribeGuests && queryVal) {
+        document.getElementById("guest-table-body").innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">খুঁজা হচ্ছে...</td></tr>`;
+        startListeningGuests(performFilter);
+      } else {
+        performFilter();
+      }
+    });
+
+    // HISTORY MODAL FETCH & RENDER
+    async function openHistoryModal(phone) {
+      const guest = guestsData.find(g => String(g.phone) === String(phone)) || { phone: phone, name: 'গ্রাহক' };
+
+      document.getElementById("modal-guest-name").innerText = guest.name || 'গ্রাহক';
+      document.getElementById("modal-guest-phone").innerText = "ফোন নম্বর: " + (guest.phone || '');
+
+      const tbody = document.getElementById("history-table-body");
+      const totalDisplay = document.getElementById("modal-guest-total-all-orders");
+      
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">অর্ডার তথ্য লোড হচ্ছে...</td></tr>`;
+      if(totalDisplay) totalDisplay.innerText = "৳ 0";
+
+      document.getElementById("history-modal").classList.add("active");
+
+      try {
+        const qSales = query(salesRef, where('customerPhone', '==', String(phone)));
+        const snapshot = await getDocs(qSales);
+        tbody.innerHTML = "";
+
+        if (snapshot.empty) {
+          tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">কোনো লিঙ্ক করা অর্ডার পাওয়া যায়নি।</td></tr>`;
+          if(totalDisplay) totalDisplay.innerText = "৳ 0";
+          return;
+        }
+
+        let grandTotalSum = 0;
+
+        snapshot.forEach(docSnap => {
+          const order = docSnap.data();
+          const orderId = docSnap.id;
+          order.id = orderId;
+          
+          const orderDate = formatDateEnglish(order, true);
+          const bill = Number(order.totalAmount || order.totalBill || order.grandTotal || 0);
+          
+          grandTotalSum += bill;
+
+          const tr = document.createElement("tr");
+          
+          const tdDate = document.createElement("td");
+          tdDate.innerText = orderDate;
+
+          const tdOrder = document.createElement("td");
+          tdOrder.innerHTML = `<span class="order-link">#${orderId}</span>`;
+          tdOrder.onclick = () => openOrderDetailsModal(orderId, order, orderDate);
+
+          const tdBill = document.createElement("td");
+          tdBill.innerText = `৳ ${bill}`;
+
+          const tdAction = document.createElement("td");
+          tdAction.style.textAlign = "right";
+          
+          const removeBtn = document.createElement("button");
+          removeBtn.className = "btn btn-danger";
+          removeBtn.style.padding = "4px 8px";
+          removeBtn.style.fontSize = "11px";
+          removeBtn.innerText = "🗑️ রিমুভ";
+          removeBtn.onclick = () => removeOrderFromGuest(orderId, phone);
+
+          tdAction.appendChild(removeBtn);
+
+          tr.appendChild(tdDate);
+          tr.appendChild(tdOrder);
+          tr.appendChild(tdBill);
+          tr.appendChild(tdAction);
+
+          tbody.appendChild(tr);
+        });
+
+        if(totalDisplay) {
+          totalDisplay.innerText = `৳ ${grandTotalSum}`;
+        }
+
+      } catch (err) {
+        console.error("Sales Fetch Error:", err);
+        tbody.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">হিস্ট্রি লোড করতে ব্যর্থ হয়েছে।</td></tr>`;
+      }
+    }
+
+    // ORDER FOOD ITEMS POPUP
+    function openOrderDetailsModal(orderId, orderData, orderDate) {
+      document.getElementById("modal-order-id").innerText = "অর্ডার বিবরনী: #" + orderId;
+      document.getElementById("modal-order-date").innerText = "তারিখ: " + orderDate;
+
+      const tbody = document.getElementById("items-table-body");
+      tbody.innerHTML = "";
+
+      const items = orderData.items || orderData.cart || orderData.foodList || [];
+
+      if (!items || items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">আইটেম তালিকা পাওয়া যায়নি।</td></tr>`;
+      } else {
+        items.forEach(item => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${item.name || item.title || item.itemName || 'খাবার আইটেম'}</td>
+            <td style="text-align:center;">${item.quantity || item.qty || 1}</td>
+            <td style="text-align:right;">৳ ${item.price || item.totalPrice || 0}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      const totalBill = orderData.totalAmount || orderData.totalBill || orderData.grandTotal || 0;
+      document.getElementById("modal-total-bill").innerText = `৳ ${totalBill}`;
+
+      document.getElementById("items-modal").classList.add("active");
+    }
+
+    // REMOVE ORDER LINK FROM GUEST
+    async function removeOrderFromGuest(orderId, phone) {
+      if (!confirm(`আপনি কি নিশ্চিত যে #${orderId} অর্ডারটি এই গ্রাহকের থেকে সরিয়ে ফেলতে চান?`)) return;
+
+      try {
+        const saleDocRef = doc(db, "saffron", "mirpur10", "sales", orderId);
+        await updateDoc(saleDocRef, {
+          customerPhone: deleteField(),
+          customerName: deleteField(),
+          guestProcessed: false
+        });
+
+        const guestDocRef = doc(db, "saffron", "mirpur10", "guests", phone);
+        const guestSnap = await getDoc(guestDocRef);
+        if (guestSnap.exists()) {
+          const currentCount = guestSnap.data().visitCount || 1;
+          const newCount = Math.max(0, currentCount - 1);
+          await updateDoc(guestDocRef, {
+            visitCount: newCount
+          });
+        }
+
+        alert("অর্ডারটি সফলভাবে রিমুভ করা হয়েছে!");
+        openHistoryModal(phone); 
+
+      } catch (err) {
+        console.error("Remove Order Error:", err);
+        alert("রিমুভ করতে ব্যর্থ: " + err.message);
+      }
+    }
+
+    // CLOSE MODALS
+    document.getElementById("close-history-modal").onclick = () => {
+      document.getElementById("history-modal").classList.remove("active");
+    };
+
+    document.getElementById("close-items-modal").onclick = () => {
+      document.getElementById("items-modal").classList.remove("active");
+    };
+  </script>
+</body>
+</html>

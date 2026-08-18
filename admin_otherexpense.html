@@ -1,0 +1,485 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saffron (Mirpur 10) - Other Expenses</title>
+  
+  <!-- SECURITY CHECK: Redirect if not logged in -->
+  <script>
+    if (localStorage.getItem('saffron_admin_logged_in') !== 'true') {
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { display: flex; height: 100vh; background-color: #f4f6f9; color: #333; }
+    
+    /* Sidebar Layout */
+    .sidebar { width: 250px; background-color: #1e293b; color: #fff; display: flex; flex-direction: column; justify-content: space-between; flex-shrink: 0; }
+    .brand { 
+      padding: 20px 15px; 
+      text-align: center; 
+      background: #0f172a; 
+      border-bottom: 1px solid #334155; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .brand-logo { width: 120px; height: 50px; object-fit: contain; margin-bottom: 6px; display: block; }
+    .branch-tag { font-size: 12px; color: #94a3b8; }
+    
+    .nav-links { list-style: none; padding: 20px 0; }
+    .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; color: #cbd5e1; text-decoration: none !important; transition: 0.2s; }
+    .nav-item:hover, .nav-item.active { background-color: #334155; color: #fff; border-left: 4px solid #f59e0b; }
+    
+    .logout-item { color: #ef4444 !important; border-top: 1px solid #334155; padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; text-decoration: none !important; }
+    .logout-item:hover { background-color: #334155; color: #f87171 !important; }
+
+    /* Main Content Area */
+    .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .status-online { background: #dcfce7; color: #166534; }
+    .status-offline { background: #fee2e2; color: #991b1b; }
+
+    /* Card & Forms */
+    .card { background: #fff; border-radius: 8px; padding: 25px; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .section-header { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 15px; border-left: 4px solid #f59e0b; padding-left: 10px; }
+    
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; font-weight: 600; color: #475569; }
+    .form-control { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; }
+    .form-control:focus { border-color: #f59e0b; }
+
+    .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; justify-content: center; }
+    .btn-primary { background: #f59e0b; color: #fff; }
+    .btn-primary:hover { background: #d97706; }
+    .btn-warning { background: #0284c7; color: #fff; padding: 6px 12px; font-size: 12px; }
+    .btn-danger { background: #ef4444; color: #fff; padding: 6px 12px; font-size: 12px; }
+    .btn-secondary { background: #64748b; color: #fff; padding: 8px 14px; font-size: 13px; }
+
+    /* Expense Table */
+    .table-responsive { overflow-x: auto; margin-top: 15px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+    th, td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
+    th { background-color: #f8fafc; color: #475569; font-weight: 600; }
+    tr:hover { background-color: #f1f5f9; }
+
+    /* Filter Box Style */
+    .filter-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+    .add-opt { font-weight: bold; color: #d97706; background-color: #fef3c7; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div>
+      <div class="brand">
+        <img src="logo.png" alt="Saffron Logo" class="brand-logo" onerror="this.onerror=null; this.src='https://via.placeholder.com/120x50?text=Saffron+Logo';">
+        <span class="branch-tag">Mirpur 10 Branch</span>
+      </div>
+
+    <!-- ২. নেভিগেশন লিঙ্ক সেকশন -->
+    <ul class="nav-links">
+<li><a href="admin_inventory.html" class="nav-item">Stock Management</a></li>
+      <li><a href="admin_food.html" class="nav-item">Food Management</a></li>
+	<li><a href="admin_employees.html" class="nav-item">Employee Management</a></li>
+	<li><a href="admin_guestmanagement.html" class="nav-item">Guest Management</a></li>
+	<li><a href="admin_coupon.html" class="nav-item">Coupon & Others</a></li>
+	<li><a href="admin_employeeexpense.html" class="nav-item">Employee Expense</a></li>
+      <li><a href="admin_otherexpense.html" class="nav-item active">Other Expense</a></li>
+	<li><a href="admin_salesmanagement.html" class="nav-item ">Employee Sales report</a></li>
+      <li><a href="admin_salesreport.html" class="nav-item">Sales History & Report</a></li>
+<li><a href="admin_costreport.html" class="nav-item">Operating Cost Report</a></li>
+<li><a href="admin_pos.html" class="nav-item">POS System</a></li>
+
+    </ul>
+  
+    </div>
+    
+    <a href="#" class="logout-item" onclick="logoutAdmin()">🚪 Logout</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="header">
+      <h2>Other Expenses</h2><h3>(বাজারসহ রেষ্টুরেন্টের অন্যান্য খরচ)</h3>
+      <div id="net-status" class="status-badge status-online">🟢 Online (Auto Syncing)</div>
+    </div>
+
+    <!-- EXPENSE ENTRY / EDIT FORM -->
+    <div class="card">
+      <div class="section-header" id="form-title">Add New Expense</div>
+      <form id="expense-form">
+        <input type="hidden" id="editing-expense-id" value="">
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Expense Type *</label>
+            <select id="exp-category" class="form-control" onchange="handleCategoryChange(this)" required>
+              <!-- Dynamic Options Load Here -->
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Description / Details *</label>
+            <input type="text" id="exp-title" class="form-control" placeholder="e.g., Grocery purchase, Fan repair" required>
+          </div>
+
+          <div class="form-group">
+            <label>Amount (BDT) *</label>
+            <input type="number" step="0.01" id="exp-amount" class="form-control" placeholder="0.00" required>
+          </div>
+
+          <div class="form-group">
+            <label>Date *</label>
+            <input type="date" id="exp-date" class="form-control" required>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+          <button type="submit" id="save-expense-btn" class="btn btn-primary" style="flex: 1;">Save Expense Details</button>
+          <button type="button" id="cancel-edit-btn" class="btn btn-secondary" style="display: none;" onclick="resetForm()">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- EXPENSE LIST TABLE & FILTER -->
+    <div class="card">
+      <div class="section-header">Recent Expenses & Filters</div>
+      
+      <!-- Filter Controls -->
+      <div class="filter-card">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Filter by Expense Type</label>
+            <select id="filter-category" class="form-control" onchange="applyFilters()">
+              <option value="">All Expense Types</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Filter by Date (Day)</label>
+            <input type="date" id="filter-date" class="form-control" onchange="applyFilters()">
+          </div>
+
+          <div class="form-group">
+            <label>Filter by Month</label>
+            <input type="month" id="filter-month" class="form-control" onchange="applyFilters()">
+          </div>
+
+          <div class="form-group" style="justify-content: flex-end;">
+            <button class="btn btn-secondary" style="margin-top: auto;" onclick="clearFilters()">Clear Filters</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Document ID</th>
+              <th>Date</th>
+              <th>Expense Type</th>
+              <th>Description</th>
+              <th>Amount (BDT)</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="expense-table-body">
+            <tr>
+              <td colspan="6" style="text-align: center;">Loading data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function logoutAdmin() {
+      if (confirm("Are you sure you want to log out?")) {
+        localStorage.removeItem('saffron_admin_logged_in');
+        window.location.href = "index.html";
+      }
+    }
+
+    document.getElementById('exp-date').valueAsDate = new Date();
+  </script>
+
+  <!-- FIREBASE MODULE SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+    import { 
+      initializeFirestore, 
+      persistentLocalCache, 
+      persistentMultipleTabManager,
+      collection, 
+      onSnapshot, 
+      doc, 
+      setDoc,
+      deleteDoc 
+    } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAq_vQ7ARn1TdMOOp1rtJqFOd1K4yUupP4",
+      authDomain: "saffron-65736.firebaseapp.com",
+      databaseURL: "https://saffron-65736-default-rtdb.firebaseio.com",
+      projectId: "saffron-65736",
+      storageBucket: "saffron-65736.firebasestorage.app",
+      messagingSenderId: "599450614604",
+      appId: "1:599450614604:web:e6be0bc5cb56dc867cede9",
+      measurementId: "G-FC5894HZEM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    let db;
+    try {
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager()
+        })
+      });
+    } catch (e) { console.warn("Offline cache error", e); }
+
+    const categoriesRef = collection(db, "saffron", "mirpur10", "expense_categories");
+    const expensesRef = collection(db, "saffron", "mirpur10", "other_expenses");
+
+    window.addEventListener('online', updateNetStatus);
+    window.addEventListener('offline', updateNetStatus);
+
+    function updateNetStatus() {
+      const netBadge = document.getElementById("net-status");
+      if (navigator.onLine) {
+        netBadge.className = "status-badge status-online";
+        netBadge.innerHTML = "🟢 Online (Auto Syncing)";
+      } else {
+        netBadge.className = "status-badge status-offline";
+        netBadge.innerHTML = "🔴 Offline (Saved Locally)";
+      }
+    }
+
+    let defaultCategories = ["Market Expense", "Restaurant Service Cost"];
+    let customCategories = [];
+    let rawExpensesList = [];
+
+    // 1. FETCH & MANAGE CATEGORIES
+    onSnapshot(categoriesRef, (snapshot) => {
+      customCategories = [];
+      if (!snapshot.empty) {
+        snapshot.docs.forEach(docSnap => {
+          customCategories.push(docSnap.data().name);
+        });
+      }
+      renderCategoryDropdowns();
+    });
+
+    function renderCategoryDropdowns() {
+      const formSelect = document.getElementById("exp-category");
+      const filterSelect = document.getElementById("filter-category");
+      
+      const currentSelected = formSelect.value;
+      const currentFilterSelected = filterSelect.value;
+
+      // Merge defaults with custom categories uniquely
+      const allCategories = Array.from(new Set([...defaultCategories, ...customCategories]));
+
+      // Form Dropdown
+      formSelect.innerHTML = `<option value="">-- Select Expense Type --</option>`;
+      allCategories.forEach(cat => {
+        formSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+      });
+      formSelect.innerHTML += `<option value="__ADD_NEW__" class="add-opt">+ Add New Expense Type</option>`;
+
+      // Filter Dropdown
+      filterSelect.innerHTML = `<option value="">All Expense Types</option>`;
+      allCategories.forEach(cat => {
+        filterSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+      });
+
+      if (currentSelected) formSelect.value = currentSelected;
+      if (currentFilterSelected) filterSelect.value = currentFilterSelected;
+    }
+
+    // Handle "+ Add New Expense Type" Selection
+    window.handleCategoryChange = async function(selectElem) {
+      if (selectElem.value === "__ADD_NEW__") {
+        const newCatName = prompt("Enter new expense type name:");
+        if (newCatName && newCatName.trim() !== "") {
+          const cleanCatName = newCatName.trim();
+          const catId = "cat_" + Date.now();
+          
+          try {
+            await setDoc(doc(db, "saffron", "mirpur10", "expense_categories", catId), {
+              id: catId,
+              name: cleanCatName,
+              createdAt: new Date().toISOString()
+            });
+            alert(`"${cleanCatName}" has been successfully added as a new expense type.`);
+            
+            setTimeout(() => {
+              selectElem.value = cleanCatName;
+            }, 300);
+          } catch (err) {
+            alert("Error adding category: " + err.message);
+            selectElem.value = "";
+          }
+        } else {
+          selectElem.value = "";
+        }
+      }
+    };
+
+    // Helper: Clean text for Firestore ID
+    function sanitizeForId(str) {
+      return str.toLowerCase().trim().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_");
+    }
+
+    // 2. SAVE OR UPDATE EXPENSE TO FIREBASE
+    document.getElementById("expense-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const category = document.getElementById("exp-category").value;
+      const title = document.getElementById("exp-title").value.trim();
+      const amount = parseFloat(document.getElementById("exp-amount").value);
+      const date = document.getElementById("exp-date").value;
+      const editingId = document.getElementById("editing-expense-id").value;
+
+      if (!category || category === "__ADD_NEW__") {
+        alert("Please select an expense type!");
+        return;
+      }
+
+      // Document ID Format: category_title_date
+      const cleanCat = sanitizeForId(category);
+      const cleanTitle = sanitizeForId(title);
+      const docId = editingId || `${cleanCat}_${cleanTitle}_${date}`;
+
+      const expensePayload = {
+        id: docId,
+        category: category,
+        title: title,
+        amount: amount,
+        date: date,
+        createdAt: new Date().toISOString()
+      };
+
+      try {
+        await setDoc(doc(db, "saffron", "mirpur10", "other_expenses", docId), expensePayload);
+        alert(editingId ? "Data updated successfully!" : "Expense saved successfully!");
+        resetForm();
+      } catch (err) {
+        alert("Error saving data: " + err.message);
+      }
+    });
+
+    // Reset Form State
+    window.resetForm = function() {
+      document.getElementById("expense-form").reset();
+      document.getElementById("editing-expense-id").value = "";
+      document.getElementById("form-title").innerText = "Add New Expense";
+      document.getElementById("save-expense-btn").innerText = "Save Expense Details";
+      document.getElementById("cancel-edit-btn").style.display = "none";
+      document.getElementById('exp-date').valueAsDate = new Date();
+    };
+
+    // 3. FETCH EXPENSES LIST AND LISTEN
+    onSnapshot(expensesRef, (snapshot) => {
+      rawExpensesList = [];
+      if (!snapshot.empty) {
+        snapshot.docs.forEach(d => rawExpensesList.push(d.data()));
+      }
+      applyFilters();
+    });
+
+    // 4. FILTER AND RENDER EXPENSES IN TABLE
+    window.applyFilters = function() {
+      const selectedCat = document.getElementById("filter-category").value;
+      const selectedDate = document.getElementById("filter-date").value;
+      const selectedMonth = document.getElementById("filter-month").value;
+
+      let filteredList = rawExpensesList.filter(item => {
+        let matchCat = selectedCat ? item.category === selectedCat : true;
+        let matchDate = selectedDate ? item.date === selectedDate : true;
+        let matchMonth = selectedMonth ? item.date.startsWith(selectedMonth) : true;
+        return matchCat && matchDate && matchMonth;
+      });
+
+      // Sort by date descending
+      filteredList.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      renderTable(filteredList);
+    };
+
+    window.clearFilters = function() {
+      document.getElementById("filter-category").value = "";
+      document.getElementById("filter-date").value = "";
+      document.getElementById("filter-month").value = "";
+      applyFilters();
+    };
+
+    function renderTable(dataList) {
+      const tbody = document.getElementById("expense-table-body");
+      tbody.innerHTML = "";
+
+      if (dataList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No expense records found.</td></tr>';
+        return;
+      }
+
+      dataList.forEach((item) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><code>${item.id}</code></td>
+          <td>${item.date}</td>
+          <td><strong>${item.category}</strong></td>
+          <td>${item.title}</td>
+          <td>৳ ${item.amount.toFixed(2)}</td>
+          <td style="display: flex; gap: 6px;">
+            <button class="btn btn-warning" onclick="editExpense('${item.id}')">Edit</button>
+            <button class="btn btn-danger" onclick="deleteExpense('${item.id}')">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 5. EDIT EXPENSE
+    window.editExpense = function(expenseId) {
+      const item = rawExpensesList.find(e => e.id === expenseId);
+      if (!item) return;
+
+      document.getElementById("editing-expense-id").value = item.id;
+      document.getElementById("exp-category").value = item.category;
+      document.getElementById("exp-title").value = item.title;
+      document.getElementById("exp-amount").value = item.amount;
+      document.getElementById("exp-date").value = item.date;
+
+      document.getElementById("form-title").innerText = "Update Expense Details (" + item.id + ")";
+      document.getElementById("save-expense-btn").innerText = "Update Expense";
+      document.getElementById("cancel-edit-btn").style.display = "inline-flex";
+      
+      // Smooth scroll to top form
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // 6. DELETE EXPENSE
+    window.deleteExpense = async function(expenseId) {
+      if (confirm(`Are you sure you want to delete "${expenseId}"?`)) {
+        try {
+          await deleteDoc(doc(db, "saffron", "mirpur10", "other_expenses", expenseId));
+          alert("Expense record deleted successfully.");
+        } catch (err) {
+          alert("Error deleting record: " + err.message);
+        }
+      }
+    };
+  </script>
+</body>
+</html>
