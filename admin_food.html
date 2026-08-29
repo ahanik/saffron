@@ -123,8 +123,6 @@
     <div class="header">
       <h2>ফুড মেকার ও মেনু ম্যানেজমেন্ট</h2>
       <div class="header-right">
-        <!-- ইউজার ইনফো ব্যাজ -->
-         <!--   <div id="logged-user-badge" class="user-info-badge">👤 ইউজার: লোড হচ্ছে...</div> -->
         <div id="net-status" class="status-badge status-online">🟢 অনলাইন (Auto Syncing)</div>
       </div>
     </div>
@@ -263,7 +261,6 @@
       }
     }
 
-    // LOAD LOGGED USER INFO FUNCTION
     async function loadLoggedUserInfo() {
       try {
         const querySnapshot = await getDocs(usersRef);
@@ -284,17 +281,15 @@
         if (currentUser) {
           const name = currentUser.name || "অজানা ইউজার";
           const role = currentUser.position || "";
-          document.getElementById("logged-user-badge").innerText = `👤 ${name} (${role})`;
-        } else {
-          document.getElementById("logged-user-badge").innerText = `👤 অ্যাডমিন`;
+          if(document.getElementById("logged-user-badge")) {
+            document.getElementById("logged-user-badge").innerText = `👤 ${name} (${role})`;
+          }
         }
       } catch (err) {
         console.error("User info load error: ", err);
-        document.getElementById("logged-user-badge").innerText = `👤 ইউজার লোড হয়নি`;
       }
     }
 
-    // Call user info loader
     loadLoggedUserInfo();
 
     window.toggleCustomCategoryInput = function(selectElem) {
@@ -524,6 +519,27 @@
       snapshot.docs.forEach((docSnap) => {
         const food = docSnap.data();
         const docId = docSnap.id;
+
+        // অটোমেটিক ইনভেন্টরির লেটেস্ট স্টক ও খরচের সাপেক্ষে ফুডের কস্ট ক্যালকুলেট করার লজিক (অটো-সিঙ্ক)
+        if (food.variants && food.variants.length > 0 && availableInventory.length > 0) {
+          food.variants.forEach(v => {
+            let recalculatedVariantCost = 0;
+            if (v.ingredients && v.ingredients.length > 0) {
+              v.ingredients.forEach(i => {
+                const invItem = availableInventory.find(inv => inv.name === i.itemName);
+                if (invItem && invItem.quantity > 0 && invItem.totalCost > 0) {
+                  const unitCost = invItem.totalCost / invItem.quantity;
+                  i.cost = parseFloat((i.qty * unitCost).toFixed(2));
+                } else {
+                  i.cost = i.cost || 0;
+                }
+                recalculatedVariantCost += i.cost;
+              });
+            }
+            v.totalCost = parseFloat(recalculatedVariantCost.toFixed(2));
+          });
+        }
+
         foodListCache[docId] = food;
 
         if (food.category) {
