@@ -704,12 +704,13 @@
       let discountLine = order.discountAmount > 0 ? `<div style="display:flex; justify-content:space-between;"><span>Discount:</span><span>- ${order.discountAmount} TK</span></div>` : '';
 
       printDiv.innerHTML = `
-        <img src="logo.png" class="receipt-logo" alt="Logo" onerror="this.style.display='none'">
+        <img src="poslogo.png" class="receipt-logo" alt="Logo" onerror="this.style.display='none'">
         <div class="receipt-title">SAFFRON</div>
-        <div class="receipt-subtitle">Restaurant & Dining</div>
+        <div class="receipt-subtitle">TAHMID SQUARE</div>
+<div class="receipt-subtitle">13/1, Senpara porbota, Mirpur-10, Dhaka-1216</div>
         <div class="receipt-divider"></div>
         <div class="receipt-info">
-          <div><strong>Inv #:</strong> ${orderId} | <strong>Table:</strong> ${order.table || 'N/A'}</div>
+          <div><strong>Order ID: #</strong> ${orderId} | <strong>Table:</strong> ${order.table || 'N/A'}</div>
           <div><strong>Date:</strong> ${new Date(order.completedAt || Date.now()).toLocaleString()}</div>
           <div><strong>Name:</strong> ${order.customerName || 'Valued Guest'}</div>
           <div><strong>Phone:</strong> ${order.customerPhone || order.phone || 'N/A'}</div>
@@ -718,7 +719,7 @@
         <div class="receipt-divider"></div>
         <table class="receipt-table">
           <thead>
-            <tr><th>Item Description</th><th class="text-right">Price</th></tr>
+            <tr><th>Item</th><th class="text-right">Total</th></tr>
           </thead>
           <tbody>${itemsHTML}</tbody>
         </table>
@@ -734,9 +735,11 @@
         </div>
         <div class="receipt-divider"></div>
         <div class="offer-box">
-          <div class="offer-box-title">To know about various offers, please provide your info:</div>
-          <div>Name: ______________________</div>
-          <div style="margin-top:4px;">Phone: _____________________</div>
+          <div class="offer-box-title">YOUR FEEDBACK IS VALUABLE TO US!</div>
+          <div>How was your experience?</div>
+	<div>____________________________________________________</div>
+	<div>____________________________________________________</div>
+	<div>Phone no: _________________________________________</div>
         </div>
         <div class="receipt-footer">
           <p style="font-weight:bold;">Thank You For Dining With Us!</p>
