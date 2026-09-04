@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saffron - Cash Reserve System</title>
+<link rel="icon" type="image/x-icon" href="faviconlogo.ico">
+  
+  <!-- SECURITY CHECK: Redirect if not logged in -->
+  <script>
+    if (localStorage.getItem('saffron_admin_logged_in') !== 'true') {
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { display: flex; height: 100vh; background-color: #f4f6f9; color: #333; }
+    
+    /* Sidebar Layout */
+    .sidebar { width: 250px; background-color: #1e293b; color: #fff; display: flex; flex-direction: column; justify-content: space-between; flex-shrink: 0; }
+    .brand { 
+      padding: 20px 15px; 
+      text-align: center; 
+      background: #0f172a; 
+      border-bottom: 1px solid #334155; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .brand-logo { width: 120px; height: 50px; object-fit: contain; margin-bottom: 6px; display: block; }
+    .branch-tag { font-size: 12px; color: #94a3b8; }
+    
+    .nav-links { list-style: none; padding: 20px 0; }
+    .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; color: #cbd5e1; text-decoration: none !important; transition: 0.2s; }
+    .nav-item:hover, .nav-item.active { background-color: #334155; color: #fff; border-left: 4px solid #f59e0b; }
+    
+    .logout-item { color: #ef4444 !important; border-top: 1px solid #334155; padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; text-decoration: none !important; }
+    .logout-item:hover { background-color: #334155; color: #f87171 !important; }
+
+    /* Main Content Area */
+    .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .status-online { background: #dcfce7; color: #166534; }
+    .status-offline { background: #fee2e2; color: #991b1b; }
+
+    /* Summary Overview Grid */
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .summary-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .summary-card h4 { font-size: 12px; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .summary-card .amount { font-size: 20px; font-weight: bold; color: #0f172a; }
+    .summary-card.highlight { background: #fef3c7; border-color: #f59e0b; }
+    .summary-card.highlight .amount { color: #b45309; }
+    .summary-card.success { background: #f0fdf4; border-color: #22c55e; }
+    .summary-card.success .amount { color: #15803d; }
+    .summary-card.danger { background: #fef2f2; border-color: #ef4444; }
+    .summary-card.danger .amount { color: #b91c1c; }
+
+    /* Card & Forms */
+    .card { background: #fff; border-radius: 8px; padding: 25px; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .section-header { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 15px; border-left: 4px solid #f59e0b; padding-left: 10px; }
+    
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; font-weight: 600; color: #475569; }
+    .form-control { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; }
+    .form-control:focus { border-color: #f59e0b; }
+    .form-control[readonly] { background-color: #f1f5f9; cursor: not-allowed; }
+
+    .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; justify-content: center; }
+    .btn-primary { background: #f59e0b; color: #fff; }
+    .btn-primary:hover { background: #d97706; }
+    .btn-secondary { background: #64748b; color: #fff; padding: 8px 14px; font-size: 13px; }
+    .btn-success { background: #16a34a; color: #fff; padding: 5px 10px; font-size: 12px; }
+    .btn-danger { background: #dc2626; color: #fff; padding: 5px 10px; font-size: 12px; }
+
+    /* Table Styling */
+    .table-responsive { overflow-x: auto; margin-top: 15px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+    th, td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
+    th { background-color: #f8fafc; color: #475569; font-weight: 600; }
+    tr:hover { background-color: #f1f5f9; }
+
+    /* Filter Box Style */
+    .filter-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+
+    /* Pending Badge & Row Styles */
+    .badge-pending { background: #fef3c7; color: #b45309; padding: 3px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; }
+    .badge-applied { background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; }
+    .row-clickable { cursor: pointer; }
+    .row-clickable:hover { background-color: #fef9c3 !important; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div>
+      <div class="brand">
+        <img src="logo.png" alt="Saffron Logo" class="brand-logo" onerror="this.onerror=null; this.src='https://via.placeholder.com/120x50?text=Saffron+Logo';">
+        <span class="branch-tag">Mirpur 10 Branch</span>
+      </div>
+
+      <ul class="nav-links">
+<li><a href="manager_inventory.html" class="nav-item ">Stock Management</a></li>
+      <li><a href="manager_guestmanagement.html" class="nav-item">Guest Management</a></li>
+      <li><a href="manager_employeeexpense.html" class="nav-item">Employee Expense</a></li>
+      <li><a href="manager_otherexpense.html" class="nav-item">Other Expense</a></li>
+      <li><a href="manager_salesmanagement.html" class="nav-item">Employee Sales report</a></li>
+      <li><a href="manager_salesreport.html" class="nav-item">Sales History & Report</a></li>
+      <li><a href="manager_costreport.html" class="nav-item">Operating Cost Report</a></li>
+<li><a href="manager_cashreserve.html" class="nav-item" active>Cash Reserve System</a></li>
+      <li><a href="manager_pos.html" class="nav-item">POS System</a></li>
+      </ul>
+    </div>
+    
+    <a href="#" class="logout-item" onclick="logoutAdmin()">🚪 Logout</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="header">
+      <div>
+        <h2>Cash Reserve & Drawer Management</h2>
+        <h3 style="font-size: 13px; color: #64748b; margin-top: 4px;">(ক্যাশ রিজার্ভ, প্রতিদিনের বাজার বিয়োগ এবং ড্রয়ার ব্যালেন্স)</h3>
+      </div>
+      <div id="net-status" class="status-badge status-online">🟢 Online (Auto Syncing)</div>
+    </div>
+
+    <!-- SUMMARY CARDS OVERVIEW -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <h4>সর্বশেষ দিন রেখে যাওয়া (Opening Cash)</h4>
+        <div class="amount" id="disp-opening">৳ 0.00</div>
+      </div>
+      <div class="summary-card highlight">
+        <h4>আজকের নেট সেলস (+ Net Sales)</h4>
+        <div class="amount" id="disp-sales">৳ 0.00</div>
+      </div>
+      <div class="summary-card danger">
+        <h4>আজকের মোট বাজার/খরচ (- Expense)</h4>
+        <div class="amount" id="disp-expense">৳ 0.00</div>
+      </div>
+      <div class="summary-card danger">
+        <h4>আজকে মালিকের উত্তোলন (- Owner)</h4>
+        <div class="amount" id="disp-owner">৳ 0.00</div>
+      </div>
+      <div class="summary-card success">
+        <h4>ক্যাশ ড্রয়ারে অবশিষ্ট (Cash In Drawer)</h4>
+        <div class="amount" id="disp-drawer">৳ 0.00</div>
+      </div>
+    </div>
+
+    <!-- CASH ENTRY & MANAGEMENT FORM -->
+    <div class="card">
+      <div class="section-header" id="form-title">Daily Cash Reserve Balance Sheet</div>
+      <form id="cash-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>তারিখ (Date Select to Edit / View) *</label>
+            <input type="date" id="cash-date" class="form-control" required onchange="onDateChange()" disabled>
+          </div>
+
+          <div class="form-group">
+            <label>সর্বশেষ দিন কত টাকা রেখে গেলেন (Opening Cash)</label>
+            <input type="number" step="0.01" id="opening-cash" class="form-control" placeholder="0.00" oninput="calculateDrawerCash()" disabled>
+          </div>
+
+          <div class="form-group">
+            <label>আজকের মোট বিক্রয় (Net Sales - Auto Fetch)</label>
+            <input type="number" step="0.01" id="today-sales" class="form-control" value="0.00" readonly>
+          </div>
+
+          <div class="form-group">
+            <label>প্রযোজ্য খরচ (Applied Expenses Only)</label>
+            <input type="number" step="0.01" id="today-expenses" class="form-control" value="0.00" readonly>
+          </div>
+
+          <div class="form-group">
+            <label>আজকে মালিক কত টাকা নিল (Owner Withdrawal)</label>
+            <input type="number" step="0.01" id="owner-withdrawal" class="form-control" placeholder="0.00" value="0" oninput="calculateDrawerCash()">
+          </div>
+
+          <!-- FIXED 2 ADMIN DROPDOWN -->
+          <div class="form-group">
+            <label>টাকা কে গ্রহণ করেছে? (Withdrawn By Admin) *</label>
+            <select id="withdrawn-by" class="form-control">
+              <option value="N/A">-- Select Admin --</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>ক্যাশ ড্রয়ারে জমা থাকবে (Final Cash in Drawer)</label>
+            <input type="number" step="0.01" id="cash-in-drawer" class="form-control" value="0.00" readonly style="font-weight: bold; color: #166534;">
+          </div>
+        </div>
+
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+          <button type="submit" id="save-cash-btn" class="btn btn-primary" style="flex: 1;">Save Today's Cash Reserve Data</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- PENDING EXPENSES QUEUE (NEW FEATURE) -->
+    <div class="card" style="border-top: 4px solid #f59e0b;">
+      <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>Pending Expenses Queue (খরচ ড্রয়ারে যুক্ত করার তালিকা)</span>
+        <small style="font-weight: normal; font-size: 12px; color: #64748b;">(ক্লিক করলে ক্যাশ ড্রয়ার থেকে বিয়োগ হবে)</small>
+      </div>
+      <p style="font-size: 13px; color: #64748b; margin-bottom: 12px;">
+        উপরে উল্লেখিত ফাইল দুটি (Employee Expense & Other Expense) থেকে প্রাপ্ত খরচের তালিকা নিচে দেওয়া হলো। 
+        যে খরচগুলো ড্রয়ারের সাথে বিয়োগ করতে চান সেটির <strong>"Apply to Drawer"</strong> বাটনে ক্লিক করুন অথবা সারির উপর ক্লিক করুন।
+      </p>
+      
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Source & ID</th>
+              <th>Date</th>
+              <th>Expense Name / Details</th>
+              <th>Amount (BDT)</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="pending-expense-table-body">
+            <tr>
+              <td colspan="6" style="text-align: center;">Loading pending expenses...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CASH RESERVE HISTORY TABLE & FILTERS -->
+    <div class="card">
+      <div class="section-header">Cash Reserve Records & History</div>
+      
+      <!-- Filter Controls -->
+      <div class="filter-card">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Filter by Date (Day)</label>
+            <input type="date" id="filter-date" class="form-control" onchange="applyFilters()">
+          </div>
+
+          <div class="form-group">
+            <label>Filter by Month</label>
+            <input type="month" id="filter-month" class="form-control" onchange="applyFilters()">
+          </div>
+
+          <div class="form-group" style="justify-content: flex-end;">
+            <button class="btn btn-secondary" style="margin-top: auto;" onclick="clearFilters()">Clear Filters</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Opening Cash</th>
+              <th>Net Sales (+)</th>
+              <th>Expenses (-)</th>
+              <th>Owner Taken (-)</th>
+              <th>Taken By</th>
+              <th>Final Cash In Drawer</th>
+              <th>Last Updated</th>
+            </tr>
+          </thead>
+          <tbody id="cash-table-body">
+            <tr>
+              <td colspan="8" style="text-align: center;">Loading cash reserve records...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function logoutAdmin() {
+      if (confirm("Are you sure you want to log out?")) {
+        localStorage.removeItem('saffron_admin_logged_in');
+        window.location.href = "index.html";
+      }
+    }
+
+    document.getElementById('cash-date').valueAsDate = new Date();
+  </script>
+
+  <!-- FIREBASE MODULE SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+    import { 
+      initializeFirestore, 
+      persistentLocalCache, 
+      persistentMultipleTabManager,
+      collection, 
+      onSnapshot, 
+      doc, 
+      setDoc
+    } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAq_vQ7ARn1TdMOOp1rtJqFOd1K4yUupP4",
+      authDomain: "saffron-65736.firebaseapp.com",
+      databaseURL: "https://saffron-65736-default-rtdb.firebaseio.com",
+      projectId: "saffron-65736",
+      storageBucket: "saffron-65736.firebasestorage.app",
+      messagingSenderId: "599450614604",
+      appId: "1:599450614604:web:e6be0bc5cb56dc867cede9",
+      measurementId: "G-FC5894HZEM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    let db;
+    try {
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager()
+        })
+      });
+    } catch (e) { console.warn("Offline cache error", e); }
+
+    const salesRef = collection(db, "saffron", "mirpur10", "sales");
+    const expensesRef = collection(db, "saffron", "mirpur10", "other_expenses");
+    const empExpensesRef = collection(db, "saffron", "mirpur10", "employee_expenses");
+    const cashReserveRef = collection(db, "saffron", "mirpur10", "cash_reserve");
+    const usersRef = collection(db, "saffron", "mirpur10", "users");
+
+    window.addEventListener('online', updateNetStatus);
+    window.addEventListener('offline', updateNetStatus);
+
+    function updateNetStatus() {
+      const netBadge = document.getElementById("net-status");
+      if (navigator.onLine) {
+        netBadge.className = "status-badge status-online";
+        netBadge.innerHTML = "🟢 Online (Auto Syncing)";
+      } else {
+        netBadge.className = "status-badge status-offline";
+        netBadge.innerHTML = "🔴 Offline (Saved Locally)";
+      }
+    }
+
+    let rawSales = [];
+    let rawExpenses = [];
+    let rawEmpExpenses = [];
+    let rawCashReserves = [];
+
+    // Local Storage based tracking for Applied Expenses & Midnight Reset
+    function getTodayStr() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function checkAndResetMidnight() {
+      const lastActiveDate = localStorage.getItem('saffron_cash_last_date');
+      const today = getTodayStr();
+
+      if (lastActiveDate !== today) {
+        // Night 12 AM crossed -> Reset applied expenses state
+        localStorage.setItem('saffron_cash_last_date', today);
+        localStorage.setItem('saffron_applied_expenses', JSON.stringify([]));
+      }
+    }
+    checkAndResetMidnight();
+
+    function getAppliedExpenseIds() {
+      checkAndResetMidnight();
+      const stored = localStorage.getItem('saffron_applied_expenses');
+      return stored ? JSON.parse(stored) : [];
+    }
+
+    function saveAppliedExpenseIds(idsArray) {
+      localStorage.setItem('saffron_applied_expenses', JSON.stringify(idsArray));
+    }
+
+    // 0. LISTEN TO USERS TO LOAD ONLY FIXED 2 ADMINS INTO DROPDOWN
+    onSnapshot(usersRef, (snapshot) => {
+      const dropdown = document.getElementById("withdrawn-by");
+      dropdown.innerHTML = '<option value="N/A">-- Select Admin --</option>';
+
+      if (!snapshot.empty) {
+        let adminCount = 0;
+        snapshot.docs.forEach(docSnap => {
+          const u = docSnap.data();
+          if ((u.position === "এডমিন/ওউনার" || u.isFixedAdmin) && adminCount < 2) {
+            const opt = document.createElement("option");
+            opt.value = u.name;
+            opt.innerText = `${u.name} (Admin)`;
+            dropdown.appendChild(opt);
+            adminCount++;
+          }
+        });
+      }
+    });
+
+    // Helper: Format Date to YYYY-MM-DD
+    function getFormattedDate(d) {
+      let month = '' + (d.getMonth() + 1);
+      let day = '' + d.getDate();
+      let year = d.getFullYear();
+      if (month.length < 2) month = '0' + month;
+      if (day.length < 2) day = '0' + day;
+      return [year, month, day].join('-');
+    }
+
+    // 1. LISTEN TO SALES
+    onSnapshot(salesRef, (snapshot) => {
+      rawSales = [];
+      if (!snapshot.empty) {
+        snapshot.docs.forEach(docSnap => {
+          rawSales.push(docSnap.data());
+        });
+      }
+      recalculateCurrentDateData();
+    });
+
+    // 2. LISTEN TO OTHER EXPENSES
+    onSnapshot(expensesRef, (snapshot) => {
+      rawExpenses = [];
+      if (!snapshot.empty) {
+        snapshot.docs.forEach(docSnap => {
+          const data = docSnap.data();
+          data.sourceType = "Other Expense";
+          rawExpenses.push(data);
+        });
+      }
+      recalculateCurrentDateData();
+    });
+
+    // LISTEN TO EMPLOYEE EXPENSES
+    onSnapshot(empExpensesRef, (snapshot) => {
+      rawEmpExpenses = [];
+      if (!snapshot.empty) {
+        snapshot.docs.forEach(docSnap => {
+          const data = docSnap.data();
+          data.sourceType = "Employee Expense";
+          rawEmpExpenses.push(data);
+        });
+      }
+      recalculateCurrentDateData();
+    });
+
+    // 3. LISTEN TO CASH RESERVE DATA
+    onSnapshot(cashReserveRef, (snapshot) => {
+      rawCashReserves = [];
+      if (!snapshot.empty) {
+        snapshot.docs.forEach(docSnap => {
+          rawCashReserves.push(docSnap.data());
+        });
+      }
+      recalculateCurrentDateData();
+      applyFilters();
+    });
+
+    window.onDateChange = function() {
+      recalculateCurrentDateData();
+    };
+
+    function recalculateCurrentDateData() {
+      const selectedDate = document.getElementById("cash-date").value;
+      if (!selectedDate) return;
+
+      // Total Net Sales
+      let totalSales = 0;
+      rawSales.forEach(item => {
+        let itemDate = item.completedAt ? item.completedAt.split("T")[0] : item.date;
+        if (itemDate === selectedDate && (item.status === 'Completed' || !item.status)) {
+          totalSales += parseFloat(item.grandTotal || item.total || 0);
+        }
+      });
+
+      // Combine both expense categories for the selected date
+      const allCombinedExpenses = [];
+      rawExpenses.forEach(e => {
+        if (e.date === selectedDate) allCombinedExpenses.push(e);
+      });
+      rawEmpExpenses.forEach(e => {
+        if (e.date === selectedDate) allCombinedExpenses.push(e);
+      });
+
+      const appliedIds = getAppliedExpenseIds();
+
+      // Only calculate total expense from items that are APPLIED
+      let totalExpense = 0;
+      allCombinedExpenses.forEach(item => {
+        if (appliedIds.includes(item.id)) {
+          totalExpense += parseFloat(item.amount || 0);
+        }
+      });
+
+      document.getElementById("today-sales").value = totalSales.toFixed(2);
+      document.getElementById("today-expenses").value = totalExpense.toFixed(2);
+
+      const existingRecord = rawCashReserves.find(r => r.date === selectedDate);
+
+      if (existingRecord) {
+        document.getElementById("opening-cash").value = existingRecord.openingCash || 0;
+        document.getElementById("owner-withdrawal").value = existingRecord.ownerWithdrawal || 0;
+        document.getElementById("withdrawn-by").value = existingRecord.withdrawnBy || "N/A";
+      } else {
+        // Roll-over previous day closing cash
+        const prevDateObj = new Date(selectedDate);
+        prevDateObj.setDate(prevDateObj.getDate() - 1);
+        const prevDateStr = getFormattedDate(prevDateObj);
+
+        const prevRecord = rawCashReserves.find(r => r.date === prevDateStr);
+        if (prevRecord) {
+          document.getElementById("opening-cash").value = (prevRecord.cashInDrawer || 0).toFixed(2);
+        } else {
+          document.getElementById("opening-cash").value = "0.00";
+        }
+        document.getElementById("owner-withdrawal").value = "0";
+        document.getElementById("withdrawn-by").value = "N/A";
+      }
+
+      calculateDrawerCash();
+      renderPendingExpenseQueue(allCombinedExpenses);
+    }
+
+    // RENDER PENDING EXPENSES QUEUE TABLE
+    function renderPendingExpenseQueue(expenseList) {
+      const tbody = document.getElementById("pending-expense-table-body");
+      tbody.innerHTML = "";
+
+      if (expenseList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b;">No expenses recorded for this date.</td></tr>';
+        return;
+      }
+
+      const appliedIds = getAppliedExpenseIds();
+
+      expenseList.forEach(item => {
+        const isApplied = appliedIds.includes(item.id);
+        const tr = document.createElement("tr");
+        if (!isApplied) tr.classList.add("row-clickable");
+
+        const titleText = item.title || item.category || item.employeeName || "Expense";
+
+        tr.innerHTML = `
+          <td><strong>${item.sourceType}</strong><br><small style="color:#64748b;">${item.id}</small></td>
+          <td>${item.date}</td>
+          <td>${titleText} ${item.employeeName ? `(${item.employeeName})` : ''}</td>
+          <td style="font-weight: bold; color: #b91c1c;">৳ ${parseFloat(item.amount || 0).toFixed(2)}</td>
+          <td>${isApplied ? '<span class="badge-applied">✓ Applied to Cash</span>' : '<span class="badge-pending">⏳ Pending Queue</span>'}</td>
+          <td>
+            ${isApplied ? 
+              `<button class="btn btn-danger" onclick="toggleExpenseApply('${item.id}', false)">Remove</button>` : 
+              `<button class="btn btn-success" onclick="toggleExpenseApply('${item.id}', true)">Apply to Drawer</button>`
+            }
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // TOGGLE APPLY / REMOVE EXPENSE TO CASH DRAWER
+    window.toggleExpenseApply = function(expenseId, apply) {
+      let appliedIds = getAppliedExpenseIds();
+
+      if (apply) {
+        if (!appliedIds.includes(expenseId)) {
+          appliedIds.push(expenseId);
+        }
+      } else {
+        appliedIds = appliedIds.filter(id => id !== expenseId);
+      }
+
+      saveAppliedExpenseIds(appliedIds);
+      recalculateCurrentDateData();
+    };
+
+    // MAIN FORMULA CALCULATION
+    window.calculateDrawerCash = function() {
+      const opening = parseFloat(document.getElementById("opening-cash").value) || 0;
+      const sales = parseFloat(document.getElementById("today-sales").value) || 0;
+      const expenses = parseFloat(document.getElementById("today-expenses").value) || 0;
+      const owner = parseFloat(document.getElementById("owner-withdrawal").value) || 0;
+
+      const cashInDrawer = (opening + sales) - (expenses + owner);
+
+      document.getElementById("cash-in-drawer").value = cashInDrawer.toFixed(2);
+
+      document.getElementById("disp-opening").innerText = "৳ " + opening.toFixed(2);
+      document.getElementById("disp-sales").innerText = "৳ " + sales.toFixed(2);
+      document.getElementById("disp-expense").innerText = "৳ " + expenses.toFixed(2);
+      document.getElementById("disp-owner").innerText = "৳ " + owner.toFixed(2);
+      document.getElementById("disp-drawer").innerText = "৳ " + cashInDrawer.toFixed(2);
+    };
+
+    // SAVE CASH RESERVE DATA
+    document.getElementById("cash-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const date = document.getElementById("cash-date").value;
+      const openingCash = parseFloat(document.getElementById("opening-cash").value) || 0;
+      const netSales = parseFloat(document.getElementById("today-sales").value) || 0;
+      const todayExpenses = parseFloat(document.getElementById("today-expenses").value) || 0;
+      const ownerWithdrawal = parseFloat(document.getElementById("owner-withdrawal").value) || 0;
+      const withdrawnBy = document.getElementById("withdrawn-by").value;
+      const cashInDrawer = parseFloat(document.getElementById("cash-in-drawer").value) || 0;
+
+      if (ownerWithdrawal > 0 && withdrawnBy === "N/A") {
+        alert("অনুগ্রহ করে টাকা গ্রহণকারী অ্যাডমিনের নাম সিলেক্ট করুন!");
+        return;
+      }
+
+      const docId = `reserve_${date}`;
+
+      const payload = {
+        id: docId,
+        date: date,
+        openingCash: openingCash,
+        netSales: netSales,
+        todayExpenses: todayExpenses,
+        ownerWithdrawal: ownerWithdrawal,
+        withdrawnBy: withdrawnBy,
+        cashInDrawer: cashInDrawer,
+        updatedAt: new Date().toISOString()
+      };
+
+      try {
+        await setDoc(doc(db, "saffron", "mirpur10", "cash_reserve", docId), payload);
+        alert("Cash reserve data saved successfully!");
+      } catch (err) {
+        alert("Error saving reserve data: " + err.message);
+      }
+    });
+
+    // FILTER & RENDER HISTORY TABLE
+    window.applyFilters = function() {
+      const selectedDate = document.getElementById("filter-date").value;
+      const selectedMonth = document.getElementById("filter-month").value;
+
+      let filteredList = rawCashReserves.filter(item => {
+        let matchDate = selectedDate ? item.date === selectedDate : true;
+        let matchMonth = selectedMonth ? item.date.startsWith(selectedMonth) : true;
+        return matchDate && matchMonth;
+      });
+
+      filteredList.sort((a, b) => new Date(b.date) - new Date(a.date));
+      renderTable(filteredList);
+    };
+
+    window.clearFilters = function() {
+      document.getElementById("filter-date").value = "";
+      document.getElementById("filter-month").value = "";
+      applyFilters();
+    };
+
+    function renderTable(dataList) {
+      const tbody = document.getElementById("cash-table-body");
+      tbody.innerHTML = "";
+
+      if (dataList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No cash reserve records found.</td></tr>';
+        return;
+      }
+
+      dataList.forEach((item) => {
+        const tr = document.createElement("tr");
+        const updatedTime = item.updatedAt ? new Date(item.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+        
+        tr.innerHTML = `
+          <td><strong>${item.date}</strong></td>
+          <td>৳ ${parseFloat(item.openingCash || 0).toFixed(2)}</td>
+          <td style="color: #166534; font-weight: 600;">+ ৳ ${parseFloat(item.netSales || 0).toFixed(2)}</td>
+          <td style="color: #b91c1c;">- ৳ ${parseFloat(item.todayExpenses || 0).toFixed(2)}</td>
+          <td style="color: #b91c1c;">- ৳ ${parseFloat(item.ownerWithdrawal || 0).toFixed(2)}</td>
+          <td><span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: 600;">${item.withdrawnBy || 'N/A'}</span></td>
+          <td><strong style="color: #0f172a; background: #dcfce7; padding: 4px 8px; border-radius: 4px;">৳ ${parseFloat(item.cashInDrawer || 0).toFixed(2)}</strong></td>
+          <td><small style="color: #64748b;">${updatedTime}</small></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>
