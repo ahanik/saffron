@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saffron - Kitchen Display Recipe Statement</title>
+  <link rel="icon" type="image/x-icon" href="faviconlogo.ico">
+  
+  <!-- SECURITY CHECK: Redirect if not logged in -->
+  <script>
+    if (localStorage.getItem('saffron_admin_logged_in') !== 'true') {
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: #f1f5f9; color: #0f172a; min-height: 100vh; }
+    
+    /* Container Layout */
+    .container { max-width: 1250px; margin: 0 auto; padding: 25px 20px; }
+
+    /* Top Navigation Header Bar */
+    .top-bar { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      background: #ffffff; 
+      padding: 16px 24px; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05); 
+      margin-bottom: 25px; 
+    }
+    .brand-section { display: flex; align-items: center; gap: 16px; }
+    .brand-logo { width: 110px; height: 42px; object-fit: contain; }
+    .brand-title-group h2 { font-size: 20px; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-title-group span { font-size: 13px; color: #64748b; font-weight: 500; }
+
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+    .status-badge { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.3px; }
+    .status-online { background: #dcfce7; color: #15803d; }
+    .status-offline { background: #fee2e2; color: #b91c1c; }
+
+    /* Buttons */
+    .btn { padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: all 0.2s ease; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+    .btn-home { background: #2563eb; color: #fff; box-shadow: 0 2px 4px rgba(37,99,235,0.2); }
+    .btn-home:hover { background: #1d4ed8; }
+    .btn-dark { background: #0f172a; color: #fff; box-shadow: 0 2px 4px rgba(15,23,42,0.2); }
+    .btn-dark:hover { background: #1e293b; }
+
+    /* Cards */
+    .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .card-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 2px solid #f1f5f9; padding-bottom: 14px; }
+    .card-title { font-size: 20px; font-weight: 800; color: #0f172a; }
+
+    /* Category Section Styling */
+    .category-block { margin-bottom: 30px; border: 1px solid #cbd5e1; border-radius: 12px; overflow: hidden; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .category-header { background: #0f172a; color: #fff; padding: 14px 20px; font-size: 16px; font-weight: 800; display: flex; justify-content: space-between; align-items: center; letter-spacing: 0.5px; }
+    .category-header .item-count { background: #334155; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #38bdf8; }
+
+    /* Summary Metrics */
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 25px; }
+    .metric-card { background: #ffffff; border: 1px solid #e2e8f0; padding: 18px; border-radius: 12px; border-left: 5px solid #f59e0b; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .metric-card h4 { font-size: 12px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .metric-card p { font-size: 22px; font-weight: 800; color: #0f172a; margin-top: 4px; }
+
+    /* Table Styling */
+    .table-responsive { overflow-x: auto; }
+    table.main-table { width: 100%; border-collapse: collapse; }
+    table.main-table > thead > tr > th { background: #f8fafc; color: #475569; font-weight: 700; font-size: 13px; text-transform: uppercase; padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; }
+    table.main-table > tbody > tr > td { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; font-size: 14px; }
+    
+    .variant-badge { display: inline-block; background: #eff6ff; color: #1d4ed8; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 700; border: 1px solid #bfdbfe; }
+    .price-text { font-weight: 800; color: #0f172a; font-size: 15px; }
+
+    /* Nested Ingredient Sub-Table */
+    table.ing-subtable { width: 100%; border-collapse: collapse; background: #f8fafc; border-radius: 6px; overflow: hidden; border: 1px solid #e2e8f0; }
+    table.ing-subtable th { background: #e2e8f0; color: #334155; font-size: 11px; font-weight: 700; padding: 6px 10px; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; }
+    table.ing-subtable td { padding: 6px 10px; font-size: 13px; color: #1e293b; border-bottom: 1px solid #f1f5f9; font-weight: 600; }
+    table.ing-subtable tr:last-child td { border-bottom: none; }
+    .qty-highlight { font-weight: 800; color: #2563eb; }
+
+    /* Hidden Container for Printing Statement */
+    #statement-print-area { display: none; }
+
+    /* MODERN KITCHEN DISPLAY PRINT / PDF STYLING WITH PAGE BREAK */
+    @media print {
+      @page { size: A4 portrait; margin: 10mm; }
+      body * { visibility: hidden; }
+
+      body.print-list-mode #statement-print-area, 
+      body.print-list-mode #statement-print-area * { 
+        visibility: visible; 
+      }
+      body.print-list-mode #statement-print-area {
+        display: block !important;
+        position: absolute; left: 0; top: 0; width: 100%;
+        padding: 0; background: #fff; color: #0f172a;
+      }
+
+      /* Category Page Wrapper - Each Category becomes a standalone page */
+      .stmt-page-block {
+        page-break-after: always;
+        break-after: page;
+        min-height: 98vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .stmt-page-block:last-child {
+        page-break-after: avoid;
+        break-after: avoid;
+      }
+
+      /* KITCHEN DISPLAY HEADER STATEMENT */
+      .stmt-top-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0f172a; padding-bottom: 10px; margin-bottom: 12px; }
+      .stmt-logo-group { display: flex; align-items: center; gap: 15px; }
+      .stmt-logo { max-width: 120px; height: auto; }
+      .stmt-brand-title { font-size: 22px; font-weight: 900; color: #0f172a; letter-spacing: 1px; text-transform: uppercase; }
+      .stmt-report-badge { background: #0f172a; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+
+      .stmt-meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #f1f5f9; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 15px; }
+      .stmt-meta-item { font-size: 11px; color: #475569; font-weight: 600; }
+      .stmt-meta-item strong { color: #0f172a; font-size: 12px; font-weight: 800; }
+
+      /* CATEGORY HEADER FOR KITCHEN DISPLAY */
+      .stmt-cat-title { font-size: 15px; font-weight: 900; color: #fff; background: #0f172a; padding: 8px 12px; margin-top: 10px; margin-bottom: 0; border-radius: 6px 6px 0 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; }
+      
+      /* PRINT TABLES */
+      .stmt-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 1px solid #0f172a; }
+      .stmt-table th { background: #e2e8f0; color: #0f172a; font-weight: 800; padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #0f172a; border-right: 1px solid #cbd5e1; }
+      .stmt-table td { padding: 8px 10px; border-bottom: 1px solid #cbd5e1; border-right: 1px solid #cbd5e1; color: #0f172a; font-size: 12px; vertical-align: middle; }
+
+      .stmt-ing-table { width: 100%; border-collapse: collapse; background: #fff; }
+      .stmt-ing-table th { background: #f1f5f9; color: #334155; font-size: 9px; font-weight: 800; padding: 4px 6px; border-bottom: 1px solid #cbd5e1; }
+      .stmt-ing-table td { padding: 4px 6px; font-size: 11px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #e2e8f0; }
+
+      .stmt-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; padding-top: 15px; border-top: 2px solid #0f172a; }
+      .stmt-sign-box { text-align: center; width: 200px; }
+      .stmt-sign-line { border-top: 1.5px solid #0f172a; margin-bottom: 4px; }
+      .stmt-sign-text { font-size: 11px; color: #0f172a; font-weight: 800; text-transform: uppercase; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Top Header Bar -->
+    <div class="top-bar">
+      <div class="brand-section">
+        <img src="poslogo.png" alt="Saffron Logo" class="brand-logo" onerror="this.onerror=null; this.src='https://via.placeholder.com/110x42?text=Saffron';">
+        <div class="brand-title-group">
+          <h2>কিচেন ডিসপ্লে রেসিপি বিবরণী (Kitchen Display)</h2>
+          <span>Mirpur 10 Branch</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div id="net-status" class="status-badge status-online">🟢 অনলাইন</div>
+        <a href="admin_inventory.html" class="btn btn-home">🏠 HOME</a>
+      </div>
+    </div>
+
+    <!-- Summary Metrics -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <h4>সর্বমোট ক্যাটাগরি</h4>
+        <p id="metric-category-count">0</p>
+      </div>
+      <div class="metric-card">
+        <h4>মোট ফুড আইটেম</h4>
+        <p id="metric-food-count">0</p>
+      </div>
+    </div>
+
+    <!-- Main Content Card -->
+    <div class="card">
+      <div class="card-header-bar">
+        <span class="card-title">👨‍🍳 কিচেন রেসিপি ম্যানুয়াল (Category-wise)</span>
+        <button class="btn btn-dark" onclick="printFoodReportStatement()">📄 RECEIPE DOWNLOAD</button>
+      </div>
+      
+      <!-- Dynamic Categories & Food Tables Container -->
+      <div id="category-tables-container">
+        <div style="text-align:center; padding: 30px; color: #64748b; font-weight: 600;">ডাটা লোড হচ্ছে...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PRINT CONTAINER FOR PDF / PRINTING STATEMENT -->
+  <div id="statement-print-area"></div>
+
+  <!-- FIREBASE MODULE SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+    import { 
+      initializeFirestore, 
+      persistentLocalCache, 
+      persistentMultipleTabManager,
+      collection, 
+      onSnapshot 
+    } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAq_vQ7ARn1TdMOOp1rtJqFOd1K4yUupP4",
+      authDomain: "saffron-65736.firebaseapp.com",
+      databaseURL: "https://saffron-65736-default-rtdb.firebaseio.com",
+      projectId: "saffron-65736",
+      storageBucket: "saffron-65736.firebasestorage.app",
+      messagingSenderId: "599450614604",
+      appId: "1:599450614604:web:e6be0bc5cb56dc867cede9",
+      measurementId: "G-FC5894HZEM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    let db;
+    try {
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+      });
+    } catch (e) {
+      console.warn("Offline cache error", e);
+    }
+
+    const foodRef = collection(db, "saffron", "mirpur10", "foods");
+
+    let foodListCache = [];
+
+    window.addEventListener('online', updateNetStatus);
+    window.addEventListener('offline', updateNetStatus);
+
+    function updateNetStatus() {
+      const netBadge = document.getElementById("net-status");
+      if (navigator.onLine) {
+        netBadge.className = "status-badge status-online";
+        netBadge.innerHTML = "🟢 অনলাইন";
+      } else {
+        netBadge.className = "status-badge status-offline";
+        netBadge.innerHTML = "🔴 অফলাইন";
+      }
+    }
+
+    // Foods Snapshot Listener
+    onSnapshot(foodRef, (snapshot) => {
+      foodListCache = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+      renderCategoryWiseTables();
+    });
+
+    function renderCategoryWiseTables() {
+      const container = document.getElementById("category-tables-container");
+      container.innerHTML = "";
+
+      if (foodListCache.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; font-weight:bold;">কোনো ফুড আইটেম পাওয়া যায়নি।</div>`;
+        updateMetrics(0, 0);
+        return;
+      }
+
+      // Group foods by Category
+      const grouped = {};
+      foodListCache.forEach(food => {
+        const cat = food.category || "Uncategorized";
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push(food);
+      });
+
+      const categories = Object.keys(grouped);
+
+      categories.forEach(catName => {
+        const items = grouped[catName];
+        
+        const catBlock = document.createElement("div");
+        catBlock.className = "category-block";
+
+        let rowsHTML = "";
+
+        items.forEach(food => {
+          if (food.variants && food.variants.length > 0) {
+            food.variants.forEach((v, vIndex) => {
+              
+              // Ingredient Sub-Table HTML
+              let ingTableHTML = "";
+              if (v.ingredients && v.ingredients.length > 0) {
+                let ingRows = "";
+                v.ingredients.forEach(i => {
+                  ingRows += `
+                    <tr>
+                      <td>${i.itemName}</td>
+                      <td class="qty-highlight">${i.qty}</td>
+                      <td>${i.unit || 'Gram'}</td>
+                    </tr>
+                  `;
+                });
+
+                ingTableHTML = `
+                  <table class="ing-subtable">
+                    <thead>
+                      <tr>
+                        <th>কাঁচামাল (Ingredient)</th>
+                        <th>পরিমাণ</th>
+                        <th>ইউনিট</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${ingRows}
+                    </tbody>
+                  </table>
+                `;
+              } else {
+                ingTableHTML = `<span style="color:#94a3b8; font-size:12px; font-style:italic;">কোনো কাঁচামাল যুক্ত নেই</span>`;
+              }
+
+              rowsHTML += `
+                <tr>
+                  ${vIndex === 0 ? `<td rowspan="${food.variants.length}" style="font-weight:800; color:#0f172a; border-right:1px solid #e2e8f0; font-size:15px;">${food.name}</td>` : ''}
+                  <td><span class="variant-badge">${v.size}</span></td>
+                  <td class="price-text">৳${v.price || 0}</td>
+                  <td>${ingTableHTML}</td>
+                </tr>
+              `;
+            });
+          } else {
+            rowsHTML += `
+              <tr>
+                <td style="font-weight:800; color:#0f172a; font-size:15px;">${food.name}</td>
+                <td>-</td>
+                <td class="price-text">৳0</td>
+                <td><span style="color:#94a3b8; font-size:12px; font-style:italic;">কোনো ভেরিয়েন্ট নেই</span></td>
+              </tr>
+            `;
+          }
+        });
+
+        catBlock.innerHTML = `
+          <div class="category-header">
+            <span>📁 ${catName}</span>
+            <span class="item-count">${items.length} টি আইটেম</span>
+          </div>
+          <div class="table-responsive">
+            <table class="main-table">
+              <thead>
+                <tr>
+                  <th style="width: 25%;">ফুডের নাম</th>
+                  <th style="width: 15%;">সাইজ / ভেরিয়েন্ট</th>
+                  <th style="width: 15%;">বিক্রি মূল্য</th>
+                  <th style="width: 45%;">প্রয়োজনীয় ইনভেন্টরি কাঁচামাল ও পরিমাণ</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHTML}
+              </tbody>
+            </table>
+          </div>
+        `;
+
+        container.appendChild(catBlock);
+      });
+
+      updateMetrics(categories.length, foodListCache.length);
+    }
+
+    function updateMetrics(categoryCount, foodCount) {
+      document.getElementById("metric-category-count").innerText = categoryCount;
+      document.getElementById("metric-food-count").innerText = foodCount;
+    }
+
+    // PRINT / DOWNLOAD STATEMENT PDF (EACH CATEGORY ON A SEPARATE PAGE)
+    window.printFoodReportStatement = function() {
+      const grouped = {};
+      foodListCache.forEach(food => {
+        const cat = food.category || "Uncategorized";
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push(food);
+      });
+
+      let fullPagesHTML = '';
+      const categoryKeys = Object.keys(grouped);
+
+      categoryKeys.forEach((catName, index) => {
+        const items = grouped[catName];
+        let catRows = '';
+
+        items.forEach(food => {
+          if (food.variants && food.variants.length > 0) {
+            food.variants.forEach((v, vIndex) => {
+              
+              let ingTableHTML = "";
+              if (v.ingredients && v.ingredients.length > 0) {
+                let ingRows = "";
+                v.ingredients.forEach(i => {
+                  ingRows += `
+                    <tr>
+                      <td><strong>${i.itemName}</strong></td>
+                      <td style="color:#2563eb; font-weight:800;">${i.qty}</td>
+                      <td>${i.unit || 'Gram'}</td>
+                    </tr>
+                  `;
+                });
+
+                ingTableHTML = `
+                  <table class="stmt-ing-table">
+                    <thead>
+                      <tr>
+                        <th>Ingredient</th>
+                        <th>Qty</th>
+                        <th>Unit</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${ingRows}
+                    </tbody>
+                  </table>
+                `;
+              } else {
+                ingTableHTML = "N/A";
+              }
+
+              catRows += `
+                <tr>
+                  ${vIndex === 0 ? `<td rowspan="${food.variants.length}"><strong>${food.name}</strong></td>` : ''}
+                  <td><strong>${v.size}</strong></td>
+                  <td><strong>৳${v.price || 0}</strong></td>
+                  <td>${ingTableHTML}</td>
+                </tr>
+              `;
+            });
+          }
+        });
+
+        // Wrap each category in a ".stmt-page-block" for dedicated page printing
+        fullPagesHTML += `
+          <div class="stmt-page-block">
+            <div>
+              <div class="stmt-top-bar">
+                <div class="stmt-logo-group">
+                  <img src="logo.png" class="stmt-logo" alt="Saffron" onerror="this.style.display='none'">
+                  <div>
+                    <div class="stmt-brand-title">SAFFRON</div>
+                    <div style="color:#475569; font-size:12px; font-weight:700;">Standard Kitchen Operating Recipe Manual</div>
+                  </div>
+                </div>
+                <div class="stmt-report-badge">PAGE ${index + 1} OF ${categoryKeys.length}</div>
+              </div>
+
+              <div class="stmt-meta-grid">
+                <div class="stmt-meta-item">Branch: <strong>Mirpur 10 Branch</strong></div>
+                <div class="stmt-meta-item">Category: <strong>${catName}</strong></div>
+                <div class="stmt-meta-item">Print Date: <strong>${new Date().toLocaleDateString('bn-BD')}</strong></div>
+              </div>
+
+              <div class="stmt-cat-title">
+                <span>CATEGORY: ${catName}</span>
+                <span>${items.length} Items</span>
+              </div>
+              <table class="stmt-table">
+                <thead>
+                  <tr>
+                    <th style="width: 28%;">Food Item</th>
+                    <th style="width: 15%;">Variant / Size</th>
+                    <th style="width: 15%;">Price</th>
+                    <th style="width: 42%;">Kitchen Recipe & Quantities</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${catRows}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="stmt-footer">
+              <div class="stmt-sign-box">
+                <div class="stmt-sign-line"></div>
+                <div class="stmt-sign-text">Head Chef Signature</div>
+              </div>
+              <div class="stmt-sign-box">
+                <div class="stmt-sign-line"></div>
+                <div class="stmt-sign-text">Kitchen Supervisor</div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      const stmtContainer = document.getElementById('statement-print-area');
+      stmtContainer.innerHTML = fullPagesHTML;
+
+      document.body.className = 'print-list-mode';
+      window.print();
+      document.body.className = '';
+    };
+  </script>
+</body>
+</html>
