@@ -69,6 +69,42 @@
     .form-control:focus { border-color: #f59e0b; }
     .form-control[readonly] { background-color: #f1f5f9; cursor: not-allowed; }
 
+    /* Enhanced Card Styling for Balance Sheet */
+    .card-balance-sheet {
+      border: 1px solid #e2e8f0;
+      border-top: 4px solid #f59e0b;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+    .card-balance-sheet .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-left: 4px solid #f59e0b;
+      padding-left: 12px;
+      margin-bottom: 20px;
+    }
+
+    /* Final Cash Highlight Field */
+    .drawer-highlight-group {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 12px 15px;
+      grid-column: span 1;
+    }
+    .drawer-highlight-group label {
+      color: #166534 !important;
+      font-weight: 700 !important;
+    }
+    .drawer-highlight-group .form-control {
+      background-color: #ffffff !important;
+      border-color: #86efac !important;
+      font-size: 16px !important;
+      color: #15803d !important;
+      font-weight: bold;
+    }
+
     .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; justify-content: center; }
     .btn-primary { background: #f59e0b; color: #fff; }
     .btn-primary:hover { background: #d97706; }
@@ -104,15 +140,18 @@
       </div>
 
       <ul class="nav-links">
-<li><a href="manager_inventory.html" class="nav-item ">Stock Management</a></li>
-      <li><a href="manager_guestmanagement.html" class="nav-item">Guest Management</a></li>
-      <li><a href="manager_employeeexpense.html" class="nav-item">Employee Expense</a></li>
-      <li><a href="manager_otherexpense.html" class="nav-item">Other Expense</a></li>
-      <li><a href="manager_salesmanagement.html" class="nav-item">Employee Sales report</a></li>
-      <li><a href="manager_salesreport.html" class="nav-item">Sales History & Report</a></li>
-      <li><a href="manager_costreport.html" class="nav-item">Operating Cost Report</a></li>
-<li><a href="manager_cashreserve.html" class="nav-item" active>Cash Reserve System</a></li>
-      <li><a href="manager_pos.html" class="nav-item">POS System</a></li>
+        <li><a href="admin_inventory.html" class="nav-item">Stock Management</a></li>
+        <li><a href="admin_food.html" class="nav-item">Food Management</a></li>
+        <li><a href="admin_employees.html" class="nav-item">Employee Management</a></li>
+        <li><a href="admin_guestmanagement.html" class="nav-item">Guest Management</a></li>
+        <li><a href="admin_coupon.html" class="nav-item">Coupon & Others</a></li>
+        <li><a href="admin_employeeexpense.html" class="nav-item">Employee Expense</a></li>
+        <li><a href="admin_otherexpense.html" class="nav-item">Other Expense</a></li>
+        <li><a href="admin_salesmanagement.html" class="nav-item">Employee Sales report</a></li>
+        <li><a href="admin_salesreport.html" class="nav-item">Sales History & Report</a></li>
+        <li><a href="admin_costreport.html" class="nav-item">Operating Cost Report</a></li>
+	<li><a href="admin_cashreserve.html" class="nav-item active">Cash Reserve System</a></li>
+        <li><a href="admin_pos.html" class="nav-item">POS System</a></li>
       </ul>
     </div>
     
@@ -154,8 +193,11 @@
     </div>
 
     <!-- CASH ENTRY & MANAGEMENT FORM -->
-    <div class="card">
-      <div class="section-header" id="form-title">Daily Cash Reserve Balance Sheet</div>
+    <div class="card card-balance-sheet">
+      <div class="section-header" id="form-title">
+        <span>Daily Cash Reserve Balance Sheet</span>
+        <span style="font-size: 12px; font-weight: normal; color: #64748b; background: #e2e8f0; padding: 4px 10px; border-radius: 20px;">📋 Daily Reconciliation</span>
+      </div>
       <form id="cash-form">
         <div class="form-grid">
           <div class="form-group">
@@ -165,7 +207,7 @@
 
           <div class="form-group">
             <label>সর্বশেষ দিন কত টাকা রেখে গেলেন (Opening Cash)</label>
-            <input type="number" step="0.01" id="opening-cash" class="form-control" placeholder="0.00" oninput="calculateDrawerCash()" disabled>
+            <input type="number" step="0.01" id="opening-cash" class="form-control" placeholder="0.00" oninput="calculateDrawerCash()">
           </div>
 
           <div class="form-group">
@@ -183,6 +225,25 @@
             <input type="number" step="0.01" id="owner-withdrawal" class="form-control" placeholder="0.00" value="0" oninput="calculateDrawerCash()">
           </div>
 
+          <!-- DROPDOWN & AMOUNT FIELD FOR EXCESS / SHORTAGE -->
+          <div class="form-group">
+            <label>ক্যাশ সমন্বয় ধরন (Cash Adjustment Type)</label>
+            <select id="adjustment-type" class="form-control" onchange="calculateDrawerCash()">
+              <option value="none">-- No Excess / Shortage --</option>
+              <option value="excess">🟢 Excess Money (+ এক্সেস টাকা)</option>
+              <option value="shortage">🔴 Shortage Money (- শর্টেজ টাকা)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>এক্সেস / শর্টেজ এর পরিমাণ (Adjustment Amount)</label>
+            <input type="number" step="0.01" id="adjustment-amount" class="form-control" placeholder="0.00" value="0" oninput="calculateDrawerCash()">
+          </div>
+
+          <!-- HIDDEN INPUTS TO MAINTAIN ORIGINAL LOGIC AND FIREBASE DATA STRUCTURE -->
+          <input type="hidden" id="excess-money" value="0">
+          <input type="hidden" id="shortage-money" value="0">
+
           <!-- FIXED 2 ADMIN DROPDOWN -->
           <div class="form-group">
             <label>টাকা কে গ্রহণ করেছে? (Withdrawn By Admin) *</label>
@@ -191,14 +252,14 @@
             </select>
           </div>
 
-          <div class="form-group">
+          <div class="form-group drawer-highlight-group">
             <label>ক্যাশ ড্রয়ারে জমা থাকবে (Final Cash in Drawer)</label>
             <input type="number" step="0.01" id="cash-in-drawer" class="form-control" value="0.00" readonly style="font-weight: bold; color: #166534;">
           </div>
         </div>
 
-        <div style="margin-top: 20px; display: flex; gap: 10px;">
-          <button type="submit" id="save-cash-btn" class="btn btn-primary" style="flex: 1;">Save Today's Cash Reserve Data</button>
+        <div style="margin-top: 25px; display: flex; gap: 10px;">
+          <button type="submit" id="save-cash-btn" class="btn btn-primary" style="flex: 1; padding: 12px; font-size: 15px; border-radius: 8px; box-shadow: 0 2px 6px rgba(245,158,11,0.3);">💾 Save Today's Cash Reserve Data</button>
         </div>
       </form>
     </div>
@@ -267,6 +328,8 @@
               <th>Net Sales (+)</th>
               <th>Expenses (-)</th>
               <th>Owner Taken (-)</th>
+              <th>Excess (+)</th>
+              <th>Shortage (-)</th>
               <th>Taken By</th>
               <th>Final Cash In Drawer</th>
               <th>Last Updated</th>
@@ -274,7 +337,7 @@
           </thead>
           <tbody id="cash-table-body">
             <tr>
-              <td colspan="8" style="text-align: center;">Loading cash reserve records...</td>
+              <td colspan="10" style="text-align: center;">Loading cash reserve records...</td>
             </tr>
           </tbody>
         </table>
@@ -503,6 +566,20 @@
         document.getElementById("opening-cash").value = existingRecord.openingCash || 0;
         document.getElementById("owner-withdrawal").value = existingRecord.ownerWithdrawal || 0;
         document.getElementById("withdrawn-by").value = existingRecord.withdrawnBy || "N/A";
+
+        // Map existing excess / shortage to dropdown and amount
+        const ex = parseFloat(existingRecord.excessMoney || 0);
+        const sh = parseFloat(existingRecord.shortageMoney || 0);
+        if (ex > 0) {
+          document.getElementById("adjustment-type").value = "excess";
+          document.getElementById("adjustment-amount").value = ex;
+        } else if (sh > 0) {
+          document.getElementById("adjustment-type").value = "shortage";
+          document.getElementById("adjustment-amount").value = sh;
+        } else {
+          document.getElementById("adjustment-type").value = "none";
+          document.getElementById("adjustment-amount").value = "0";
+        }
       } else {
         // Roll-over previous day closing cash
         const prevDateObj = new Date(selectedDate);
@@ -516,6 +593,8 @@
           document.getElementById("opening-cash").value = "0.00";
         }
         document.getElementById("owner-withdrawal").value = "0";
+        document.getElementById("adjustment-type").value = "none";
+        document.getElementById("adjustment-amount").value = "0";
         document.getElementById("withdrawn-by").value = "N/A";
       }
 
@@ -582,7 +661,24 @@
       const expenses = parseFloat(document.getElementById("today-expenses").value) || 0;
       const owner = parseFloat(document.getElementById("owner-withdrawal").value) || 0;
 
-      const cashInDrawer = (opening + sales) - (expenses + owner);
+      // Handle Dropdown UI selection for Excess / Shortage
+      const adjType = document.getElementById("adjustment-type").value;
+      const adjAmt = parseFloat(document.getElementById("adjustment-amount").value) || 0;
+
+      let excess = 0;
+      let shortage = 0;
+
+      if (adjType === "excess") {
+        excess = adjAmt;
+      } else if (adjType === "shortage") {
+        shortage = adjAmt;
+      }
+
+      // Sync hidden fields
+      document.getElementById("excess-money").value = excess;
+      document.getElementById("shortage-money").value = shortage;
+
+      const cashInDrawer = (opening + sales + excess) - (expenses + owner + shortage);
 
       document.getElementById("cash-in-drawer").value = cashInDrawer.toFixed(2);
 
@@ -602,6 +698,8 @@
       const netSales = parseFloat(document.getElementById("today-sales").value) || 0;
       const todayExpenses = parseFloat(document.getElementById("today-expenses").value) || 0;
       const ownerWithdrawal = parseFloat(document.getElementById("owner-withdrawal").value) || 0;
+      const excessMoney = parseFloat(document.getElementById("excess-money").value) || 0;
+      const shortageMoney = parseFloat(document.getElementById("shortage-money").value) || 0;
       const withdrawnBy = document.getElementById("withdrawn-by").value;
       const cashInDrawer = parseFloat(document.getElementById("cash-in-drawer").value) || 0;
 
@@ -619,6 +717,8 @@
         netSales: netSales,
         todayExpenses: todayExpenses,
         ownerWithdrawal: ownerWithdrawal,
+        excessMoney: excessMoney,
+        shortageMoney: shortageMoney,
         withdrawnBy: withdrawnBy,
         cashInDrawer: cashInDrawer,
         updatedAt: new Date().toISOString()
@@ -658,7 +758,7 @@
       tbody.innerHTML = "";
 
       if (dataList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No cash reserve records found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center;">No cash reserve records found.</td></tr>';
         return;
       }
 
@@ -672,6 +772,8 @@
           <td style="color: #166534; font-weight: 600;">+ ৳ ${parseFloat(item.netSales || 0).toFixed(2)}</td>
           <td style="color: #b91c1c;">- ৳ ${parseFloat(item.todayExpenses || 0).toFixed(2)}</td>
           <td style="color: #b91c1c;">- ৳ ${parseFloat(item.ownerWithdrawal || 0).toFixed(2)}</td>
+          <td style="color: #166534;">+ ৳ ${parseFloat(item.excessMoney || 0).toFixed(2)}</td>
+          <td style="color: #b91c1c;">- ৳ ${parseFloat(item.shortageMoney || 0).toFixed(2)}</td>
           <td><span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: 600;">${item.withdrawnBy || 'N/A'}</span></td>
           <td><strong style="color: #0f172a; background: #dcfce7; padding: 4px 8px; border-radius: 4px;">৳ ${parseFloat(item.cashInDrawer || 0).toFixed(2)}</strong></td>
           <td><small style="color: #64748b;">${updatedTime}</small></td>
