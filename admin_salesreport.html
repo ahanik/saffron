@@ -53,6 +53,8 @@
     .btn-success { background: #10b981; color: #fff; }
     .btn-warning { background: #3b82f6; color: #fff; }
     .btn-dark { background: #1e293b; color: #fff; }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
 
     /* Summary Metrics */
     .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
@@ -97,6 +99,7 @@
       .stmt-top-bar { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 20px; }
       .stmt-logo-group { display: flex; align-items: center; gap: 15px; }
       .stmt-logo { max-width: 140px; height: auto; }
+.stmt-logo1 { max-width: 80px; height: auto; }
       .stmt-brand-title { font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: 1px; text-transform: uppercase; }
       .stmt-report-badge { background: #0f172a; color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
@@ -372,6 +375,8 @@
       collection, 
       onSnapshot, 
       doc, 
+      setDoc,
+      deleteDoc,
       updateDoc 
     } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
@@ -562,11 +567,54 @@
           <td class="action-btns">
             <button class="btn btn-warning" style="padding:4px 8px; font-size:11px;" onclick="openEditModal('${orderId}')">👁️ বিস্তারিত/এডিট</button>
             <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="reprintPosReceipt('${orderId}')">🖨️ POS রসিদ</button>
+            <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteSaleOrder('${orderId}')">🗑️ ডিলিট</button>
           </td>
         `;
         tbody.appendChild(tr);
       });
     }
+
+    // DELETE SALE ORDER & MOVE TO FIRESTORE "deleted_sales" COLLECTION
+    window.deleteSaleOrder = async function(orderId) {
+      const order = masterSalesList.find(o => o.id === orderId || o.orderId === orderId);
+      if (!order) return alert("অর্ডার তথ্য পাওয়া যায়নি!");
+
+      const reason = prompt(`আপনি কি #${orderId} অর্ডারটি ডিলিট করতে নিশ্চিত?\n\nঅনুগ্রহ করে ডিলিট করার কারণ লিখুন (বাধ্যতামূলক):`);
+      
+      if (reason === null) return; // User clicked Cancel
+      
+      if (!reason.trim()) {
+        alert("ডিলিট করার কারণ লেখা বাধ্যতামূলক!");
+        return;
+      }
+
+      const currentUser = localStorage.getItem('saffron_admin_user') || 'Admin';
+
+      if (confirm(`অর্ডার আইডি: #${orderId}\nকারণ: ${reason}\nইউজার: ${currentUser}\n\nআপনি কি নিশ্চিতভাবে তথ্যটি ডিলিট করতে চান?`)) {
+        try {
+          // 1. Prepare data to move
+          const deletedData = {
+            ...order,
+            deletedAt: new Date().toISOString(),
+            deletedBy: currentUser,
+            deleteReason: reason.trim()
+          };
+
+          // 2. Save to "deleted_sales" collection
+          const deletedRef = doc(db, "saffron", "mirpur10", "deleted_sales", orderId);
+          await setDoc(deletedRef, deletedData);
+
+          // 3. Delete from original "sales" collection
+          const originalRef = doc(db, "saffron", "mirpur10", "sales", orderId);
+          await deleteDoc(originalRef);
+
+          alert(`অর্ডার #${orderId} সফলভাবে ডিলিট করা হয়েছে `);
+        } catch (err) {
+          console.error("Error deleting sale: ", err);
+          alert("ডিলিট করতে সমস্যা হয়েছে: " + err.message);
+        }
+      }
+    };
 
     // PRINT MODERN STATEMENT PDF
     window.printReportStatement = function() {
@@ -611,7 +659,7 @@
       stmtContainer.innerHTML = `
         <div class="stmt-top-bar">
           <div class="stmt-logo-group">
-            <img src="logo.png" class="stmt-logo" alt="Saffron" onerror="this.style.display='none'">
+            <img src="logo.png" class="stmt-logo1" alt="Saffron" onerror="this.style.display='none'">
             <div>
               <div class="stmt-brand-title">SAFFRON</div>
               <div style="color:#64748b; font-size:11px;">Official Sales Performance Statement</div>
