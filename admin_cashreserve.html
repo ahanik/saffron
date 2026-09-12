@@ -581,14 +581,13 @@
           document.getElementById("adjustment-amount").value = "0";
         }
       } else {
-        // Roll-over previous day closing cash
-        const prevDateObj = new Date(selectedDate);
-        prevDateObj.setDate(prevDateObj.getDate() - 1);
-        const prevDateStr = getFormattedDate(prevDateObj);
+        // Fetch most recent previous record before the selected date
+        const previousRecords = rawCashReserves
+          .filter(r => r.date < selectedDate)
+          .sort((a, b) => b.date.localeCompare(a.date));
 
-        const prevRecord = rawCashReserves.find(r => r.date === prevDateStr);
-        if (prevRecord) {
-          document.getElementById("opening-cash").value = (prevRecord.cashInDrawer || 0).toFixed(2);
+        if (previousRecords.length > 0) {
+          document.getElementById("opening-cash").value = (previousRecords[0].cashInDrawer || 0).toFixed(2);
         } else {
           document.getElementById("opening-cash").value = "0.00";
         }
