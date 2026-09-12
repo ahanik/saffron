@@ -78,7 +78,7 @@
 
     /* PRINT STYLING RULES */
     @media print {
-@page {
+      @page {
         size: auto;
         margin: 5mm; 
       }
@@ -99,7 +99,7 @@
       .stmt-top-bar { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 20px; }
       .stmt-logo-group { display: flex; align-items: center; gap: 15px; }
       .stmt-logo { max-width: 140px; height: auto; }
-.stmt-logo1 { max-width: 80px; height: auto; }
+      .stmt-logo1 { max-width: 80px; height: auto; }
       .stmt-brand-title { font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: 1px; text-transform: uppercase; }
       .stmt-report-badge { background: #0f172a; color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
@@ -167,19 +167,18 @@
         <span class="branch-tag">Mirpur 10 Branch</span>
       </div>
       <ul class="nav-links">
-<li><a href="admin_inventory.html" class="nav-item">Stock Management</a></li>
-      <li><a href="admin_food.html" class="nav-item">Food Management</a></li>
-	<li><a href="admin_employees.html" class="nav-item">Employee Management</a></li>
-	<li><a href="admin_guestmanagement.html" class="nav-item">Guest Management</a></li>
-	<li><a href="admin_coupon.html" class="nav-item">Coupon & Others</a></li>
-	<li><a href="admin_employeeexpense.html" class="nav-item">Employee Expense</a></li>
-      <li><a href="admin_otherexpense.html" class="nav-item ">Other Expense</a></li>
-	<li><a href="admin_salesmanagement.html" class="nav-item ">Employee Sales report</a></li>
-      <li><a href="admin_salesreport.html" class="nav-item active">Sales History & Report</a></li>
-<li><a href="admin_costreport.html" class="nav-item">Operating Cost Report</a></li>
-		  <li><a href="admin_cashreserve.html" class="nav-item">Cash Reserve System</a></li>
-<li><a href="admin_pos.html" class="nav-item">POS System</a></li>
-
+        <li><a href="admin_inventory.html" class="nav-item">Stock Management</a></li>
+        <li><a href="admin_food.html" class="nav-item">Food Management</a></li>
+        <li><a href="admin_employees.html" class="nav-item">Employee Management</a></li>
+        <li><a href="admin_guestmanagement.html" class="nav-item">Guest Management</a></li>
+        <li><a href="admin_coupon.html" class="nav-item">Coupon & Others</a></li>
+        <li><a href="admin_employeeexpense.html" class="nav-item">Employee Expense</a></li>
+        <li><a href="admin_otherexpense.html" class="nav-item">Other Expense</a></li>
+        <li><a href="admin_salesmanagement.html" class="nav-item">Employee Sales report</a></li>
+        <li><a href="admin_salesreport.html" class="nav-item active">Sales History & Report</a></li>
+        <li><a href="admin_costreport.html" class="nav-item">Operating Cost Report</a></li>
+        <li><a href="admin_cashreserve.html" class="nav-item">Cash Reserve System</a></li>
+        <li><a href="admin_pos.html" class="nav-item">POS System</a></li>
       </ul>
     </div>
     <a href="#" class="logout-btn" onclick="logoutAdmin()">🚪 লগআউট (Logout)</a>
@@ -245,9 +244,6 @@
           <label>পেমেন্ট মেথড</label>
           <select id="filter-payment" class="form-control">
             <option value="ALL">সবগুলো</option>
-            <option value="Cash">Cash</option>
-            <option value="Bkash">Bkash</option>
-            <option value="Card">Card</option>
           </select>
         </div>
         <!-- CASHIER FILTER DROPDOWN -->
@@ -315,9 +311,6 @@
           <div class="form-group">
             <label>পেমেন্ট মেথড</label>
             <select id="edit-payment-method" class="form-control">
-              <option value="Cash">Cash</option>
-              <option value="Bkash">Bkash</option>
-              <option value="Card">Card</option>
             </select>
           </div>
           <div class="form-group">
@@ -402,11 +395,69 @@
     }
 
     const salesRef = collection(db, "saffron", "mirpur10", "sales");
+    const paymentMethodsRef = collection(db, "saffron", "mirpur10", "payment_methods");
 
     let masterSalesList = [];
     let filteredSalesList = [];
+    let availablePaymentMethods = [];
 
-    // Realtime Listener
+    // Realtime Listener for Payment Methods (Synced with admin_coupon.html)
+    onSnapshot(paymentMethodsRef, (snapshot) => {
+      availablePaymentMethods = [];
+      snapshot.docs.forEach((d) => {
+        availablePaymentMethods.push(d.id);
+      });
+      populatePaymentMethodDropdowns();
+    }, (error) => {
+      console.error("Firestore Payment Methods Error: ", error);
+    });
+
+    function populatePaymentMethodDropdowns() {
+      // 1. Filter dropdown
+      const filterPaymentSelect = document.getElementById("filter-payment");
+      const currentFilterVal = filterPaymentSelect.value;
+      
+      filterPaymentSelect.innerHTML = `<option value="ALL">সবগুলো</option>`;
+      availablePaymentMethods.forEach(method => {
+        const opt = document.createElement("option");
+        opt.value = method;
+        opt.textContent = method;
+        filterPaymentSelect.appendChild(opt);
+      });
+      filterPaymentSelect.value = currentFilterVal || "ALL";
+
+      // 2. Edit Modal dropdown
+      const editPaymentSelect = document.getElementById("edit-payment-method");
+      const currentEditVal = editPaymentSelect.value;
+      
+      editPaymentSelect.innerHTML = "";
+      if (availablePaymentMethods.length === 0) {
+        // Fallback default options if database has no payment methods yet
+        const defaultMethods = ["Cash", "Bkash", "Card"];
+        defaultMethods.forEach(method => {
+          const opt = document.createElement("option");
+          opt.value = method;
+          opt.textContent = method;
+          editPaymentSelect.appendChild(opt);
+        });
+      } else {
+        availablePaymentMethods.forEach(method => {
+          const opt = document.createElement("option");
+          opt.value = method;
+          opt.textContent = method;
+          editPaymentSelect.appendChild(opt);
+        });
+      }
+
+      if (currentEditVal) {
+        // Preserve selected payment method if exists in options
+        if ([...editPaymentSelect.options].some(o => o.value === currentEditVal)) {
+          editPaymentSelect.value = currentEditVal;
+        }
+      }
+    }
+
+    // Realtime Listener for Sales
     onSnapshot(salesRef, (snapshot) => {
       masterSalesList = [];
       snapshot.docs.forEach((d) => {
@@ -758,9 +809,9 @@
 
       printDiv.innerHTML = `
         <img src="poslogo.png" class="receipt-logo" alt="Logo" onerror="this.style.display='none'">
- <div class="receipt-title">SAFFRON</div>
+        <div class="receipt-title">SAFFRON</div>
         <div class="receipt-subtitle">TAHMID SQUARE</div>
-<div class="receipt-subtitle">13/1, Senpara porbota, Mirpur-10, Dhaka-1216</div>
+        <div class="receipt-subtitle">13/1, Senpara porbota, Mirpur-10, Dhaka-1216</div>
         <div class="receipt-divider"></div>
         <div class="receipt-info">
           <div><strong>Order ID: #</strong> ${orderId} | <strong>Table:</strong> ${order.table || 'N/A'}</div>
@@ -788,11 +839,11 @@
         </div>
         <div class="receipt-divider"></div>
         <div class="offer-box">
-<div class="offer-box-title">YOUR FEEDBACK IS VALUABLE TO US!</div>
+          <div class="offer-box-title">YOUR FEEDBACK IS VALUABLE TO US!</div>
           <div>How was your experience?</div>
-	<div>____________________________________________________</div>
-	<div>____________________________________________________</div>
-	<div>Phone no: _________________________________________</div>
+          <div>____________________________________________________</div>
+          <div>____________________________________________________</div>
+          <div>Phone no: _________________________________________</div>
         </div>
         <div class="receipt-footer">
           <p style="font-weight:bold;">Thank You For Dining With Us!</p>
@@ -815,7 +866,19 @@
       document.getElementById("edit-cust-name").value = order.customerName || '';
       document.getElementById("edit-cust-phone").value = order.customerPhone || order.phone || '';
       document.getElementById("edit-table").value = order.table || '';
-      document.getElementById("edit-payment-method").value = order.paymentMethod || 'Cash';
+      
+      const editPaymentSelect = document.getElementById("edit-payment-method");
+      const orderPayment = order.paymentMethod || 'Cash';
+      
+      // If payment method is not present in options, dynamically add it
+      if (![...editPaymentSelect.options].some(o => o.value === orderPayment)) {
+        const opt = document.createElement("option");
+        opt.value = orderPayment;
+        opt.textContent = orderPayment;
+        editPaymentSelect.appendChild(opt);
+      }
+      editPaymentSelect.value = orderPayment;
+
       document.getElementById("edit-discount").value = order.manualDiscount || order.discountAmount || 0;
       document.getElementById("edit-reason").value = '';
 
