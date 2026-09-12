@@ -720,6 +720,7 @@
     let currentEditingOrderId = null;
     let isEditingCompletedOrder = false;
     let originalOrderCreatedBy = null;
+    let originalCartItems = []; // COMPLETED ORDER EDIT ER SOMOY PURBER ITEMS TRACK RAKHAR JONNO
 
     function loadUserInfo() {
       const nameElem = document.getElementById('user-display-name');
@@ -895,27 +896,52 @@
       });
 
       onSnapshot(collection(db, "saffron", "mirpur10", "sales"), (snap) => {
-        const todayStr = new Date().toISOString().split('T')[0];
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         todayCompletedOrders = [];
 
         snap.docs.forEach(d => {
           const data = d.data();
-          const completedDate = data.completedAt ? data.completedAt.split('T')[0] : '';
-          if(completedDate === todayStr) {
+          let completedDate = '';
+          if (data.completedAt) {
+            const dObj = new Date(data.completedAt);
+            if (!isNaN(dObj.getTime())) {
+              completedDate = `${dObj.getFullYear()}-${String(dObj.getMonth() + 1).padStart(2, '0')}-${String(dObj.getDate()).padStart(2, '0')}`;
+            } else {
+              completedDate = String(data.completedAt).split('T')[0];
+            }
+          }
+          if (completedDate === todayStr) {
             todayCompletedOrders.push({ orderId: d.id, ...data });
           }
         });
 
         todayCompletedOrders.sort((a, b) => new Date(b.completedAt || 0) - new Date(a.completedAt || 0));
+        if (document.getElementById('completed-orders-modal').style.display === 'flex') {
+          renderCompletedOrdersList();
+        }
       });
     }
 
-    function updateInventoryStock(cartItems) {
+    function updateInventoryStock(cartItems, isUpdate = false, previousCartItems = []) {
       if (!cartItems || !cartItems.length) return;
+
+      // Completed Order Update er somoy shudhu NOTUN add kora item gulor raw materials biyog hobe
+      let itemsToProcess = cartItems;
+      if (isUpdate && previousCartItems && previousCartItems.length > 0) {
+        itemsToProcess = cartItems.map(cItem => {
+          const oldItem = previousCartItems.find(p => p.name === cItem.name);
+          const oldQty = oldItem ? oldItem.qty : 0;
+          const diffQty = cItem.qty - oldQty;
+          return { ...cItem, qty: diffQty };
+        }).filter(item => item.qty > 0);
+      }
+
+      if (!itemsToProcess.length) return;
 
       const cachedInventory = JSON.parse(localStorage.getItem('saffron_inventory_cache') || "{}");
 
-      cartItems.forEach(cartItem => {
+      itemsToProcess.forEach(cartItem => {
         let matchedFood = allFoods.find(f => f.name && f.name.trim() === cartItem.name.split(' (')[0].trim());
         if (!matchedFood) return;
 
@@ -1086,6 +1112,7 @@
       currentEditingOrderId = null;
       isEditingCompletedOrder = false;
       originalOrderCreatedBy = null;
+      originalCartItems = [];
 
       document.getElementById('table-select').value = '';
       document.getElementById('waiter-select').value = '';
@@ -1338,6 +1365,7 @@
       currentEditingOrderId = orderId;
       isEditingCompletedOrder = true;
       originalOrderCreatedBy = order.createdBy || order.completedBy || 'Cashier';
+      originalCartItems = JSON.parse(JSON.stringify(order.items || [])); // Purber items deep copy kora holo
 
       document.getElementById('active-order-id').innerText = orderId;
       document.getElementById('update-indicator').style.display = 'inline';
@@ -1346,7 +1374,7 @@
 
       document.getElementById('cust-phone').placeholder = "017xxxxxxxx (Required)";
 
-      cart = [...order.items];
+      cart = JSON.parse(JSON.stringify(order.items || []));
       renderTableDropdown();
 
       document.getElementById('table-select').value = order.table || '';
@@ -1535,7 +1563,8 @@
         completedAt: new Date().toISOString()
       };
 
-      updateInventoryStock(orderData.items);
+      // Inventory Stock Update Call (Completed Order Update Phase vs Normal Phase)
+      updateInventoryStock(orderData.items, isEditingCompletedOrder, originalCartItems);
       
       if (appliedCouponCode && couponsData[appliedCouponCode]) {
         try {
@@ -1549,14 +1578,23 @@
       }
 
       printCustomerReceiptDirect(orderId, orderData);
-      saveOrderLocally(orderData);
+
+      // Save directly to Firestore if online
+      if (navigator.onLine) {
+        try {
+          await setDoc(doc(db, "saffron", "mirpur10", "sales", orderId), orderData);
+        } catch(e) {
+          saveOrderLocally(orderData);
+        }
+      } else {
+        saveOrderLocally(orderData);
+      }
 
       if(!isEditingCompletedOrder && currentEditingOrderId) {
         deleteDoc(doc(db, "saffron", "mirpur10", "running_orders", currentEditingOrderId)).catch(()=>{});
         runningOrdersList = runningOrdersList.filter(o => o.orderId !== currentEditingOrderId);
       }
 
-      syncOfflineSales();
       clearCart();
     }
 
@@ -1623,6 +1661,7 @@
 <div class="receipt-title">SAFFRON</div>
         <div class="receipt-subtitle">TAHMID SQUARE</div>
 <div class="receipt-subtitle">13/1, Senpara porbota, Mirpur-10, Dhaka-1216</div>
+<div class="receipt-subtitle">Phone - 01343-831878</div>
         <div class="receipt-divider"></div>
         <div class="receipt-info">
           <div><strong>Order ID:</strong> #${orderId}</div>

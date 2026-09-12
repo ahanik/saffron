@@ -534,7 +534,7 @@
     <div class="header-info">
 
 
-<a href="manager_inventory.html" style="display: inline-block; background:#f59e0b; color:#fff; text-decoration: none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px; text-align: center;">
+<a href="admin_inventory.html" style="display: inline-block; background:#f59e0b; color:#fff; text-decoration: none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px; text-align: center;">
   <i class="fa fa-fw fa-home"></i> MAIN MENU
 </a>
 
@@ -720,6 +720,7 @@
     let currentEditingOrderId = null;
     let isEditingCompletedOrder = false;
     let originalOrderCreatedBy = null;
+    let originalCartItems = []; // COMPLETED ORDER EDIT ER SOMOY PURBER ITEMS TRACK RAKHAR JONNO
 
     function loadUserInfo() {
       const nameElem = document.getElementById('user-display-name');
@@ -910,12 +911,25 @@
       });
     }
 
-    function updateInventoryStock(cartItems) {
+    function updateInventoryStock(cartItems, isUpdate = false, previousCartItems = []) {
       if (!cartItems || !cartItems.length) return;
+
+      // Completed Order Update er somoy shudhu NOTUN add kora item gulor raw materials biyog hobe
+      let itemsToProcess = cartItems;
+      if (isUpdate && previousCartItems && previousCartItems.length > 0) {
+        itemsToProcess = cartItems.map(cItem => {
+          const oldItem = previousCartItems.find(p => p.name === cItem.name);
+          const oldQty = oldItem ? oldItem.qty : 0;
+          const diffQty = cItem.qty - oldQty;
+          return { ...cItem, qty: diffQty };
+        }).filter(item => item.qty > 0);
+      }
+
+      if (!itemsToProcess.length) return;
 
       const cachedInventory = JSON.parse(localStorage.getItem('saffron_inventory_cache') || "{}");
 
-      cartItems.forEach(cartItem => {
+      itemsToProcess.forEach(cartItem => {
         let matchedFood = allFoods.find(f => f.name && f.name.trim() === cartItem.name.split(' (')[0].trim());
         if (!matchedFood) return;
 
@@ -1086,6 +1100,7 @@
       currentEditingOrderId = null;
       isEditingCompletedOrder = false;
       originalOrderCreatedBy = null;
+      originalCartItems = [];
 
       document.getElementById('table-select').value = '';
       document.getElementById('waiter-select').value = '';
@@ -1338,6 +1353,7 @@
       currentEditingOrderId = orderId;
       isEditingCompletedOrder = true;
       originalOrderCreatedBy = order.createdBy || order.completedBy || 'Cashier';
+      originalCartItems = JSON.parse(JSON.stringify(order.items || [])); // Purber items deep copy kora holo
 
       document.getElementById('active-order-id').innerText = orderId;
       document.getElementById('update-indicator').style.display = 'inline';
@@ -1346,7 +1362,7 @@
 
       document.getElementById('cust-phone').placeholder = "017xxxxxxxx (Required)";
 
-      cart = [...order.items];
+      cart = JSON.parse(JSON.stringify(order.items || []));
       renderTableDropdown();
 
       document.getElementById('table-select').value = order.table || '';
@@ -1535,7 +1551,8 @@
         completedAt: new Date().toISOString()
       };
 
-      updateInventoryStock(orderData.items);
+      // Inventory Stock Update Call (Completed Order Update Phase vs Normal Phase)
+      updateInventoryStock(orderData.items, isEditingCompletedOrder, originalCartItems);
       
       if (appliedCouponCode && couponsData[appliedCouponCode]) {
         try {
@@ -1618,10 +1635,12 @@
       }
 
       printDiv.innerHTML = `
-         <img src="poslogo.png" style="max-width: 50px; display: block; margin: 0 auto;" alt="Logo">
+        ${updateHeader}
+  <img src="poslogo.png" style="max-width: 50px; display: block; margin: 0 auto;" alt="Logo">
 <div class="receipt-title">SAFFRON</div>
         <div class="receipt-subtitle">TAHMID SQUARE</div>
 <div class="receipt-subtitle">13/1, Senpara porbota, Mirpur-10, Dhaka-1216</div>
+<div class="receipt-subtitle">Phone - 01343-831878</div>
         <div class="receipt-divider"></div>
         <div class="receipt-info">
           <div><strong>Order ID:</strong> #${orderId}</div>
@@ -1650,7 +1669,7 @@
         <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:14px;"><span>Grand Total:</span><span>${order.grandTotal} TK</span></div>
         <div style="display:flex; justify-content:space-between; margin-top:4px;"><span>Payment Method:</span><span>${order.paymentMethod}</span></div>
         <div class="offer-box">
-            <div class="offer-box-title">YOUR FEEDBACK IS VALUABLE TO US!</div>
+<div class="offer-box-title">YOUR FEEDBACK IS VALUABLE TO US!</div>
           <div>How was your experience?</div>
 	<div>____________________________________________________</div>
 	<div>____________________________________________________</div>
