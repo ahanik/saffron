@@ -897,21 +897,21 @@
 
       onSnapshot(collection(db, "saffron", "mirpur10", "sales"), (snap) => {
         const now = new Date();
-        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+        
         todayCompletedOrders = [];
 
         snap.docs.forEach(d => {
           const data = d.data();
-          let completedDate = '';
+          let orderTime = 0;
           if (data.completedAt) {
-            const dObj = new Date(data.completedAt);
-            if (!isNaN(dObj.getTime())) {
-              completedDate = `${dObj.getFullYear()}-${String(dObj.getMonth() + 1).padStart(2, '0')}-${String(dObj.getDate()).padStart(2, '0')}`;
-            } else {
-              completedDate = String(data.completedAt).split('T')[0];
-            }
+            orderTime = new Date(data.completedAt).getTime();
+          } else if (data.createdAt) {
+            orderTime = new Date(data.createdAt).getTime();
           }
-          if (completedDate === todayStr) {
+          
+          if (orderTime >= startOfDay && orderTime <= endOfDay) {
             todayCompletedOrders.push({ orderId: d.id, ...data });
           }
         });
@@ -1384,6 +1384,9 @@
       document.getElementById('cust-phone').value = order.customerPhone || order.phone || '';
       document.getElementById('manual-discount').value = order.manualDiscount || '';
       document.getElementById('coupon-code').value = order.appliedCoupon || order.coupon || '';
+      if(order.manualDiscountType) {
+        document.getElementById('manual-discount-type').value = order.manualDiscountType;
+      }
 
       renderCart();
       handleCouponInput();
@@ -1414,6 +1417,7 @@
         appliedCoupon: document.getElementById('coupon-code').value.trim().toUpperCase() || null,
         coupon: document.getElementById('coupon-code').value.trim().toUpperCase() || null,
         manualDiscount: Number(document.getElementById('manual-discount').value) || 0,
+        manualDiscountType: document.getElementById('manual-discount-type').value,
         subtotal: Number(document.getElementById('subtotal-val').innerText.replace(' TK', '')),
         vatRate: currentVatRate,
         vatAmount: Number(document.getElementById('vat-val').innerText.replace(' TK', '')),
@@ -1469,6 +1473,9 @@
       document.getElementById('cust-phone').value = order.customerPhone || order.phone || '';
       document.getElementById('manual-discount').value = order.manualDiscount || '';
       document.getElementById('coupon-code').value = order.appliedCoupon || order.coupon || '';
+      if(order.manualDiscountType) {
+        document.getElementById('manual-discount-type').value = order.manualDiscountType;
+      }
       renderCart();
       handleCouponInput();
     }
@@ -1550,6 +1557,7 @@
         appliedCoupon: appliedCouponCode,
         coupon: appliedCouponCode,
         manualDiscount: Number(document.getElementById('manual-discount').value) || 0,
+        manualDiscountType: document.getElementById('manual-discount-type').value,
         subtotal: Number(document.getElementById('subtotal-val').innerText.replace(' TK', '')),
         vatRate: currentVatRate,
         vatAmount: Number(document.getElementById('vat-val').innerText.replace(' TK', '')),
@@ -1643,8 +1651,13 @@
         `;
       });
 
+      let discountLabel = "Discount";
+      if (!order.appliedCoupon && order.manualDiscountType === '%') {
+        discountLabel = `Discount (${order.manualDiscount}%)`;
+      }
+
       let couponHTML = order.appliedCoupon ? `<div style="display:flex; justify-content:space-between;"><span>Coupon (${order.appliedCoupon}):</span><span>- ${order.discountAmount} TK</span></div>` : '';
-      let manualDiscHTML = (!order.appliedCoupon && order.discountAmount > 0) ? `<div style="display:flex; justify-content:space-between;"><span>Discount:</span><span>- ${order.discountAmount} TK</span></div>` : '';
+      let manualDiscHTML = (!order.appliedCoupon && order.discountAmount > 0) ? `<div style="display:flex; justify-content:space-between;"><span>${discountLabel}:</span><span>- ${order.discountAmount} TK</span></div>` : '';
       let updateHeader = order.updateReason ? `<div class="text-center" style="font-weight:bold; color:#000;">[UPDATED INVOICE]</div>` : '';
 
       let digitalCustInfo = '';

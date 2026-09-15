@@ -520,6 +520,9 @@
         return;
       }
 
+      // ক্যাটাগরি অনুযায়ী গ্রুপ করার জন্য অবজেক্ট
+      const groupedFoods = {};
+
       snapshot.docs.forEach((docSnap) => {
         const food = docSnap.data();
         const docId = docSnap.id;
@@ -557,37 +560,59 @@
           }
         }
 
-        let sizesHtml = "";
-        let ingredientsHtml = "";
-
-        if (food.variants && food.variants.length > 0) {
-          food.variants.forEach(v => {
-            sizesHtml += `<div><span class="variant-badge">${v.size}</span> - ৳${v.price}</div>`;
-            
-            let ingList = (v.ingredients || []).map(i => `${i.itemName}: ${i.qty} ${i.unit} (৳${i.cost || 0})`).join(", ");
-            let variantTotalCost = v.totalCost || 0;
-
-            ingredientsHtml += `<div style="margin-bottom: 6px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
-              <strong>${v.size}:</strong> ${ingList || 'কোনো কাঁচামাল নেই'} <br>
-              <span style="color: #059669; font-weight: bold;">মোট খরচ: ৳${variantTotalCost}</span>
-            </div>`;
-          });
+        // ক্যাটাগরি ভিত্তিক সাজানো
+        const catName = food.category || "Uncategorized";
+        if (!groupedFoods[catName]) {
+          groupedFoods[catName] = [];
         }
+        groupedFoods[catName].push({ docId, ...food });
+      });
 
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td><strong>${food.name}</strong></td>
-          <td>${food.category}</td>
-          <td>${sizesHtml}</td>
-          <td>${ingredientsHtml}</td>
-          <td>
-            <div class="action-btns">
-              <button class="btn btn-warning" style="padding: 6px 12px; font-size: 13px;" onclick="editFood('${docId}')">✏️ Edit</button>
-              <button class="btn btn-danger" style="padding: 6px 12px; font-size: 13px;" onclick="deleteFood('${docId}')">🗑️ Delete</button>
-            </div>
+      // গ্রুপ করা ডাটা টেবিল-এ রেন্ডার করা
+      Object.keys(groupedFoods).sort().forEach(categoryName => {
+        // ক্যাটাগরি হেডারের জন্য রো (Header Row)
+        const catRow = document.createElement("tr");
+        catRow.innerHTML = `
+          <td colspan="5" style="background-color: #f1f5f9; font-weight: bold; color: #1e293b; font-size: 15px; border-bottom: 2px solid #cbd5e1; padding: 10px 15px;">
+            📂 ক্যাটাগরি: ${categoryName}
           </td>
         `;
-        tbody.appendChild(tr);
+        tbody.appendChild(catRow);
+
+        // ঐ ক্যাটাগরির অন্তর্ভুক্ত ফুড আইটেমগুলো সিরিয়ালি রেন্ডার করা
+        groupedFoods[categoryName].forEach(food => {
+          let sizesHtml = "";
+          let ingredientsHtml = "";
+
+          if (food.variants && food.variants.length > 0) {
+            food.variants.forEach(v => {
+              sizesHtml += `<div><span class="variant-badge">${v.size}</span> - ৳${v.price}</div>`;
+              
+              let ingList = (v.ingredients || []).map(i => `${i.itemName}: ${i.qty} ${i.unit} (৳${i.cost || 0})`).join(", ");
+              let variantTotalCost = v.totalCost || 0;
+
+              ingredientsHtml += `<div style="margin-bottom: 6px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
+                <strong>${v.size}:</strong> ${ingList || 'কোনো কাঁচামাল নেই'} <br>
+                <span style="color: #059669; font-weight: bold;">মোট খরচ: ৳${variantTotalCost}</span>
+              </div>`;
+            });
+          }
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td><strong>${food.name}</strong></td>
+            <td>${food.category}</td>
+            <td>${sizesHtml}</td>
+            <td>${ingredientsHtml}</td>
+            <td>
+              <div class="action-btns">
+                <button class="btn btn-warning" style="padding: 6px 12px; font-size: 13px;" onclick="editFood('${food.docId}')">✏️ Edit</button>
+                <button class="btn btn-danger" style="padding: 6px 12px; font-size: 13px;" onclick="deleteFood('${food.docId}')">🗑️ Delete</button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
       });
     });
 
@@ -632,7 +657,7 @@
     window.resetFoodForm = function() {
       document.getElementById("food-form").reset();
       document.getElementById("editing-food-id").value = "";
-      document.getElementById("form-header-title").innerText = "১. নতুন ফুড মেনু আইটেম তৈরি করুন";
+      document.getElementById("form-header-title").innerText = "১. নতুন ফুড মেনু তৈরি করুন";
       document.getElementById("cancel-edit-btn").style.display = "none";
       document.getElementById("submit-btn").innerText = "ফুড আইটেম সেভ করুন";
       document.getElementById("submit-btn").style.background = "#f59e0b";
