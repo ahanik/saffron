@@ -534,7 +534,7 @@
     <div class="header-info">
 
 
-<a href="admin_inventory.html" style="display: inline-block; background:#f59e0b; color:#fff; text-decoration: none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px; text-align: center;">
+<a href="manager_inventory.html" style="display: inline-block; background:#f59e0b; color:#fff; text-decoration: none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px; text-align: center;">
   <i class="fa fa-fw fa-home"></i> MAIN MENU
 </a>
 
@@ -896,18 +896,30 @@
       });
 
       onSnapshot(collection(db, "saffron", "mirpur10", "sales"), (snap) => {
-        const todayStr = new Date().toISOString().split('T')[0];
+        const now = new Date();
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+        
         todayCompletedOrders = [];
 
         snap.docs.forEach(d => {
           const data = d.data();
-          const completedDate = data.completedAt ? data.completedAt.split('T')[0] : '';
-          if(completedDate === todayStr) {
+          let orderTime = 0;
+          if (data.completedAt) {
+            orderTime = new Date(data.completedAt).getTime();
+          } else if (data.createdAt) {
+            orderTime = new Date(data.createdAt).getTime();
+          }
+          
+          if (orderTime >= startOfDay && orderTime <= endOfDay) {
             todayCompletedOrders.push({ orderId: d.id, ...data });
           }
         });
 
         todayCompletedOrders.sort((a, b) => new Date(b.completedAt || 0) - new Date(a.completedAt || 0));
+        if (document.getElementById('completed-orders-modal').style.display === 'flex') {
+          renderCompletedOrdersList();
+        }
       });
     }
 
@@ -1372,6 +1384,9 @@
       document.getElementById('cust-phone').value = order.customerPhone || order.phone || '';
       document.getElementById('manual-discount').value = order.manualDiscount || '';
       document.getElementById('coupon-code').value = order.appliedCoupon || order.coupon || '';
+      if(order.manualDiscountType) {
+        document.getElementById('manual-discount-type').value = order.manualDiscountType;
+      }
 
       renderCart();
       handleCouponInput();
@@ -1402,6 +1417,7 @@
         appliedCoupon: document.getElementById('coupon-code').value.trim().toUpperCase() || null,
         coupon: document.getElementById('coupon-code').value.trim().toUpperCase() || null,
         manualDiscount: Number(document.getElementById('manual-discount').value) || 0,
+        manualDiscountType: document.getElementById('manual-discount-type').value,
         subtotal: Number(document.getElementById('subtotal-val').innerText.replace(' TK', '')),
         vatRate: currentVatRate,
         vatAmount: Number(document.getElementById('vat-val').innerText.replace(' TK', '')),
@@ -1457,6 +1473,9 @@
       document.getElementById('cust-phone').value = order.customerPhone || order.phone || '';
       document.getElementById('manual-discount').value = order.manualDiscount || '';
       document.getElementById('coupon-code').value = order.appliedCoupon || order.coupon || '';
+      if(order.manualDiscountType) {
+        document.getElementById('manual-discount-type').value = order.manualDiscountType;
+      }
       renderCart();
       handleCouponInput();
     }
@@ -1538,6 +1557,7 @@
         appliedCoupon: appliedCouponCode,
         coupon: appliedCouponCode,
         manualDiscount: Number(document.getElementById('manual-discount').value) || 0,
+        manualDiscountType: document.getElementById('manual-discount-type').value,
         subtotal: Number(document.getElementById('subtotal-val').innerText.replace(' TK', '')),
         vatRate: currentVatRate,
         vatAmount: Number(document.getElementById('vat-val').innerText.replace(' TK', '')),
@@ -1566,14 +1586,23 @@
       }
 
       printCustomerReceiptDirect(orderId, orderData);
-      saveOrderLocally(orderData);
+
+      // Save directly to Firestore if online
+      if (navigator.onLine) {
+        try {
+          await setDoc(doc(db, "saffron", "mirpur10", "sales", orderId), orderData);
+        } catch(e) {
+          saveOrderLocally(orderData);
+        }
+      } else {
+        saveOrderLocally(orderData);
+      }
 
       if(!isEditingCompletedOrder && currentEditingOrderId) {
         deleteDoc(doc(db, "saffron", "mirpur10", "running_orders", currentEditingOrderId)).catch(()=>{});
         runningOrdersList = runningOrdersList.filter(o => o.orderId !== currentEditingOrderId);
       }
 
-      syncOfflineSales();
       clearCart();
     }
 
@@ -1622,8 +1651,13 @@
         `;
       });
 
+      let discountLabel = "Discount";
+      if (!order.appliedCoupon && order.manualDiscountType === '%') {
+        discountLabel = `Discount (${order.manualDiscount}%)`;
+      }
+
       let couponHTML = order.appliedCoupon ? `<div style="display:flex; justify-content:space-between;"><span>Coupon (${order.appliedCoupon}):</span><span>- ${order.discountAmount} TK</span></div>` : '';
-      let manualDiscHTML = (!order.appliedCoupon && order.discountAmount > 0) ? `<div style="display:flex; justify-content:space-between;"><span>Discount:</span><span>- ${order.discountAmount} TK</span></div>` : '';
+      let manualDiscHTML = (!order.appliedCoupon && order.discountAmount > 0) ? `<div style="display:flex; justify-content:space-between;"><span>${discountLabel}:</span><span>- ${order.discountAmount} TK</span></div>` : '';
       let updateHeader = order.updateReason ? `<div class="text-center" style="font-weight:bold; color:#000;">[UPDATED INVOICE]</div>` : '';
 
       let digitalCustInfo = '';
