@@ -536,6 +536,7 @@
 
 
 
+
       <button onclick="openCompletedOrdersModal()" style="background:#0284c7; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px;">
         <i class="fa-solid fa-clock-rotate-left"></i> Today Completed Orders
       </button>
@@ -792,7 +793,10 @@
       let newCounter = lastCounter + 1;
       localStorage.setItem(`order_counter_${datePrefix}`, newCounter.toString());
 
-      return `${datePrefix}${newCounter}`;
+      // Unique ID জেনারেট করার জন্য র‍্যান্ডম স্ট্রিং যুক্ত করা হলো যাতে ডেটা ওভাররাইট না হয়
+      const uniqueSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+
+      return `${datePrefix}${newCounter}-${uniqueSuffix}`;
     }
 
     function loadFoodsFromLocalCache() {
@@ -1213,7 +1217,6 @@
           const rawCouponPhone = c.phone || c.customerPhone || c.allowedPhone;
           const couponPhone = rawCouponPhone ? String(rawCouponPhone).trim() : null;
 
-          // স্পেসিফিক কাষ্টমার কুপনের ক্ষেত্রে maxUses এবং usedCount সমান হলে চেক করার কোড
           if (couponPhone && c.maxUses !== undefined && c.usedCount !== undefined && Number(c.maxUses) === Number(c.usedCount)) {
             msgElem.innerText = "Coupon has already been used or expired";
  		msgElem.style.color = "#ef4444";
