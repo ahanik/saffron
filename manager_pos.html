@@ -795,7 +795,6 @@
       let newCounter = lastCounter + 1;
       localStorage.setItem(`order_counter_${datePrefix}`, newCounter.toString());
 
-      // Unique ID জেনারেট করার জন্য র‍্যান্ডম স্ট্রিং যুক্ত করা হলো যাতে ডেটা ওভাররাইট না হয়
       const uniqueSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
 
       return `${datePrefix}${newCounter}-${uniqueSuffix}`;
@@ -964,9 +963,18 @@
           targetVariant.ingredients.forEach(ing => {
             const rawName = ing.itemName;
             const deductionQty = (parseFloat(ing.qty) || 0) * cartItem.qty;
-            const deductionCost = (parseFloat(ing.cost) || 0) * cartItem.qty;
 
             if (rawName && deductionQty > 0) {
+              const currentInv = cachedInventory[rawName] || rawMaterialsList[rawName];
+              let deductionCost = 0;
+
+              // আনুপাতিক হারে খরচ বের করার লজিক: (বর্তমান মোট খরচ / বর্তমান মোট পরিমাণ) * বিক্রিত কাঁচামালের পরিমাণ
+              if (currentInv && currentInv.quantity > 0 && currentInv.totalCost > 0) {
+                deductionCost = (currentInv.totalCost / currentInv.quantity) * deductionQty;
+              } else {
+                deductionCost = (parseFloat(ing.cost) || 0) * cartItem.qty;
+              }
+
               const invDocRef = doc(db, "saffron", "mirpur10", "inventory", rawName);
 
               updateDoc(invDocRef, {
@@ -1221,11 +1229,11 @@
 
           if (couponPhone && c.maxUses !== undefined && c.usedCount !== undefined && Number(c.maxUses) === Number(c.usedCount)) {
             msgElem.innerText = "Coupon has already been used or expired";
- 		msgElem.style.color = "#ef4444";
-              couponInput.value = '';
-              manualDiscInput.disabled = false;
-              couponCode = '';
-              discount = 0;
+            msgElem.style.color = "#ef4444";
+            couponInput.value = '';
+            manualDiscInput.disabled = false;
+            couponCode = '';
+            discount = 0;
           } else if(c.expireDate && c.expireDate < today) {
             msgElem.innerText = "Coupon code expired";
             msgElem.style.color = "#ef4444";
@@ -1367,7 +1375,7 @@
       currentEditingOrderId = orderId;
       isEditingCompletedOrder = true;
       originalOrderCreatedBy = order.createdBy || order.completedBy || 'Cashier';
-      originalCartItems = JSON.parse(JSON.stringify(order.items || [])); // Purber items deep copy kora holo
+      originalCartItems = JSON.parse(JSON.stringify(order.items || []));
 
       document.getElementById('active-order-id').innerText = orderId;
       document.getElementById('update-indicator').style.display = 'inline';
