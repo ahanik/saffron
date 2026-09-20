@@ -534,6 +534,8 @@
     <div class="header-info">
 
 
+
+
       <button onclick="openCompletedOrdersModal()" style="background:#0284c7; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px;">
         <i class="fa-solid fa-clock-rotate-left"></i> Today Completed Orders
       </button>
@@ -790,9 +792,7 @@
       let newCounter = lastCounter + 1;
       localStorage.setItem(`order_counter_${datePrefix}`, newCounter.toString());
 
-      const uniqueSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-
-      return `${datePrefix}${newCounter}-${uniqueSuffix}`;
+      return `${datePrefix}${newCounter}`;
     }
 
     function loadFoodsFromLocalCache() {
@@ -958,18 +958,9 @@
           targetVariant.ingredients.forEach(ing => {
             const rawName = ing.itemName;
             const deductionQty = (parseFloat(ing.qty) || 0) * cartItem.qty;
+            const deductionCost = (parseFloat(ing.cost) || 0) * cartItem.qty;
 
             if (rawName && deductionQty > 0) {
-              const currentInv = cachedInventory[rawName] || rawMaterialsList[rawName];
-              let deductionCost = 0;
-
-              // আনুপাতিক হারে খরচ বের করার লজিক: (বর্তমান মোট খরচ / বর্তমান মোট পরিমাণ) * বিক্রিত কাঁচামালের পরিমাণ
-              if (currentInv && currentInv.quantity > 0 && currentInv.totalCost > 0) {
-                deductionCost = (currentInv.totalCost / currentInv.quantity) * deductionQty;
-              } else {
-                deductionCost = (parseFloat(ing.cost) || 0) * cartItem.qty;
-              }
-
               const invDocRef = doc(db, "saffron", "mirpur10", "inventory", rawName);
 
               updateDoc(invDocRef, {
@@ -1222,13 +1213,14 @@
           const rawCouponPhone = c.phone || c.customerPhone || c.allowedPhone;
           const couponPhone = rawCouponPhone ? String(rawCouponPhone).trim() : null;
 
+          // স্পেসিফিক কাষ্টমার কুপনের ক্ষেত্রে maxUses এবং usedCount সমান হলে চেক করার কোড
           if (couponPhone && c.maxUses !== undefined && c.usedCount !== undefined && Number(c.maxUses) === Number(c.usedCount)) {
             msgElem.innerText = "Coupon has already been used or expired";
-            msgElem.style.color = "#ef4444";
-            couponInput.value = '';
-            manualDiscInput.disabled = false;
-            couponCode = '';
-            discount = 0;
+ 		msgElem.style.color = "#ef4444";
+              couponInput.value = '';
+              manualDiscInput.disabled = false;
+              couponCode = '';
+              discount = 0;
           } else if(c.expireDate && c.expireDate < today) {
             msgElem.innerText = "Coupon code expired";
             msgElem.style.color = "#ef4444";
@@ -1370,7 +1362,7 @@
       currentEditingOrderId = orderId;
       isEditingCompletedOrder = true;
       originalOrderCreatedBy = order.createdBy || order.completedBy || 'Cashier';
-      originalCartItems = JSON.parse(JSON.stringify(order.items || []));
+      originalCartItems = JSON.parse(JSON.stringify(order.items || [])); // Purber items deep copy kora holo
 
       document.getElementById('active-order-id').innerText = orderId;
       document.getElementById('update-indicator').style.display = 'inline';

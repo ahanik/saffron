@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saffron - Inventory stock Report</title>
+  <link rel="icon" type="image/x-icon" href="faviconlogo.ico">
+
+  <script>
+    if (localStorage.getItem('saffron_admin_logged_in') !== 'true') {
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { display: flex; height: 100vh; background-color: #f4f6f9; color: #333; }
+    
+    /* Sidebar Layout */
+    .sidebar { width: 250px; background-color: #1e293b; color: #fff; display: flex; flex-direction: column; position: relative; }
+
+    .brand { 
+      padding: 20px 15px; 
+      text-align: center; 
+      background: #0f172a; 
+      border-bottom: 1px solid #334155; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .brand-logo {
+      width: 120px;            
+      height: 50px;  
+      object-fit: contain;          
+      margin-bottom: 6px;
+      display: block;
+    }
+    .sidebar a {
+      text-decoration: none !important;
+    }
+
+    .logout-btn { color: #ef4444; border-top: 1px solid #334155; padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; text-decoration: none; position: absolute; bottom: 0; width: 100%; }
+    .logout-btn:hover { background-color: #334155; color: #f87171; }
+
+    .branch-tag { display: block; font-size: 12px; color: #94a3b8; font-weight: normal; }
+    
+    .nav-links { list-style: none; padding: 20px 0; }
+    .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 16px; transition: 0.2s; color: #cbd5e1; }
+    .nav-item:hover, .nav-item.active { background-color: #334155; color: #fff; border-left: 4px solid #f59e0b; }
+    
+    /* Main Content Area */
+    .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .status-online { background: #dcfce7; color: #166534; }
+    
+    /* Card & Forms */
+    .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .card-title { font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
+    
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; font-weight: 600; color: #475569; }
+    .form-control { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; }
+    .form-control:focus { border-color: #f59e0b; }
+
+    .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 14px; }
+    .btn-primary { background: #f59e0b; color: #fff; }
+    .btn-primary:hover { background: #d97706; }
+    
+    /* Table Styling */
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
+    th { background: #f8fafc; color: #475569; font-weight: 600; font-size: 14px; }
+    td { font-size: 14px; }
+    
+    .info-box { background: #e0f2fe; border: 1px solid #bae6fd; padding: 15px; border-radius: 6px; margin-bottom: 20px; color: #0369a1; display: flex; flex-direction: column; gap: 8px;}
+    .info-row { display: flex; justify-content: space-between; align-items: center; font-size: 15px; }
+    .info-row span { font-weight: bold; color: #0f172a; }
+    
+    .summary-box { background: #fef3c7; border: 1px solid #fde68a; padding: 15px; border-radius: 6px; margin-top: 20px; font-size: 16px; font-weight: bold; color: #92400e; text-align: right; }
+    .date-badge { background: #e2e8f0; color: #334155; padding: 3px 8px; border-radius: 4px; font-weight: 600; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar Structure -->
+<div class="sidebar">
+  <div>
+    <div class="brand">
+      <img src="logo.png" alt="Saffron Logo" class="brand-logo" onerror="this.onerror=null; this.src='https://via.placeholder.com/120x50?text=Saffron+Logo';">
+      <span class="branch-tag">Mirpur 10 Branch</span>
+    </div>
+
+    <ul class="nav-links">
+      <li><a href="admin_inventory.html" class="nav-item">Stock Management</a></li>
+      <li><a href="admin_inventory_report.html" class="nav-item active">Stock Report</a></li>
+      <li><a href="admin_food.html" class="nav-item">Food Management</a></li>
+      <li><a href="admin_employees.html" class="nav-item">Employee Management</a></li>
+      <li><a href="admin_guestmanagement.html" class="nav-item">Guest Management</a></li>
+      <li><a href="admin_coupon.html" class="nav-item">Coupon & Others</a></li>
+      <li><a href="admin_employeeexpense.html" class="nav-item">Employee Expense</a></li>
+      <li><a href="admin_otherexpense.html" class="nav-item">Other Expense</a></li>
+      <li><a href="admin_salesmanagement.html" class="nav-item">Employee Sales report</a></li>
+      <li><a href="admin_salesreport.html" class="nav-item">Sales History & Report</a></li>
+      <li><a href="admin_costreport.html" class="nav-item">Operating Cost Report</a></li>
+      <li><a href="admin_cashreserve.html" class="nav-item">Cash Reserve System</a></li>
+      <li><a href="admin_pos.html" class="nav-item">POS System</a></li>
+    </ul>
+  </div>
+  
+  <a href="#" class="logout-btn" onclick="logoutAdmin()">🚪 লগআউট (Logout)</a>
+</div>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    
+    <!-- Top Bar Header -->
+    <div class="header">
+      <h2 id="page-title">ইনভেন্টরি আইটেম ইউজেস রিপোর্ট (Item Usage Tracking)</h2>
+      <div class="header-right">
+        <div id="net-status" class="status-badge status-online">🟢 অনলাইন</div>
+      </div>
+    </div>
+
+    <!-- Usage Report Panel -->
+    <div class="card">
+      <div class="card-title">১. আইটেম এবং তারিখ নির্বাচন করুন</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>ইনভেন্টরি আইটেম (উপকরণ)</label>
+          <select id="item-select" class="form-control">
+            <option value="">লোড হচ্ছে...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>শুরুর তারিখ (From Date)</label>
+          <input type="date" id="start-date" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>শেষ তারিখ (To Date)</label>
+          <input type="date" id="end-date" class="form-control">
+        </div>
+        <div class="form-group" style="justify-content: flex-end;">
+          <button onclick="generateReport()" class="btn btn-primary">রিপোর্ট দেখুন</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Stock Update Info -->
+    <div class="info-box" id="stock-info-box" style="display: none;">
+      <div style="font-size: 16px; font-weight: bold; border-bottom: 1px solid #bae6fd; padding-bottom: 5px;">লাইভ স্টকের তথ্য (Live Data)</div>
+      
+      <div class="info-row" style="margin-bottom: 8px;">
+        <div>নির্বাচিত আইটেম: <span id="info-item-name">N/A</span></div>
+        <div style="color: #64748b; font-size:13px;">সর্বশেষ আপডেট: <span id="info-last-update">N/A</span></div>
+      </div>
+
+      <!-- New: Before and After Stock Info -->
+      <div class="info-row" style="background: #f1f5f9; padding: 10px; border-radius: 5px; margin-bottom: 5px; border: 1px solid #cbd5e1;">
+        <div style="color: #475569;">নতুন স্টক যোগ/আপডেট করার আগে ছিলো:</div>
+        <div style="font-size: 16px; font-weight: bold;"><span id="info-previous-qty">N/A</span></div>
+      </div>
+
+      <div class="info-row" style="background: #bae6fd; padding: 10px; border-radius: 5px; margin-bottom: 5px; border: 1px solid #7dd3fc;">
+        <div style="color: #0369a1;">স্টক যোগ/আপডেট করার পর হয়েছিলো:</div>
+        <div style="font-size: 16px; font-weight: bold;"><span id="info-after-update-qty">N/A</span></div>
+      </div>
+
+      <div class="info-row" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 5px;">
+        <div style="color: #15803d;">বর্তমানের লাইভ অবশিষ্ট স্টক (বিক্রির পর): </div>
+        <div style="font-size: 18px; color: #166534;"><span id="info-current-qty">N/A</span></div>
+      </div>
+    </div>
+
+    <!-- Usage Data Table -->
+    <div class="card" id="report-card" style="display: none;">
+      <div class="card-title" id="report-title">২. খাবারের অনুযায়ী খরচের বিবরণ</div>
+      <table>
+        <thead>
+          <tr>
+            <th>বিক্রির তারিখ (Date)</th>
+            <th>খাবারের নাম (Food Item)</th>
+            <th>মোট বিক্রি হয়েছে (Qty Sold)</th>
+            <th>উপকরণ খরচ হয়েছে (Ingredient Used)</th>
+          </tr>
+        </thead>
+        <tbody id="report-tbody">
+          <!-- Data will load here -->
+        </tbody>
+      </table>
+      
+      <div class="summary-box">
+        সর্বমোট খরচ হয়েছে: <span id="total-usage-val">0</span> <span id="total-usage-unit"></span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function logoutAdmin() {
+      if (confirm("আপনি কি নিশ্চিত যে লগআউট করতে চান?")) {
+        localStorage.removeItem('saffron_admin_logged_in');
+        window.location.href = "index.html";
+      }
+    }
+
+    // Set default dates
+    document.getElementById('start-date').valueAsDate = new Date();
+    document.getElementById('end-date').valueAsDate = new Date();
+  </script>
+
+  <!-- FIREBASE MODULE SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+    import { 
+      initializeFirestore, 
+      collection, 
+      getDocs,
+      doc,
+      getDoc
+    } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAq_vQ7ARn1TdMOOp1rtJqFOd1K4yUupP4",
+      authDomain: "saffron-65736.firebaseapp.com",
+      databaseURL: "https://saffron-65736-default-rtdb.firebaseio.com",
+      projectId: "saffron-65736",
+      storageBucket: "saffron-65736.firebasestorage.app",
+      messagingSenderId: "599450614604",
+      appId: "1:599450614604:web:e6be0bc5cb56dc867cede9",
+      measurementId: "G-FC5894HZEM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = initializeFirestore(app, {});
+
+    let allFoods = [];
+
+    // 1. Fetch Inventory Dropdown & Foods Data ONCE
+    async function fetchInitialData() {
+      try {
+        const invSnapshot = await getDocs(collection(db, "saffron", "mirpur10", "inventory"));
+        const select = document.getElementById("item-select");
+        select.innerHTML = '<option value="">-- একটি আইটেম নির্বাচন করুন --</option>';
+        
+        invSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          if(!data.isDeleted && !doc.id.endsWith("-deleted")) {
+            const opt = document.createElement("option");
+            opt.value = doc.id; 
+            opt.setAttribute("data-name", data.name); 
+            opt.innerText = data.name;
+            select.appendChild(opt);
+          }
+        });
+
+        const foodSnapshot = await getDocs(collection(db, "saffron", "mirpur10", "foods"));
+        foodSnapshot.docs.forEach(doc => {
+          allFoods.push({ id: doc.id, ...doc.data() });
+        });
+
+      } catch (error) {
+        console.error("Error loading data:", error);
+        alert("প্রাথমিক ডেটা লোড করতে সমস্যা হচ্ছে!");
+      }
+    }
+
+    fetchInitialData();
+
+    function formatDate(dateObj) {
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const year = dateObj.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+
+    // 2. Generate Report (Fetches LIVE data on click)
+    window.generateReport = async function() {
+      const selectEl = document.getElementById('item-select');
+      const selectedItemId = selectEl.value;
+      const startDateVal = document.getElementById('start-date').value;
+      const endDateVal = document.getElementById('end-date').value;
+
+      if (!selectedItemId) {
+        alert("অনুগ্রহ করে একটি ইনভেন্টরি আইটেম সিলেক্ট করুন!");
+        return;
+      }
+      if (!startDateVal || !endDateVal) {
+        alert("তারিখ নির্বাচন করুন!");
+        return;
+      }
+
+      const selectedItemName = selectEl.options[selectEl.selectedIndex].getAttribute("data-name");
+
+      const reportCard = document.getElementById("report-card");
+      const infoBox = document.getElementById("stock-info-box");
+      const tbody = document.getElementById("report-tbody");
+      
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">ডেটা ক্যালকুলেট হচ্ছে, দয়া করে অপেক্ষা করুন...</td></tr>';
+      reportCard.style.display = "block";
+      infoBox.style.display = "none";
+
+      let currentLiveQty = 0;
+      let prevStockQty = null;
+      let afterUpdateStockQty = null;
+      let unit = "";
+      let lastUpdateTime = "জানা যায়নি";
+
+      try {
+        const invDocRef = doc(db, "saffron", "mirpur10", "inventory", selectedItemId);
+        const invDocSnap = await getDoc(invDocRef);
+        
+        if (invDocSnap.exists()) {
+          const invData = invDocSnap.data();
+          currentLiveQty = parseFloat(invData.quantity) || 0;
+          unit = invData.unit || "";
+          
+          // Check for new exact fields
+          if(invData.lastPreviousStock !== undefined) prevStockQty = parseFloat(invData.lastPreviousStock);
+          if(invData.lastStockAfterUpdate !== undefined) afterUpdateStockQty = parseFloat(invData.lastStockAfterUpdate);
+          
+          if(invData.updatedAt && invData.updatedAt.toDate) {
+             lastUpdateTime = invData.updatedAt.toDate().toLocaleString();
+          }
+        }
+      } catch (error) {
+        console.error("Live stock fetch error:", error);
+      }
+
+      // Display live info
+      document.getElementById("info-item-name").innerText = selectedItemName;
+      document.getElementById("info-last-update").innerText = lastUpdateTime;
+      
+      // Update Previous and After Update values based on database response
+      document.getElementById("info-previous-qty").innerText = prevStockQty !== null ? `${prevStockQty.toFixed(2)} ${unit}` : `রেকর্ড নেই`;
+      document.getElementById("info-after-update-qty").innerText = afterUpdateStockQty !== null ? `${afterUpdateStockQty.toFixed(2)} ${unit}` : `রেকর্ড নেই`;
+      document.getElementById("info-current-qty").innerText = `${currentLiveQty.toFixed(2)} ${unit}`;
+
+      const startTimestamp = new Date(startDateVal);
+      startTimestamp.setHours(0, 0, 0, 0);
+      const endTimestamp = new Date(endDateVal);
+      endTimestamp.setHours(23, 59, 59, 999);
+
+      try {
+        const salesRef = collection(db, "saffron", "mirpur10", "sales");
+        const salesSnapshot = await getDocs(salesRef);
+        
+        let foodUsageMap = {};
+        let grandTotalUsed = 0;
+
+        salesSnapshot.docs.forEach(doc => {
+          const sale = doc.data();
+          let orderTime = sale.completedAt ? new Date(sale.completedAt).getTime() : (sale.createdAt ? new Date(sale.createdAt).getTime() : 0);
+
+          if (orderTime >= startTimestamp.getTime() && orderTime <= endTimestamp.getTime()) {
+            const saleDateFormatted = formatDate(new Date(orderTime));
+            
+            if(sale.items && Array.isArray(sale.items)) {
+              sale.items.forEach(cartItem => {
+                const foodBaseName = cartItem.name.split(' (')[0].trim();
+                const matchedFood = allFoods.find(f => f.name && f.name.trim() === foodBaseName);
+                
+                if (matchedFood) {
+                  let targetVariant = null;
+                  
+                  if (cartItem.name.includes('(') && cartItem.name.includes(')')) {
+                    const sizeLabel = cartItem.name.substring(cartItem.name.indexOf('(') + 1, cartItem.name.indexOf(')')).trim();
+                    if (matchedFood.variants) {
+                      targetVariant = matchedFood.variants.find(v => (v.size && v.size.trim() === sizeLabel) || (v.name && v.name.trim() === sizeLabel));
+                    }
+                  }
+
+                  if (!targetVariant && matchedFood.variants && matchedFood.variants.length > 0) {
+                    targetVariant = matchedFood.variants[0];
+                  }
+
+                  if (targetVariant && targetVariant.ingredients && Array.isArray(targetVariant.ingredients)) {
+                    targetVariant.ingredients.forEach(ing => {
+                      if (ing.itemName === selectedItemName) {
+                        const amountUsedPerItem = parseFloat(ing.qty) || 0;
+                        const totalUsedForThisCartItem = amountUsedPerItem * cartItem.qty;
+
+                        if (totalUsedForThisCartItem > 0) {
+                          const groupKey = `${saleDateFormatted}_${cartItem.name}`;
+                          if (!foodUsageMap[groupKey]) {
+                            foodUsageMap[groupKey] = { dateStr: saleDateFormatted, foodName: cartItem.name, soldQty: 0, usedIngredientQty: 0, timestamp: orderTime };
+                          }
+                          foodUsageMap[groupKey].soldQty += cartItem.qty;
+                          foodUsageMap[groupKey].usedIngredientQty += totalUsedForThisCartItem;
+                          grandTotalUsed += totalUsedForThisCartItem;
+                        }
+                      }
+                    });
+                  }
+                }
+              });
+            }
+          }
+        });
+        
+        infoBox.style.display = "flex";
+
+        const sortedList = Object.values(foodUsageMap).sort((a, b) => a.timestamp - b.timestamp);
+        tbody.innerHTML = "";
+        
+        if (sortedList.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: #ef4444; font-weight:bold;">এই তারিখের মধ্যে "${selectedItemName}" কোনো খাবারে বিক্রি/খরচ হয়নি।</td></tr>`;
+        } else {
+          sortedList.forEach(item => {
+            tbody.innerHTML += `
+              <tr>
+                <td><span class="date-badge">${item.dateStr}</span></td>
+                <td style="font-weight:bold; color: #0f172a;">${item.foodName}</td>
+                <td>${item.soldQty} টি</td>
+                <td style="color: #0369a1; font-weight:bold;">${item.usedIngredientQty.toFixed(2)} ${unit}</td>
+              </tr>
+            `;
+          });
+        }
+
+        document.getElementById("total-usage-val").innerText = grandTotalUsed.toFixed(2);
+        document.getElementById("total-usage-unit").innerText = unit;
+        document.getElementById("report-title").innerText = `২. খাবারের অনুযায়ী খরচের বিবরণ (${startDateVal} থেকে ${endDateVal})`;
+
+      } catch (error) {
+        console.error("Error generating report:", error);
+        alert("রিপোর্ট তৈরি করতে সমস্যা হয়েছে!");
+        tbody.innerHTML = '<tr><td colspan="4">এরর হয়েছে। কনসোল চেক করুন।</td></tr>';
+      }
+    };
+  </script>
+</body>
+</html>
