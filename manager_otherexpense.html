@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Saffron - Other Expenses</title>
-  <link rel="icon" type="image/x-icon" href="faviconlogo.ico">
+	<link rel="icon" type="image/x-icon" href="faviconlogo.ico">
   
   <!-- SECURITY CHECK: Redirect if not logged in -->
   <script>
@@ -88,9 +88,10 @@
 
     <!-- ২. নেভিগেশন লিঙ্ক সেকশন -->
     <ul class="nav-links">
-<li><a href="manager_inventory.html" class="nav-item active">Stock Management</a></li>
-      <li><a href="manager_guestmanagement.html" class="nav-item">Guest Management</a></li>
+<li><a href="manager_inventory.html" class="nav-item ">Stock Management</a></li>
+      <li><a href="manager_inventoryreport.html" class="nav-item">Stock Report</a></li>
       <li><a href="manager_employeeexpense.html" class="nav-item">Employee Expense</a></li>
+<li><a href="manager_guestmanagement.html" class="nav-item">Guest Management</a></li>
       <li><a href="manager_otherexpense.html" class="nav-item active">Other Expense</a></li>
       <li><a href="manager_salesmanagement.html" class="nav-item">Employee Sales report</a></li>
       <li><a href="manager_salesreport.html" class="nav-item">Sales History & Report</a></li>
@@ -442,7 +443,7 @@
           <td>৳ ${item.amount.toFixed(2)}</td>
           <td style="display: flex; gap: 6px;">
             <button class="btn btn-warning" onclick="editExpense('${item.id}')">Edit</button>
-            <button class="btn btn-danger" style="visibility: hidden;" onclick="deleteExpense('${item.id}')">Delete</button>
+            <button class="btn btn-danger" style="visibility: hidden" onclick="deleteExpense('${item.id}')">Delete</button>
           </td>
         `;
         tbody.appendChild(tr);
