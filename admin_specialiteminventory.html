@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saffron - Sub-Assembly / Inventory Recipe Management</title>
+  <link rel="icon" type="image/x-icon" href="faviconlogo.ico">
+  
+  <!-- SECURITY CHECK: Redirect if not logged in -->
+  <script>
+    if (localStorage.getItem('saffron_admin_logged_in') !== 'true') {
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: #f1f5f9; color: #0f172a; min-height: 100vh; }
+    
+    /* Container Layout */
+    .container { max-width: 1250px; margin: 0 auto; padding: 25px 20px; }
+
+    /* Top Navigation Header Bar */
+    .top-bar { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      background: #ffffff; 
+      padding: 16px 24px; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05); 
+      margin-bottom: 25px; 
+    }
+    .brand-section { display: flex; align-items: center; gap: 16px; }
+    .brand-logo { width: 110px; height: 42px; object-fit: contain; }
+    .brand-title-group h2 { font-size: 20px; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-title-group span { font-size: 13px; color: #64748b; font-weight: 500; }
+
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+    .status-badge { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.3px; }
+    .status-online { background: #dcfce7; color: #15803d; }
+    .status-offline { background: #fee2e2; color: #b91c1c; }
+
+    /* Buttons */
+    .btn { padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: all 0.2s ease; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+    .btn-home { background: #2563eb; color: #fff; box-shadow: 0 2px 4px rgba(37,99,235,0.2); }
+    .btn-home:hover { background: #1d4ed8; }
+    .btn-dark { background: #0f172a; color: #fff; box-shadow: 0 2px 4px rgba(15,23,42,0.2); }
+    .btn-dark:hover { background: #1e293b; }
+    .btn-primary { background: #f59e0b; color: #fff; }
+    .btn-primary:hover { background: #d97706; }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-success:hover { background: #059669; }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-warning { background: #3b82f6; color: #fff; }
+
+    /* Cards */
+    .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .card-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 2px solid #f1f5f9; padding-bottom: 14px; }
+    .card-title { font-size: 20px; font-weight: 800; color: #0f172a; }
+
+    /* Form Inputs */
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; font-weight: 700; color: #475569; }
+    .form-control { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; transition: all 0.2s; }
+    .form-control:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.15); }
+
+    .recipe-row { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
+
+    /* Table Styling */
+    .table-responsive { overflow-x: auto; }
+    table.main-table { width: 100%; border-collapse: collapse; }
+    table.main-table > thead > tr > th { background: #f8fafc; color: #475569; font-weight: 700; font-size: 13px; text-transform: uppercase; padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; }
+    table.main-table > tbody > tr > td { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; font-size: 14px; }
+
+    /* Nested Ingredient Sub-Table */
+    table.ing-subtable { width: 100%; border-collapse: collapse; background: #f8fafc; border-radius: 6px; overflow: hidden; border: 1px solid #e2e8f0; }
+    table.ing-subtable th { background: #e2e8f0; color: #334155; font-size: 11px; font-weight: 700; padding: 6px 10px; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; }
+    table.ing-subtable td { padding: 6px 10px; font-size: 13px; color: #1e293b; border-bottom: 1px solid #f1f5f9; font-weight: 600; }
+    .qty-highlight { font-weight: 800; color: #2563eb; }
+
+    .action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* Hidden Container for Printing Statement */
+    #statement-print-area { display: none; }
+
+    /* MODERN KITCHEN DISPLAY PRINT / PDF STYLING WITH PAGE BREAK */
+    @media print {
+      @page { size: A4 portrait; margin: 10mm; }
+      body * { visibility: hidden; }
+
+      body.print-list-mode #statement-print-area, 
+      body.print-list-mode #statement-print-area * { 
+        visibility: visible; 
+      }
+      body.print-list-mode #statement-print-area {
+        display: block !important;
+        position: absolute; left: 0; top: 0; width: 100%;
+        padding: 0; background: #fff; color: #0f172a;
+      }
+
+      /* Page Wrapper for Print */
+      .stmt-page-block {
+        page-break-after: always;
+        break-after: page;
+        min-height: 98vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .stmt-page-block:last-child {
+        page-break-after: avoid;
+        break-after: avoid;
+      }
+
+      /* KITCHEN DISPLAY HEADER STATEMENT */
+      .stmt-top-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0f172a; padding-bottom: 10px; margin-bottom: 12px; }
+      .stmt-logo-group { display: flex; align-items: center; gap: 15px; }
+      .stmt-logo { max-width: 120px; height: auto; }
+      .stmt-brand-title { font-size: 22px; font-weight: 900; color: #0f172a; letter-spacing: 1px; text-transform: uppercase; }
+      .stmt-report-badge { background: #0f172a; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+
+      .stmt-meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #f1f5f9; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 15px; }
+      .stmt-meta-item { font-size: 11px; color: #475569; font-weight: 600; }
+      .stmt-meta-item strong { color: #0f172a; font-size: 12px; font-weight: 800; }
+
+      .stmt-cat-title { font-size: 15px; font-weight: 900; color: #fff; background: #0f172a; padding: 8px 12px; margin-top: 10px; margin-bottom: 0; border-radius: 6px 6px 0 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; }
+      
+      /* PRINT TABLES */
+      .stmt-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 1px solid #0f172a; }
+      .stmt-table th { background: #e2e8f0; color: #0f172a; font-weight: 800; padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #0f172a; border-right: 1px solid #cbd5e1; }
+      .stmt-table td { padding: 8px 10px; border-bottom: 1px solid #cbd5e1; border-right: 1px solid #cbd5e1; color: #0f172a; font-size: 12px; vertical-align: middle; }
+
+      .stmt-ing-table { width: 100%; border-collapse: collapse; background: #fff; }
+      .stmt-ing-table th { background: #f1f5f9; color: #334155; font-size: 9px; font-weight: 800; padding: 4px 6px; border-bottom: 1px solid #cbd5e1; }
+      .stmt-ing-table td { padding: 4px 6px; font-size: 11px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #e2e8f0; }
+
+      .stmt-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; padding-top: 15px; border-top: 2px solid #0f172a; }
+      .stmt-sign-box { text-align: center; width: 200px; }
+      .stmt-sign-line { border-top: 1.5px solid #0f172a; margin-bottom: 4px; }
+      .stmt-sign-text { font-size: 11px; color: #0f172a; font-weight: 800; text-transform: uppercase; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Top Navigation Header Bar -->
+    <div class="top-bar">
+      <div class="brand-section">
+        <img src="poslogo.png" alt="Saffron Logo" class="brand-logo" onerror="this.onerror=null; this.src='https://via.placeholder.com/110x42?text=Saffron';">
+        <div class="brand-title-group">
+          <h2>Saffron - Inventory Recipe Builder</h2>
+          <span>Mirpur 10 Branch</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div id="net-status" class="status-badge status-online">🟢 অনলাইন</div>
+        <a href="admin_inventory.html" class="btn btn-home">🏠 INVENTORY HOME</a>
+      </div>
+    </div>
+
+    <!-- 1. ADD / EDIT RECIPE FORM CARD -->
+    <div class="card">
+      <div class="card-header-bar">
+        <span class="card-title">🧪 ১. ইনভেন্টরি আইটেমের কাঁচামাল রেসিপি সেটআপ করুন</span>
+        <button type="button" id="cancel-edit-btn" class="btn btn-dark" style="display: none; background: #64748b;" onclick="resetRecipeForm()">✕ বাতিল</button>
+      </div>
+
+      <form id="recipe-form">
+        <input type="hidden" id="editing-target-id" value="">
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>প্রস্তুতকৃত ইনভেন্টরি আইটেম নির্বাচন করুন (Target Item)</label>
+            <select id="target-item-select" class="form-control" onchange="handleTargetSelectChange(this)" required>
+              <option value="">-- ইনভেন্টরি আইটেম বাছুন --</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>কত পরিমাণের জন্য এই রেসিপিটি? (Batch Size Quantity)</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="number" step="any" id="batch-qty" class="form-control" placeholder="যেমন: 1000" required>
+              <span id="target-unit-label" style="align-self: center; font-weight: 800; color: #475569; min-width: 50px;">Gram</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin: 15px 0 10px 0; font-weight: 800; color: #0f172a; font-size: 15px;">
+          উপরে উল্লিখিত পরিমাণের জন্য প্রয়োজনীয় কাঁচামাল যোগ করুন:
+        </div>
+
+        <div id="ingredients-container" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 15px;">
+          <!-- Dynamic Ingredient Rows Will Append Here -->
+        </div>
+
+        <button type="button" class="btn btn-warning" onclick="addIngredientRow()" style="margin-bottom: 20px;">+ কাঁচামাল যোগ করুন</button>
+
+        <div>
+          <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 15px;">সেভ রেসিপি সেটআপ</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 2. QUANTITY ACTION CARD (Add / Reduce Quantity Modal Box) -->
+    <div class="card" id="update-stock-card" style="display: none; background: #fffbe0; border: 2px solid #f59e0b;">
+      <div class="card-header-bar" style="border-bottom-color: #fde047;">
+        <span class="card-title" id="update-title" style="color: #b45309;">স্টক তৈরি / পরিবর্তন করুন</span>
+      </div>
+      
+      <form id="update-stock-form" class="form-grid">
+        <input type="hidden" id="selected-item-id">
+        <input type="hidden" id="action-type">
+
+        <div class="form-group">
+          <label id="update-qty-label">কত গ্রাম/পিস তৈরি করবেন?</label>
+          <input type="number" step="any" id="update-qty-input" class="form-control" placeholder="পরিমাণ লিখুন" required>
+        </div>
+
+        <div class="form-group" id="price-input-group">
+          <label>অতিরিক্ত খরচ/টাকা (যদি থাকে) (TK)</label>
+          <input type="number" step="any" id="update-price-input" class="form-control" placeholder="0" value="0">
+        </div>
+
+        <div class="form-group" style="justify-content: flex-end; flex-direction: row; align-items: flex-end; gap: 10px;">
+          <button type="submit" class="btn btn-success">কনফার্ম ও ইনভেন্টরি আপডেট করুন</button>
+          <button type="button" class="btn btn-dark" style="background:#cbd5e1; color:#0f172a;" onclick="closeUpdateCard()">বাতিল</button>
+        </div>
+      </form>
+      <div id="recipe-calc-preview" style="font-size: 13px; font-weight: 700; color: #b45309; margin-top: 10px;"></div>
+    </div>
+
+    <!-- 3. RECIPE LIST TABLE CARD -->
+    <div class="card">
+      <div class="card-header-bar">
+        <span class="card-title">📋 ২. ইনভেন্টরি রেসিপি ও প্রস্তুতকৃত আইটেম লিস্ট</span>
+        <button class="btn btn-dark" onclick="printInventoryRecipeReport()">📄 RECEIPE DOWNLOAD</button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="main-table">
+          <thead>
+            <tr>
+              <th style="width: 20%;">তৈরিকৃত আইটেমের নাম</th>
+              <th style="width: 15%;">ব্যাচ সাইজ (বেস)</th>
+              <th style="width: 15%;">বর্তমান স্টক</th>
+              <th style="width: 35%;">প্রয়োজনীয় কাঁচামাল রেসিপি</th>
+              <th style="width: 15%;">অ্যাকশন</th>
+            </tr>
+          </thead>
+          <tbody id="recipe-table-body">
+            <tr><td colspan="5" style="text-align: center;">ডাটা লোড হচ্ছে...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PRINT CONTAINER FOR PDF / PRINTING STATEMENT -->
+  <div id="statement-print-area"></div>
+
+  <!-- FIREBASE MODULE SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+    import { 
+      initializeFirestore, 
+      persistentLocalCache, 
+      persistentMultipleTabManager,
+      collection, 
+      onSnapshot, 
+      doc, 
+      setDoc,
+      deleteDoc,
+      updateDoc,
+      increment,
+      serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAq_vQ7ARn1TdMOOp1rtJqFOd1K4yUupP4",
+      authDomain: "saffron-65736.firebaseapp.com",
+      databaseURL: "https://saffron-65736-default-rtdb.firebaseio.com",
+      projectId: "saffron-65736",
+      storageBucket: "saffron-65736.firebasestorage.app",
+      messagingSenderId: "599450614604",
+      appId: "1:599450614604:web:e6be0bc5cb56dc867cede9",
+      measurementId: "G-FC5894HZEM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    let db;
+    try {
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+      });
+    } catch (e) {
+      console.warn("Offline cache error", e);
+    }
+
+    const inventoryRef = collection(db, "saffron", "mirpur10", "inventory");
+    const subRecipesRef = collection(db, "saffron", "mirpur10", "inventory_recipes");
+
+    let inventoryCache = [];
+    let recipesCache = {};
+
+    window.addEventListener('online', updateNetStatus);
+    window.addEventListener('offline', updateNetStatus);
+
+    function updateNetStatus() {
+      const netBadge = document.getElementById("net-status");
+      if (navigator.onLine) {
+        netBadge.className = "status-badge status-online";
+        netBadge.innerHTML = "🟢 অনলাইন";
+      } else {
+        netBadge.className = "status-badge status-offline";
+        netBadge.innerHTML = "🔴 অফলাইন";
+      }
+    }
+
+    // Realtime Inventory Listener
+    onSnapshot(inventoryRef, (snapshot) => {
+      inventoryCache = [];
+      snapshot.docs.forEach((docSnap) => {
+        const item = docSnap.data();
+        if (!item.isDeleted && !docSnap.id.endsWith("-deleted")) {
+          inventoryCache.push({ id: docSnap.id, ...item });
+        }
+      });
+      populateTargetDropdown();
+      renderRecipeTable();
+    });
+
+    // Realtime Sub-Recipes Listener
+    onSnapshot(subRecipesRef, (snapshot) => {
+      recipesCache = {};
+      snapshot.docs.forEach(docSnap => {
+        recipesCache[docSnap.id] = docSnap.data();
+      });
+      renderRecipeTable();
+    });
+
+    function populateTargetDropdown() {
+      const select = document.getElementById("target-item-select");
+      const currentVal = select.value;
+      let html = `<option value="">-- ইনভেন্টরি আইটেম বাছুন --</option>`;
+      
+      inventoryCache.forEach(item => {
+        html += `<option value="${item.id}" data-unit="${item.unit || 'Gram'}">${item.name} (${item.quantity || 0} ${item.unit || 'Gram'})</option>`;
+      });
+      select.innerHTML = html;
+      select.value = currentVal;
+    }
+
+    window.handleTargetSelectChange = function(selectElem) {
+      const selectedOpt = selectElem.options[selectElem.selectedIndex];
+      const unit = selectedOpt ? selectedOpt.getAttribute("data-unit") || "Gram" : "Gram";
+      document.getElementById("target-unit-label").innerText = unit;
+
+      // Re-populate ingredients rows to exclude this target item
+      document.querySelectorAll(".r-item").forEach(select => {
+        const val = select.value;
+        updateIngredientOptions(select, selectElem.value);
+        select.value = val;
+      });
+    };
+
+    function updateIngredientOptions(selectElem, targetId) {
+      let options = `<option value="">-- কাঁচামাল বাছুন --</option>`;
+      inventoryCache.forEach(inv => {
+        if (inv.id !== targetId) {
+          options += `<option value="${inv.id}" data-unit="${inv.unit}">${inv.name} (${inv.unit})</option>`;
+        }
+      });
+      selectElem.innerHTML = options;
+    }
+
+    window.addIngredientRow = function(itemVal = '', qtyVal = '') {
+      const container = document.getElementById("ingredients-container");
+      const rowId = Date.now() + Math.random();
+      const targetId = document.getElementById("target-item-select").value;
+
+      const div = document.createElement("div");
+      div.className = "recipe-row";
+      div.id = `recipe-row-${rowId}`;
+      div.innerHTML = `
+        <select class="form-control r-item" style="flex: 2;" onchange="validateDuplicateIngredient(this)" required></select>
+        <input type="number" step="any" class="form-control r-qty" placeholder="পরিমাণ" value="${qtyVal}" style="flex: 1;" required>
+        <button type="button" class="btn btn-danger" style="padding: 6px 10px;" onclick="this.parentElement.remove()">✕</button>
+      `;
+      container.appendChild(div);
+
+      const selectElem = div.querySelector(".r-item");
+      updateIngredientOptions(selectElem, targetId);
+      if (itemVal) selectElem.value = itemVal;
+    };
+
+    window.validateDuplicateIngredient = function(selectElem) {
+      const val = selectElem.value;
+      if (!val) return;
+
+      let count = 0;
+      document.querySelectorAll(".r-item").forEach(s => {
+        if (s.value === val) count++;
+      });
+
+      if (count > 1) {
+        alert(`আপনি ইতোমধ্যে এই কাঁচামালটি নির্বাচন করেছেন!`);
+        selectElem.value = "";
+      }
+    };
+
+    // FORM SUBMIT: Save / Update Recipe Setup
+    document.getElementById("recipe-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const targetId = document.getElementById("target-item-select").value;
+      const batchQty = parseFloat(document.getElementById("batch-qty").value) || 0;
+      const targetItem = inventoryCache.find(i => i.id === targetId);
+
+      if (!targetId || batchQty <= 0) {
+        alert("সঠিক আইটেম এবং ব্যাচ কয়ান্টিটি নির্বাচন করুন!");
+        return;
+      }
+
+      const rows = document.querySelectorAll("#ingredients-container .recipe-row");
+      const ingredients = [];
+
+      rows.forEach(row => {
+        const itemSelect = row.querySelector(".r-item");
+        const itemId = itemSelect.value;
+        const qty = parseFloat(row.querySelector(".r-qty").value) || 0;
+
+        const invItem = inventoryCache.find(i => i.id === itemId);
+        if (itemId && qty > 0 && invItem) {
+          ingredients.push({
+            itemId: itemId,
+            itemName: invItem.name,
+            unit: invItem.unit || "Gram",
+            qty: qty
+          });
+        }
+      });
+
+      if (ingredients.length === 0) {
+        alert("কমপক্ষে একটি কাঁচামাল যোগ করুন!");
+        return;
+      }
+
+      try {
+        await setDoc(doc(db, "saffron", "mirpur10", "inventory_recipes", targetId), {
+          targetId: targetId,
+          targetName: targetItem ? targetItem.name : targetId,
+          unit: targetItem ? targetItem.unit : "Gram",
+          batchQty: batchQty,
+          ingredients: ingredients,
+          updatedAt: serverTimestamp()
+        });
+
+        alert(`"${targetItem ? targetItem.name : targetId}" এর কাঁচামাল রেসিপি সফলভাবে সেভ হয়েছে!`);
+        resetRecipeForm();
+      } catch (err) {
+        console.error("Error saving recipe: ", err);
+        alert("রেসিপি সেভ করতে সমস্যা হয়েছে: " + err.message);
+      }
+    });
+
+    // Render Recipe List Table
+    function renderRecipeTable() {
+      const tbody = document.getElementById("recipe-table-body");
+      tbody.innerHTML = "";
+
+      const keys = Object.keys(recipesCache);
+      if (keys.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">কোনো প্রস্তুতকৃত আইটেমের রেসিপি সেটআপ করা হয়নি।</td></tr>`;
+        return;
+      }
+
+      keys.forEach(key => {
+        const rec = recipesCache[key];
+        const invItem = inventoryCache.find(i => i.id === rec.targetId);
+        const currentStock = invItem ? invItem.quantity || 0 : 0;
+        const unit = rec.unit || 'Gram';
+
+        let ingSubTableRows = "";
+        (rec.ingredients || []).forEach(i => {
+          ingSubTableRows += `
+            <tr>
+              <td>${i.itemName}</td>
+              <td class="qty-highlight">${i.qty}</td>
+              <td>${i.unit || 'Gram'}</td>
+            </tr>
+          `;
+        });
+
+        const ingTableHTML = `
+          <table class="ing-subtable">
+            <thead>
+              <tr>
+                <th>কাঁচামাল (Ingredient)</th>
+                <th>প্রয়োজনীয় পরিমাণ</th>
+                <th>ইউনিট</th>
+              </tr>
+            </thead>
+            <tbody>${ingSubTableRows}</tbody>
+          </table>
+        `;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${rec.targetName}</strong></td>
+          <td><span style="font-weight:800; color:#2563eb;">${rec.batchQty} ${unit}</span></td>
+          <td><strong>${currentStock} ${unit}</strong></td>
+          <td>${ingTableHTML}</td>
+          <td>
+            <div class="action-btns">
+              <button class="btn btn-success" style="padding: 4px 8px; font-size: 12px;" onclick="openUpdateModal('${rec.targetId}', 'add')">+ Add Qty</button>
+              <button class="btn" style="background:#f97316; color:#fff; padding: 4px 8px; font-size: 12px;" onclick="openUpdateModal('${rec.targetId}', 'reduce')">- Reduce Qty</button>
+              <button class="btn btn-warning" style="padding: 4px 8px; font-size: 12px;" onclick="editRecipe('${rec.targetId}')">✏️ Edit</button>
+              <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteRecipe('${rec.targetId}')">🗑️ Delete</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // RESET RECIPE FORM
+    window.resetRecipeForm = function() {
+      document.getElementById("recipe-form").reset();
+      document.getElementById("editing-target-id").value = "";
+      document.getElementById("cancel-edit-btn").style.display = "none";
+      document.getElementById("submit-btn").innerText = "সেভ রেসিপি সেটআপ";
+      document.getElementById("target-item-select").disabled = false;
+      document.getElementById("ingredients-container").innerHTML = "";
+      addIngredientRow();
+    };
+
+    // EDIT RECIPE
+    window.editRecipe = function(targetId) {
+      const rec = recipesCache[targetId];
+      if (!rec) return;
+
+      document.getElementById("editing-target-id").value = targetId;
+      document.getElementById("target-item-select").value = targetId;
+      document.getElementById("target-item-select").disabled = true;
+      document.getElementById("batch-qty").value = rec.batchQty;
+      document.getElementById("target-unit-label").innerText = rec.unit || "Gram";
+
+      document.getElementById("cancel-edit-btn").style.display = "inline-block";
+      document.getElementById("submit-btn").innerText = "আপডেট রেসিপি সেটআপ";
+
+      document.getElementById("ingredients-container").innerHTML = "";
+      (rec.ingredients || []).forEach(i => {
+        addIngredientRow(i.itemId, i.qty);
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // DELETE RECIPE
+    window.deleteRecipe = async function(targetId) {
+      if (confirm(`আপনি কি সত্যিই এই রেসিপি সেটআপটি মুছে ফেলতে চান? (ইনভেন্টরি আইটেম কিন্তু মুছবে না)`)) {
+        try {
+          await deleteDoc(doc(db, "saffron", "mirpur10", "inventory_recipes", targetId));
+          alert("রেসিপি ডিলিট করা হয়েছে।");
+        } catch (err) {
+          alert("ডিলিট করতে সমস্যা হয়েছে: " + err.message);
+        }
+      }
+    };
+
+    // OPEN ADD / REDUCE STOCK MODAL
+    window.openUpdateModal = function(targetId, type) {
+      const rec = recipesCache[targetId];
+      if (!rec) {
+        alert("এই আইটেমের জন্য কোনো রেসিপি পাওয়া যায়নি!");
+        return;
+      }
+
+      document.getElementById("update-stock-card").style.display = "block";
+      document.getElementById("selected-item-id").value = targetId;
+      document.getElementById("action-type").value = type;
+      document.getElementById("update-qty-input").value = "";
+      document.getElementById("update-price-input").value = "0";
+
+      const title = document.getElementById("update-title");
+      const qtyLabel = document.getElementById("update-qty-label");
+      const priceGroup = document.getElementById("price-input-group");
+
+      if (type === 'add') {
+        title.innerText = `➕ পরিমাণ যোগ করুন: ${rec.targetName}`;
+        qtyLabel.innerText = `কত ${rec.unit || 'Gram'} ${rec.targetName} তৈরি করতে চান?`;
+        priceGroup.style.display = "flex";
+      } else {
+        title.innerText = `➖ পরিমাণ কমান: ${rec.targetName}`;
+        qtyLabel.innerText = `কত ${rec.unit || 'Gram'} ${rec.targetName} কমাতে চান?`;
+        priceGroup.style.display = "none";
+      }
+
+      window.scrollTo({ top: document.getElementById("update-stock-card").offsetTop - 20, behavior: 'smooth' });
+    };
+
+    window.closeUpdateCard = function() {
+      document.getElementById("update-stock-card").style.display = "none";
+    };
+
+    // SUBMIT STOCK UPDATE (AUTO DEDUCT INGREDIENTS & ADD TARGET STOCK)
+    document.getElementById("update-stock-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const targetId = document.getElementById("selected-item-id").value;
+      const type = document.getElementById("action-type").value;
+      const qtyToProduce = parseFloat(document.getElementById("update-qty-input").value) || 0;
+      const extraPrice = parseFloat(document.getElementById("update-price-input").value) || 0;
+
+      const rec = recipesCache[targetId];
+      if (!rec || qtyToProduce <= 0) return;
+
+      const ratio = qtyToProduce / rec.batchQty; // Multiplier ratio
+      let totalIngredientsCostDeducted = 0;
+
+      try {
+        if (type === 'add') {
+          // 1. Reduce all raw materials from Inventory proportionately
+          for (let ing of rec.ingredients) {
+            const deductQty = ing.qty * ratio;
+            const invItem = inventoryCache.find(i => i.id === ing.itemId);
+
+            let costDeduction = 0;
+            if (invItem && invItem.quantity > 0 && invItem.totalCost > 0) {
+              const unitCost = invItem.totalCost / invItem.quantity;
+              costDeduction = deductQty * unitCost;
+            }
+
+            totalIngredientsCostDeducted += costDeduction;
+
+            // Reduce raw material stock and cost in Inventory
+            const ingDocRef = doc(db, "saffron", "mirpur10", "inventory", ing.itemId);
+            await updateDoc(ingDocRef, {
+              quantity: increment(-deductQty),
+              totalCost: increment(-costDeduction),
+              updatedAt: serverTimestamp()
+            });
+          }
+
+          // 2. Add produced item quantity and calculated cost to target Item in Inventory
+          const totalTargetCostAdd = totalIngredientsCostDeducted + extraPrice;
+          const targetDocRef = doc(db, "saffron", "mirpur10", "inventory", targetId);
+
+          await updateDoc(targetDocRef, {
+            quantity: increment(qtyToProduce),
+            totalCost: increment(totalTargetCostAdd),
+            updatedAt: serverTimestamp()
+          });
+
+          alert(`সফলভাবে ${qtyToProduce} ${rec.unit || 'Gram'} ${rec.targetName} ইনভেন্টরিতে যোগ হয়েছে এবং কাঁচামাল অটোমেটিক মাইনাস করা হয়েছে!`);
+        } else {
+          // Reduce produced item directly
+          const targetDocRef = doc(db, "saffron", "mirpur10", "inventory", targetId);
+          await updateDoc(targetDocRef, {
+            quantity: increment(-qtyToProduce),
+            updatedAt: serverTimestamp()
+          });
+
+          alert(`সফলভাবে ${qtyToProduce} ${rec.unit || 'Gram'} ${rec.targetName} স্টক থেকে কমানো হয়েছে!`);
+        }
+
+        closeUpdateCard();
+      } catch (err) {
+        console.error("Error updating inventory recipe stock: ", err);
+        alert("স্টক আপডেট করতে সমস্যা হয়েছে: " + err.message);
+      }
+    });
+
+    // PRINT / DOWNLOAD STATEMENT PDF FOR INVENTORY RECIPES
+    window.printInventoryRecipeReport = function() {
+      const keys = Object.keys(recipesCache);
+      if (keys.length === 0) {
+        alert("প্রিন্ট করার মতো কোনো রেসিপি ডাটা নেই!");
+        return;
+      }
+
+      let catRows = '';
+      keys.forEach(key => {
+        const rec = recipesCache[key];
+        const invItem = inventoryCache.find(i => i.id === rec.targetId);
+        const currentStock = invItem ? invItem.quantity || 0 : 0;
+        const unit = rec.unit || 'Gram';
+
+        let ingTableHTML = "";
+        if (rec.ingredients && rec.ingredients.length > 0) {
+          let ingRows = "";
+          rec.ingredients.forEach(i => {
+            ingRows += `
+              <tr>
+                <td><strong>${i.itemName}</strong></td>
+                <td style="color:#2563eb; font-weight:800;">${i.qty}</td>
+                <td>${i.unit || 'Gram'}</td>
+              </tr>
+            `;
+          });
+
+          ingTableHTML = `
+            <table class="stmt-ing-table">
+              <thead>
+                <tr>
+                  <th>Ingredient</th>
+                  <th>Qty</th>
+                  <th>Unit</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${ingRows}
+              </tbody>
+            </table>
+          `;
+        } else {
+          ingTableHTML = "N/A";
+        }
+
+        catRows += `
+          <tr>
+            <td><strong>${rec.targetName}</strong></td>
+            <td><strong>${rec.batchQty} ${unit}</strong></td>
+            <td><strong>${currentStock} ${unit}</strong></td>
+            <td>${ingTableHTML}</td>
+          </tr>
+        `;
+      });
+
+      const fullPageHTML = `
+        <div class="stmt-page-block">
+          <div>
+            <div class="stmt-top-bar">
+              <div class="stmt-logo-group">
+                <img src="poslogo.png" width="50" height="60" class="stmt-logo" alt="Saffron" onerror="this.style.display='none'">
+                <div>
+                  <div class="stmt-brand-title">SAFFRON</div>
+                  <div style="color:#475569; font-size:12px; font-weight:700;">Sub-Assembly / Inventory Recipe Manual</div>
+                </div>
+              </div>
+              <div class="stmt-report-badge">PAGE 1 OF 1</div>
+            </div>
+
+            <div class="stmt-meta-grid">
+              <div class="stmt-meta-item">Branch: <strong>Mirpur 10 Branch</strong></div>
+              <div class="stmt-meta-item">Total Recipes: <strong>${keys.length} Items</strong></div>
+              <div class="stmt-meta-item">Print Date: <strong>${new Date().toLocaleDateString('en-EN')}</strong></div>
+            </div>
+
+            <div class="stmt-cat-title">
+              <span>INVENTORY SUB-ASSEMBLY RECIPES</span>
+              <span>${keys.length} Items</span>
+            </div>
+            <table class="stmt-table">
+              <thead>
+                <tr>
+                  <th style="width: 25%;">Target Item Name</th>
+                  <th style="width: 15%;">Batch Size</th>
+                  <th style="width: 15%;">Current Stock</th>
+                  <th style="width: 45%;">Ingredients & Quantities</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${catRows}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="stmt-footer">
+            <div class="stmt-sign-box">
+              <div class="stmt-sign-line"></div>
+              <div class="stmt-sign-text">Head Chef Signature</div>
+            </div>
+            <div class="stmt-sign-box">
+              <div class="stmt-sign-line"></div>
+              <div class="stmt-sign-text">Kitchen Supervisor</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const stmtContainer = document.getElementById('statement-print-area');
+      stmtContainer.innerHTML = fullPageHTML;
+
+      document.body.className = 'print-list-mode';
+      window.print();
+      document.body.className = '';
+    };
+
+    // Initialize first row on page load
+    addIngredientRow();
+  </script>
+</body>
+</html>
