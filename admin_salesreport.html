@@ -67,7 +67,7 @@
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
     th { background: #f8fafc; color: #475569; font-weight: 600; }
-    .action-btns { display: flex; gap: 6px; }
+    .action-btns { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
     /* Modals */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
@@ -75,6 +75,10 @@
 
     /* Hidden Containers for Printing */
     #pos-receipt-print, #statement-print-area { display: none; }
+
+    /* Online Orders Box Styling */
+    .online-sales-card { background: #fffdf5; border: 2px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15); }
+    .online-settlement-box { background: #fff; border: 1px solid #fcd34d; padding: 15px; border-radius: 8px; margin-top: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; align-items: center; }
 
     /* PRINT STYLING RULES */
     @media print {
@@ -168,7 +172,7 @@
       </div>
       <ul class="nav-links">
         <li><a href="admin_inventory.html" class="nav-item">Stock Management</a></li>
-<li><a href="admin_inventoryreport.html" class="nav-item">Stock Report</a></li>
+        <li><a href="admin_inventoryreport.html" class="nav-item">Stock Report</a></li>
         <li><a href="admin_food.html" class="nav-item">Food Management</a></li>
         <li><a href="admin_employees.html" class="nav-item">Employee Management</a></li>
         <li><a href="admin_guestmanagement.html" class="nav-item">Guest Management</a></li>
@@ -212,10 +216,57 @@
       </div>
     </div>
 
+    <!-- ONLINE SALES SECTION (FOODPANDA, FOODI, PATHAO) -->
+    <div class="card online-sales-card">
+      <div class="card-title" style="color: #d97706; border-bottom-color: #fde68a;">
+        <span>🛵 অনলাইন সেলস হিস্টোরি (Foodpanda, Foodi, Pathao)</span>
+        <span style="font-size: 12px; font-weight: normal; color: #78350f;">* কোনো টাইম লিমিট নেই, সাপ্তাহিক পেমেন্ট সেটেলমেন্ট সেকশন</span>
+      </div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40px; text-align: center;"><input type="checkbox" id="select-all-online" onchange="toggleSelectAllOnline(this)"></th>
+              <th>ইনভয়েস #</th>
+              <th>তারিখ ও সময়</th>
+              <th>পেমেন্ট মেথড</th>
+              <th>আইটেম</th>
+              <th>মোট মূল্য</th>
+              <th>এড মানি (Add Extra)</th>
+              <th>ক্যাশিয়ার</th>
+              <th>অ্যাকশন</th>
+            </tr>
+          </thead>
+          <tbody id="online-sales-table-body">
+            <tr><td colspan="9" style="text-align:center;">অনলাইন ডাটা লোড হচ্ছে...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Online Order Multi Settlement Control -->
+      <div class="online-settlement-box">
+        <div>
+          <label style="font-size: 12px; font-weight: bold; color: #475569;">সিলেক্টেড অর্ডার টোটাল বিল:</label>
+          <div id="online-selected-total" style="font-size: 18px; font-weight: bold; color: #0f172a;">0 TK</div>
+        </div>
+        <div class="form-group">
+          <label>প্রাপ্ত টাকা (Collected Amount)</label>
+          <input type="number" id="online-collected-amount" class="form-control" placeholder="প্রাপ্ত টাকার পরিমাণ লিখুন" oninput="calculateOnlineSettlement()">
+        </div>
+        <div>
+          <label style="font-size: 12px; font-weight: bold; color: #475569;">ঘাটতি / কমতি (%):</label>
+          <div id="online-shortage-percent" style="font-size: 16px; font-weight: bold; color: #dc2626;">0 %</div>
+        </div>
+        <div style="display: flex; align-items: flex-end;">
+          <button class="btn btn-success" style="width: 100%; height: 38px;" onclick="completeOnlineOrders()">✅ অনলাইন সেল কমপ্লিট করুন (Complete)</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Filter Card -->
     <div class="card">
       <div class="card-title">
-        <span>🔍 অ্যাডভান্সড ফিল্টারিং</span>
+        <span>🔍 অ্যাডভান্সড ফিল্টারিং (রেগুলার সেলস)</span>
         <button class="btn btn-dark" onclick="printReportStatement()">📄 স্টেটমেন্ট ডাউনলোড (PDF / Print)</button>
       </div>
       <div class="filter-grid">
@@ -263,7 +314,7 @@
 
     <!-- Table Card -->
     <div class="card">
-      <div class="card-title">সম্পূর্ণ সেলস হিস্টোরি</div>
+      <div class="card-title">সম্পূর্ণ সেলস হিস্টোরি (রেগুলার ও কমপ্লিট অনলাইন)</div>
       <div class="table-responsive">
         <table>
           <thead>
@@ -371,7 +422,8 @@
       doc, 
       setDoc,
       deleteDoc,
-      updateDoc 
+      updateDoc,
+      writeBatch
     } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -399,10 +451,14 @@
     const paymentMethodsRef = collection(db, "saffron", "mirpur10", "payment_methods");
 
     let masterSalesList = [];
+    let regularSalesList = [];
+    let onlinePendingSalesList = [];
     let filteredSalesList = [];
     let availablePaymentMethods = [];
 
-    // Realtime Listener for Payment Methods (Synced with admin_coupon.html)
+    const ONLINE_PLATFORMS = ["FOODPANDA", "FOODI", "PATHAO"];
+
+    // Realtime Listener for Payment Methods
     onSnapshot(paymentMethodsRef, (snapshot) => {
       availablePaymentMethods = [];
       snapshot.docs.forEach((d) => {
@@ -414,7 +470,6 @@
     });
 
     function populatePaymentMethodDropdowns() {
-      // 1. Filter dropdown
       const filterPaymentSelect = document.getElementById("filter-payment");
       const currentFilterVal = filterPaymentSelect.value;
       
@@ -427,14 +482,12 @@
       });
       filterPaymentSelect.value = currentFilterVal || "ALL";
 
-      // 2. Edit Modal dropdown
       const editPaymentSelect = document.getElementById("edit-payment-method");
       const currentEditVal = editPaymentSelect.value;
       
       editPaymentSelect.innerHTML = "";
       if (availablePaymentMethods.length === 0) {
-        // Fallback default options if database has no payment methods yet
-        const defaultMethods = ["Cash", "Bkash", "Card"];
+        const defaultMethods = ["Cash", "Bkash", "Card", "FOODPANDA", "FOODI", "PATHAO"];
         defaultMethods.forEach(method => {
           const opt = document.createElement("option");
           opt.value = method;
@@ -451,7 +504,6 @@
       }
 
       if (currentEditVal) {
-        // Preserve selected payment method if exists in options
         if ([...editPaymentSelect.options].some(o => o.value === currentEditVal)) {
           editPaymentSelect.value = currentEditVal;
         }
@@ -461,12 +513,28 @@
     // Realtime Listener for Sales
     onSnapshot(salesRef, (snapshot) => {
       masterSalesList = [];
+      regularSalesList = [];
+      onlinePendingSalesList = [];
+
       snapshot.docs.forEach((d) => {
         masterSalesList.push({ id: d.id, ...d.data() });
       });
 
-      masterSalesList.sort((a, b) => new Date(b.completedAt || 0) - new Date(a.completedAt || 0));
+      masterSalesList.sort((a, b) => new Date(b.completedAt || b.createdAt || 0) - new Date(a.completedAt || a.createdAt || 0));
+
+      masterSalesList.forEach(item => {
+        const payMethod = (item.paymentMethod || '').toUpperCase().trim();
+        const isOnline = ONLINE_PLATFORMS.includes(payMethod);
+
+        if (isOnline && !item.onlineCompleted) {
+          onlinePendingSalesList.push(item);
+        } else {
+          regularSalesList.push(item);
+        }
+      });
+
       populateCashierDropdown();
+      renderOnlineSalesTable();
       window.applyFilters();
     }, (error) => {
       console.error("Firestore Sales Error: ", error);
@@ -493,6 +561,137 @@
 
       cashierSelect.value = selectedVal || "ALL";
     }
+
+    // RENDER ONLINE UNCOMPLETED SALES
+    function renderOnlineSalesTable() {
+      const tbody = document.getElementById("online-sales-table-body");
+      tbody.innerHTML = "";
+
+      if (onlinePendingSalesList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#64748b;">কোনো অপেক্ষমাণ অনলাইন সেল রেকর্ড পাওয়া যায়নি।</td></tr>`;
+        calculateOnlineSettlement();
+        return;
+      }
+
+      onlinePendingSalesList.forEach(item => {
+        const orderId = item.id || item.orderId;
+        const dateStr = item.createdAt || item.completedAt ? new Date(item.createdAt || item.completedAt).toLocaleString('bn-BD') : 'N/A';
+        const itemCount = (item.items || []).reduce((s, i) => s + (i.qty || 1), 0);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td style="text-align:center;"><input type="checkbox" class="online-select-chk" value="${orderId}" data-amount="${item.grandTotal || 0}" onchange="calculateOnlineSettlement()"></td>
+          <td><strong>#${orderId}</strong></td>
+          <td>${dateStr}</td>
+          <td><span class="status-badge" style="background:#fef3c7; color:#92400e;">${item.paymentMethod || 'ONLINE'}</span></td>
+          <td>${itemCount} টি আইটেম</td>
+          <td><strong>${item.grandTotal || 0} TK</strong></td>
+          <td>
+            <div style="display:flex; gap:4px;">
+              <input type="number" id="add-money-input-${orderId}" class="form-control" style="width:75px; padding:4px;" placeholder="Tk" min="0">
+              <button class="btn btn-primary" style="padding:4px 8px; font-size:11px;" onclick="handleAddMoney('${orderId}')">+ এড</button>
+            </div>
+          </td>
+          <td>${item.createdBy || item.completedBy || 'Cashier'}</td>
+          <td class="action-btns">
+            <button class="btn btn-warning" style="padding:4px 8px; font-size:11px;" onclick="openEditModal('${orderId}')">👁️ বিস্তারিত</button>
+            <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="reprintPosReceipt('${orderId}')">🖨️ POS রসিদ</button>
+            <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteSaleOrder('${orderId}')">🗑️ ডিলিট</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      calculateOnlineSettlement();
+    }
+
+    // ADD EXTRA MONEY TO ONLINE ORDER
+    window.handleAddMoney = async function(orderId) {
+      const input = document.getElementById(`add-money-input-${orderId}`);
+      const extraAmount = parseFloat(input.value) || 0;
+
+      if (extraAmount <= 0) return alert("সঠিক এমাউন্ট লিখুন!");
+
+      const order = masterSalesList.find(o => o.id === orderId);
+      if (!order) return alert("অর্ডার তথ্য পাওয়া যায়নি!");
+
+      const newGrandTotal = (Number(order.grandTotal) || 0) + extraAmount;
+      const currentAddMoney = (Number(order.addedExtraMoney) || 0) + extraAmount;
+
+      try {
+        const orderRef = doc(db, "saffron", "mirpur10", "sales", orderId);
+        await updateDoc(orderRef, {
+          grandTotal: newGrandTotal,
+          addedExtraMoney: currentAddMoney,
+          updatedAt: new Date().toISOString()
+        });
+        alert(`সাফল্যের সাথে ${extraAmount} TK এড করা হয়েছে!`);
+      } catch (err) {
+        console.error("Add money error: ", err);
+        alert("এড মানি যোগ করতে সমস্যা হয়েছে: " + err.message);
+      }
+    };
+
+    // ONLINE MULTI-SELECT SETTLEMENT CALCULATION
+    window.toggleSelectAllOnline = function(master) {
+      const checkboxes = document.querySelectorAll(".online-select-chk");
+      checkboxes.forEach(chk => chk.checked = master.checked);
+      calculateOnlineSettlement();
+    };
+
+    window.calculateOnlineSettlement = function() {
+      const checkboxes = document.querySelectorAll(".online-select-chk:checked");
+      let totalBill = 0;
+
+      checkboxes.forEach(chk => {
+        totalBill += parseFloat(chk.getAttribute("data-amount")) || 0;
+      });
+
+      document.getElementById("online-selected-total").innerText = `${totalBill.toFixed(1)} TK`;
+
+      const collectedAmount = parseFloat(document.getElementById("online-collected-amount").value) || 0;
+      let shortagePercent = 0;
+
+      if (totalBill > 0 && collectedAmount < totalBill) {
+        const diff = totalBill - collectedAmount;
+        shortagePercent = (diff / totalBill) * 100;
+      }
+
+      document.getElementById("online-shortage-percent").innerText = `${shortagePercent.toFixed(2)} %`;
+    };
+
+    // COMPLETE SELECTED ONLINE ORDERS
+    window.completeOnlineOrders = async function() {
+      const checkboxes = document.querySelectorAll(".online-select-chk:checked");
+      if (checkboxes.length === 0) return alert("অনলাইন সেকশন থেকে অন্তত একটি অর্ডার সিলেক্ট করুন!");
+
+      if (!confirm(`আপনি কি সিলেক্টকৃত ${checkboxes.length} টি অনলাইন অর্ডার কমপ্লিট করে 'সম্পূর্ণ সেলস হিস্টোরি' তে পাঠাতে চান?`)) {
+        return;
+      }
+
+      const batch = writeBatch(db);
+      const now = new Date().toISOString();
+
+      checkboxes.forEach(chk => {
+        const orderId = chk.value;
+        const ref = doc(db, "saffron", "mirpur10", "sales", orderId);
+        batch.update(ref, {
+          onlineCompleted: true,
+          onlineCompletedAt: now,
+          onlineCompletedBy: localStorage.getItem('saffron_admin_user') || 'Admin'
+        });
+      });
+
+      try {
+        await batch.commit();
+        alert("সিলেক্টকৃত অনলাইন অর্ডারসমূহ সফলতা সহ কমপ্লিট করা হয়েছে এবং সম্পূর্ণ সেলস হিস্টোরিতে যোগ হয়েছে!");
+        document.getElementById("select-all-online").checked = false;
+        document.getElementById("online-collected-amount").value = "";
+      } catch (err) {
+        console.error("Complete Online Orders Error: ", err);
+        alert("কমপ্লিট করতে সমস্যা হয়েছে: " + err.message);
+      }
+    };
 
     window.handlePresetDateChange = function() {
       const preset = document.getElementById("filter-date-preset").value;
@@ -543,7 +742,7 @@
         if (eVal) endDate = new Date(eVal + "T23:59:59");
       }
 
-      filteredSalesList = masterSalesList.filter(item => {
+      filteredSalesList = regularSalesList.filter(item => {
         const itemDate = new Date(item.completedAt || item.createdAt || 0);
 
         if (startDate && itemDate < startDate) return false;
@@ -603,7 +802,7 @@
 
       filteredSalesList.forEach(item => {
         const orderId = item.id || item.orderId;
-        const dateStr = item.completedAt ? new Date(item.completedAt).toLocaleString('bn-BD') : 'N/A';
+        const dateStr = item.completedAt || item.createdAt ? new Date(item.completedAt || item.createdAt).toLocaleString('bn-BD') : 'N/A';
         const itemCount = (item.items || []).reduce((s, i) => s + (i.qty || 1), 0);
 
         const tr = document.createElement("tr");
@@ -633,7 +832,7 @@
 
       const reason = prompt(`আপনি কি #${orderId} অর্ডারটি ডিলিট করতে নিশ্চিত?\n\nঅনুগ্রহ করে ডিলিট করার কারণ লিখুন (বাধ্যতামূলক):`);
       
-      if (reason === null) return; // User clicked Cancel
+      if (reason === null) return;
       
       if (!reason.trim()) {
         alert("ডিলিট করার কারণ লেখা বাধ্যতামূলক!");
@@ -644,7 +843,6 @@
 
       if (confirm(`অর্ডার আইডি: #${orderId}\nকারণ: ${reason}\nইউজার: ${currentUser}\n\nআপনি কি নিশ্চিতভাবে তথ্যটি ডিলিট করতে চান?`)) {
         try {
-          // 1. Prepare data to move
           const deletedData = {
             ...order,
             deletedAt: new Date().toISOString(),
@@ -652,11 +850,9 @@
             deleteReason: reason.trim()
           };
 
-          // 2. Save to "deleted_sales" collection
           const deletedRef = doc(db, "saffron", "mirpur10", "deleted_sales", orderId);
           await setDoc(deletedRef, deletedData);
 
-          // 3. Delete from original "sales" collection
           const originalRef = doc(db, "saffron", "mirpur10", "sales", orderId);
           await deleteDoc(originalRef);
 
@@ -688,7 +884,7 @@
       
       let rowsHTML = '';
       filteredSalesList.forEach(item => {
-        const dateStr = item.completedAt ? new Date(item.completedAt).toLocaleString('bn-BD') : 'N/A';
+        const dateStr = item.completedAt || item.createdAt ? new Date(item.completedAt || item.createdAt).toLocaleString('bn-BD') : 'N/A';
         const withoutVat = (Number(item.grandTotal || 0) - Number(item.vatAmount || 0)).toFixed(1);
         const cashierName = item.createdBy || item.completedBy || 'Cashier';
         
@@ -816,7 +1012,7 @@
         <div class="receipt-divider"></div>
         <div class="receipt-info">
           <div><strong>Order ID: #</strong> ${orderId} | <strong>Table:</strong> ${order.table || 'N/A'}</div>
-          <div><strong>Date:</strong> ${new Date(order.completedAt || Date.now()).toLocaleString()}</div>
+          <div><strong>Date:</strong> ${new Date(order.completedAt || order.createdAt || Date.now()).toLocaleString()}</div>
           <div><strong>Name:</strong> ${order.customerName || 'Valued Guest'}</div>
           <div><strong>Phone:</strong> ${order.customerPhone || order.phone || 'N/A'}</div>
           <div><strong>Served By:</strong> ${order.createdBy || order.completedBy || 'Cashier'}</div>
@@ -871,7 +1067,6 @@
       const editPaymentSelect = document.getElementById("edit-payment-method");
       const orderPayment = order.paymentMethod || 'Cash';
       
-      // If payment method is not present in options, dynamically add it
       if (![...editPaymentSelect.options].some(o => o.value === orderPayment)) {
         const opt = document.createElement("option");
         opt.value = orderPayment;

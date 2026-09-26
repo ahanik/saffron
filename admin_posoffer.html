@@ -529,7 +529,7 @@
   <div class="top-header">
     <div class="brand-logo">
       <i class="fa-solid fa-utensils" style="color: #0284c7;"></i>
-      <span>Saffron POS</span>
+      <span>Saffron POS - offer</span>
     </div>
     <div class="header-info">
 
@@ -538,9 +538,6 @@
   <i class="fa fa-fw fa-home"></i> MAIN MENU
 </a>
 
-<a href="admin_posoffer.html" style="display: inline-block; background:#f59e0b; color:#fff; text-decoration: none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px; text-align: center;">
-  <i class="fa fa-fw fa-home"></i> POS OFFER SECTION
-</a>
 
       <button onclick="openCompletedOrdersModal()" style="background:#0284c7; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px;">
         <i class="fa-solid fa-clock-rotate-left"></i> Today Completed Orders
@@ -724,6 +721,34 @@
     let isEditingCompletedOrder = false;
     let originalOrderCreatedBy = null;
     let originalCartItems = []; // COMPLETED ORDER EDIT ER SOMOY PURBER ITEMS TRACK RAKHAR JONNO
+
+    // AUTO DISCOUNT CALCULATION FUNCTION
+    function calculateAutoDiscount(item) {
+      const price = item.price || 0;
+      let category = item.category || '';
+
+      if (!category) {
+        const matchedFood = allFoods.find(f => {
+          const rawCartName = (item.name || '').split(' (')[0].trim();
+          return f.name && f.name.trim() === rawCartName;
+        });
+        if (matchedFood && matchedFood.category) {
+          category = matchedFood.category;
+        }
+      }
+
+      if (category.toLowerCase().includes('platter') || (item.name && item.name.toLowerCase().includes('platter'))) {
+        return 50;
+      }
+
+      if (price < 200) return 0;
+      if (price >= 200 && price <= 299) return 20;
+      if (price >= 300 && price <= 399) return 30;
+      if (price >= 400 && price <= 499) return 40;
+      if (price >= 500) return 50;
+
+      return 0;
+    }
 
     function loadUserInfo() {
       const nameElem = document.getElementById('user-display-name');
@@ -1086,7 +1111,7 @@
           const opt = document.createElement('div');
           opt.className = 'variant-opt';
           opt.onclick = () => {
-            addToCart(`${food.name || 'Item'} (${variantName})`, variantPrice);
+            addToCart(`${food.name || 'Item'} (${variantName})`, variantPrice, food.category);
             closeModal('variant-modal');
           };
           opt.innerHTML = `
@@ -1097,7 +1122,7 @@
         });
         document.getElementById('variant-modal').style.display = 'flex';
       } else {
-        addToCart(food.name || 'Item', Number(food.price ?? 0));
+        addToCart(food.name || 'Item', Number(food.price ?? 0), food.category);
       }
     }
 
@@ -1105,12 +1130,12 @@
       document.getElementById(modalId).style.display = 'none';
     }
 
-    window.addToCart = function(itemName, price) {
+    window.addToCart = function(itemName, price, category = '') {
       const existing = cart.find(i => i.name === itemName);
       if(existing) {
         existing.qty += 1;
       } else {
-        cart.push({ name: itemName, price: Number(price), qty: 1 });
+        cart.push({ name: itemName, price: Number(price), qty: 1, category: category });
       }
       renderCart();
     }
@@ -1161,10 +1186,12 @@
 
       container.innerHTML = '';
       cart.forEach((item, idx) => {
+        const discPct = calculateAutoDiscount(item);
+        const discText = discPct > 0 ? ` <span style="color:#22c55e; font-weight:bold;">(-${discPct}%)</span>` : '';
         container.innerHTML += `
           <div class="cart-item">
             <div>
-              <div style="font-weight:bold;">${item.name}</div>
+              <div style="font-weight:bold;">${item.name}${discText}</div>
               <div style="color:#64748b;">${item.price} TK x ${item.qty} = ${item.price * item.qty} TK</div>
             </div>
             <div style="display:flex; gap:6px; align-items:center;">
@@ -1209,8 +1236,13 @@
 
     window.calculateBill = function() {
       let subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+      let autoDiscount = cart.reduce((sum, item) => {
+        const discPct = calculateAutoDiscount(item);
+        return sum + ((item.price * item.qty) * discPct / 100);
+      }, 0);
+
       let vat = (subtotal * currentVatRate) / 100;
-      let discount = 0;
+      let discount = autoDiscount;
 
       const couponInput = document.getElementById('coupon-code');
       let couponCode = couponInput.value.trim().toUpperCase();
@@ -1236,15 +1268,15 @@
             couponInput.value = '';
             manualDiscInput.disabled = false;
             couponCode = '';
-            discount = 0;
+            discount = autoDiscount;
           } else if(c.expireDate && c.expireDate < today) {
             msgElem.innerText = "Coupon code expired";
             msgElem.style.color = "#ef4444";
-            discount = 0;
+            discount = autoDiscount;
           } else if(minOrderVal > 0 && subtotal < minOrderVal) {
             msgElem.innerText = `Min order TK ${minOrderVal} (excl. VAT) required`;
             msgElem.style.color = "#ef4444";
-            discount = 0;
+            discount = autoDiscount;
           } else if(couponPhone) {
             if(custPhone === '') {
               msgElem.innerText = "This coupon only for specific customer!!!";
@@ -1252,7 +1284,7 @@
               couponInput.value = '';
               manualDiscInput.disabled = false;
               couponCode = ''; 
-              discount = 0;
+              discount = autoDiscount;
             } 
             else if(couponPhone !== custPhone) {
               msgElem.innerText = "Coupon removed! Phone number mismatch.";
@@ -1260,41 +1292,47 @@
               couponInput.value = '';
               manualDiscInput.disabled = false;
               couponCode = '';
-              discount = 0;
+              discount = autoDiscount;
             } 
             else {
               msgElem.innerText = "Coupon applied successfully!";
               msgElem.style.color = "#22c55e";
               
-              if(c.type === 'flat') discount = Number(c.amount || 0);
+              let cDisc = 0;
+              if(c.type === 'flat') cDisc = Number(c.amount || 0);
               else if(c.type === 'percent') {
-                discount = (subtotal * Number(c.amount || 0)) / 100;
-                if(c.maxDiscount && discount > Number(c.maxDiscount)) discount = Number(c.maxDiscount);
+                cDisc = (subtotal * Number(c.amount || 0)) / 100;
+                if(c.maxDiscount && cDisc > Number(c.maxDiscount)) cDisc = Number(c.maxDiscount);
               }
+              discount = autoDiscount + cDisc;
             }
           } else {
             msgElem.innerText = "Coupon applied successfully!";
             msgElem.style.color = "#22c55e";
 
-            if(c.type === 'flat') discount = Number(c.amount || 0);
+            let cDisc = 0;
+            if(c.type === 'flat') cDisc = Number(c.amount || 0);
             else if(c.type === 'percent') {
-              discount = (subtotal * Number(c.amount || 0)) / 100;
-              if(c.maxDiscount && discount > Number(c.maxDiscount)) discount = Number(c.maxDiscount);
+              cDisc = (subtotal * Number(c.amount || 0)) / 100;
+              if(c.maxDiscount && cDisc > Number(c.maxDiscount)) cDisc = Number(c.maxDiscount);
             }
+            discount = autoDiscount + cDisc;
           }
         } else {
           msgElem.innerText = "Invalid Coupon Code";
           msgElem.style.color = "#ef4444";
-          discount = 0;
+          discount = autoDiscount;
         }
       }
 
       if(!couponCode && manualDiscountVal > 0) {
+        let mDisc = 0;
         if(manualDiscountType === '%') {
-          discount = (subtotal * manualDiscountVal) / 100;
+          mDisc = (subtotal * manualDiscountVal) / 100;
         } else {
-          discount = manualDiscountVal;
+          mDisc = manualDiscountVal;
         }
+        discount = autoDiscount + mDisc;
       }
 
       discount = Math.min(discount, subtotal);
@@ -1502,9 +1540,11 @@
       const printDiv = document.getElementById('print-section');
       let itemsHTML = '';
       (order.items || []).forEach(i => {
+        const discPct = calculateAutoDiscount(i);
+        const discText = discPct > 0 ? ` (-${discPct}%)` : '';
         itemsHTML += `
           <tr>
-            <td style="font-weight:bold;">${i.name}</td>
+            <td style="font-weight:bold;">${i.name}${discText}</td>
             <td class="text-right" style="font-weight:bold;">x${i.qty}</td>
           </tr>
         `;
@@ -1656,9 +1696,11 @@
       const printDiv = document.getElementById('print-section');
       let itemsHTML = '';
       (order.items || []).forEach(i => {
+        const discPct = calculateAutoDiscount(i);
+        const discText = discPct > 0 ? ` (-${discPct}%)` : '';
         itemsHTML += `
           <tr>
-            <td>${i.name}<br><small>${i.price} x ${i.qty}</small></td>
+            <td>${i.name}${discText}<br><small>${i.price} x ${i.qty}</small></td>
             <td class="text-right">${i.price * i.qty} TK</td>
           </tr>
         `;
