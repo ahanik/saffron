@@ -649,10 +649,11 @@
 
       document.getElementById("online-selected-total").innerText = `${totalBill.toFixed(1)} TK`;
 
-      const collectedAmount = parseFloat(document.getElementById("online-collected-amount").value) || 0;
+      const collectedAmountInput = document.getElementById("online-collected-amount").value;
+      const collectedAmount = parseFloat(collectedAmountInput) || 0;
       let shortagePercent = 0;
 
-      if (totalBill > 0 && collectedAmount < totalBill) {
+      if (totalBill > 0 && collectedAmountInput !== "" && collectedAmount < totalBill) {
         const diff = totalBill - collectedAmount;
         shortagePercent = (diff / totalBill) * 100;
       }
@@ -660,36 +661,127 @@
       document.getElementById("online-shortage-percent").innerText = `${shortagePercent.toFixed(2)} %`;
     };
 
-    // COMPLETE SELECTED ONLINE ORDERS
+    // COMPLETE SELECTED ONLINE ORDERS (CONVERTS ALL SELECTED TO 1 ORDER)
     window.completeOnlineOrders = async function() {
       const checkboxes = document.querySelectorAll(".online-select-chk:checked");
       if (checkboxes.length === 0) return alert("অনলাইন সেকশন থেকে অন্তত একটি অর্ডার সিলেক্ট করুন!");
 
-      if (!confirm(`আপনি কি সিলেক্টকৃত ${checkboxes.length} টি অনলাইন অর্ডার কমপ্লিট করে 'সম্পূর্ণ সেলস হিস্টোরি' তে পাঠাতে চান?`)) {
+      const collectedAmountInput = document.getElementById("online-collected-amount").value;
+      if (collectedAmountInput === "" || isNaN(collectedAmountInput)) {
+        return alert("অনুগ্রহ করে 'প্রাপ্ত টাকা (Collected Amount)' এর ঘরে প্রাপ্ত সঠিক এমাউন্ট লিখুন!");
+      }
+
+      const collectedAmount = parseFloat(collectedAmountInput);
+      if (collectedAmount < 0) {
+        return alert("প্রাপ্ত টাকার পরিমাণ নেগেটিভ হতে পারে না!");
+      }
+
+      if (!confirm(`আপনি কি সিলেক্টকৃত ${checkboxes.length} টি অনলাইন অর্ডার একত্রিত করে ১টি একক অর্ডারে রূপান্তর ও কমপ্লিট করতে চান?`)) {
         return;
       }
 
-      const batch = writeBatch(db);
-      const now = new Date().toISOString();
-
+      // Collect selected order objects and sort chronologically
+      const selectedOrders = [];
       checkboxes.forEach(chk => {
-        const orderId = chk.value;
-        const ref = doc(db, "saffron", "mirpur10", "sales", orderId);
-        batch.update(ref, {
-          onlineCompleted: true,
-          onlineCompletedAt: now,
-          onlineCompletedBy: localStorage.getItem('saffron_admin_user') || 'Admin'
+        const ord = masterSalesList.find(o => (o.id || o.orderId) === chk.value);
+        if (ord) selectedOrders.push(ord);
+      });
+
+      selectedOrders.sort((a, b) => new Date(a.createdAt || a.completedAt || 0) - new Date(b.createdAt || b.completedAt || 0));
+
+      // Calculate total original bill from all selected orders
+      let totalOriginalBill = 0;
+      selectedOrders.forEach(o => {
+        totalOriginalBill += Number(o.grandTotal || 0);
+      });
+
+      // Calculate discount amount and shortage percentage
+      const discountAmount = totalOriginalBill > collectedAmount ? (totalOriginalBill - collectedAmount) : 0;
+      const shortagePercent = totalOriginalBill > 0 ? ((discountAmount / totalOriginalBill) * 100) : 0;
+
+      // Group all items and append date/time label
+      const combinedItems = [];
+      let combinedSubtotal = 0;
+      let combinedVat = 0;
+      const platformsSet = new Set();
+      const cashiersSet = new Set();
+
+      selectedOrders.forEach(ord => {
+        const orderDateStr = ord.createdAt || ord.completedAt ? new Date(ord.createdAt || ord.completedAt).toLocaleString('bn-BD') : '';
+        const payMeth = ord.paymentMethod || 'ONLINE';
+        platformsSet.add(payMeth);
+
+        const cashier = ord.createdBy || ord.completedBy || 'Cashier';
+        cashiersSet.add(cashier);
+
+        combinedSubtotal += Number(ord.subtotal || ord.grandTotal || 0);
+        combinedVat += Number(ord.vatAmount || 0);
+
+        (ord.items || []).forEach(item => {
+          const itemLabel = `${item.name} (${payMeth}${orderDateStr ? ' - ' + orderDateStr : ''})`;
+          combinedItems.push({
+            name: itemLabel,
+            qty: Number(item.qty || 1),
+            price: Number(item.price || 0)
+          });
         });
+      });
+
+      const now = new Date();
+      const datePart = now.toISOString().slice(2, 10).replace(/-/g, '');
+      const timePart = String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0') + String(now.getSeconds()).padStart(2, '0');
+      const newCombinedDocId = `${datePart}${timePart}`;
+
+      const primaryPlatform = Array.from(platformsSet).join('/');
+      const combinedCashier = Array.from(cashiersSet).join(', ');
+
+      const combinedOrderData = {
+        id: newCombinedDocId,
+        orderId: newCombinedDocId,
+        customerName: `Online Settlement (${selectedOrders.length} Orders)`,
+        customerPhone: "N/A",
+        table: "Online",
+        paymentMethod: primaryPlatform,
+        items: combinedItems,
+        subtotal: combinedSubtotal,
+        vatAmount: combinedVat,
+        vatRate: 0,
+        manualDiscount: discountAmount,
+        discountAmount: discountAmount,
+        shortagePercent: shortagePercent.toFixed(2),
+        grandTotal: collectedAmount,
+        collectedAmount: collectedAmount,
+        originalBill: totalOriginalBill,
+        createdBy: combinedCashier,
+        completedBy: localStorage.getItem('saffron_admin_user') || 'Admin',
+        onlineCompleted: true,
+        isCombinedOnline: true,
+        combinedOrderIds: selectedOrders.map(o => o.id || o.orderId),
+        createdAt: now.toISOString(),
+        completedAt: now.toISOString(),
+        onlineCompletedAt: now.toISOString()
+      };
+
+      const batch = writeBatch(db);
+
+      // 1. Create the single consolidated order
+      const newRef = doc(db, "saffron", "mirpur10", "sales", newCombinedDocId);
+      batch.set(newRef, combinedOrderData);
+
+      // 2. Delete individual selected uncompleted orders
+      selectedOrders.forEach(ord => {
+        const oldRef = doc(db, "saffron", "mirpur10", "sales", ord.id);
+        batch.delete(oldRef);
       });
 
       try {
         await batch.commit();
-        alert("সিলেক্টকৃত অনলাইন অর্ডারসমূহ সফলতা সহ কমপ্লিট করা হয়েছে এবং সম্পূর্ণ সেলস হিস্টোরিতে যোগ হয়েছে!");
+        alert(`সিলেক্টকৃত ${selectedOrders.length} টি অনলাইন অর্ডার সফলভাবে কনভার্ট করে ১টি অর্ডারে (#${newCombinedDocId}) কমপ্লিট করা হয়েছে!\n\nপ্রাপ্ত টাকা: ${collectedAmount.toFixed(1)} TK\nঘাটতি/ডিসকাউন্ট: ${shortagePercent.toFixed(2)}% (${discountAmount.toFixed(1)} TK)`);
         document.getElementById("select-all-online").checked = false;
         document.getElementById("online-collected-amount").value = "";
       } catch (err) {
         console.error("Complete Online Orders Error: ", err);
-        alert("কমপ্লিট করতে সমস্যা হয়েছে: " + err.message);
+        alert("অনলাইন অর্ডার কনভার্ট করতে সমস্যা হয়েছে: " + err.message);
       }
     };
 
@@ -1003,6 +1095,7 @@
       });
 
       let discountLine = order.discountAmount > 0 ? `<div style="display:flex; justify-content:space-between;"><span>Discount:</span><span>- ${order.discountAmount} TK</span></div>` : '';
+      let shortageLine = order.shortagePercent ? `<div style="display:flex; justify-content:space-between;"><span>Shortage:</span><span>${order.shortagePercent}%</span></div>` : '';
 
       printDiv.innerHTML = `
         <img src="poslogo.png" class="receipt-logo" alt="Logo" onerror="this.style.display='none'">
@@ -1029,6 +1122,7 @@
           <div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>${order.subtotal || order.grandTotal} TK</span></div>
           <div style="display:flex; justify-content:space-between;"><span>VAT (${order.vatRate || 0}%):</span><span>${order.vatAmount || 0} TK</span></div>
           ${discountLine}
+          ${shortageLine}
           <div class="receipt-totals grand-total">
             <div style="display:flex; justify-content:space-between;"><span>GRAND TOTAL:</span><span>${order.grandTotal} TK</span></div>
           </div>
