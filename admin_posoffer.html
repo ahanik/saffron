@@ -722,7 +722,7 @@
     let originalOrderCreatedBy = null;
     let originalCartItems = []; // COMPLETED ORDER EDIT ER SOMOY PURBER ITEMS TRACK RAKHAR JONNO
 
-    // AUTO DISCOUNT CALCULATION FUNCTION
+    // AUTO DISCOUNT CALCULATION FUNCTION WITH RESTRICTIONS
     function calculateAutoDiscount(item) {
       const price = item.price || 0;
       let category = item.category || '';
@@ -737,8 +737,17 @@
         }
       }
 
-      if (category.toLowerCase().includes('platter') || (item.name && item.name.toLowerCase().includes('platter'))) {
+      const isPlatter = category.toLowerCase().includes('platter') || (item.name && item.name.toLowerCase().includes('platter'));
+
+      // প্লাটারের ৫০% ডিসকাউন্টে ৩০০ টাকার রেস্ট্রিকশন থাকবে না
+      if (isPlatter) {
         return 50;
+      }
+
+      // অন্যান্য আইটেমের ক্ষেত্রে সাবটোটাল কমপক্ষে ৩০০ টাকা হতে হবে
+      const subtotal = cart.reduce((sum, cartItem) => sum + (cartItem.price * cartItem.qty), 0);
+      if (subtotal < 300) {
+        return 0;
       }
 
       if (price < 200) return 0;
@@ -956,7 +965,6 @@
     function updateInventoryStock(cartItems, isUpdate = false, previousCartItems = []) {
       if (!cartItems || !cartItems.length) return;
 
-      // Completed Order Update er somoy shudhu NOTUN add kora item gulor raw materials biyog hobe
       let itemsToProcess = cartItems;
       if (isUpdate && previousCartItems && previousCartItems.length > 0) {
         itemsToProcess = cartItems.map(cItem => {
@@ -996,7 +1004,6 @@
               const currentInv = cachedInventory[rawName] || rawMaterialsList[rawName];
               let deductionCost = 0;
 
-              // আনুপাতিক হারে খরচ বের করার লজিক: (বর্তমান মোট খরচ / বর্তমান মোট পরিমাণ) * বিক্রিত কাঁচামালের পরিমাণ
               if (currentInv && currentInv.quantity > 0 && currentInv.totalCost > 0) {
                 deductionCost = (currentInv.totalCost / currentInv.quantity) * deductionQty;
               } else {
@@ -1336,7 +1343,15 @@
       }
 
       discount = Math.min(discount, subtotal);
-      let grandTotal = Math.max(0, (subtotal - discount) + vat);
+      let calculatedGrandTotal = Math.max(0, (subtotal - discount) + vat);
+
+      // নতুন রেস্ট্রিকশন: ডিসকাউন্ট বা অফার যুক্ত হওয়ার পরেও রেস্তোরাঁয় গ্রাহকের সর্বমোট বিলের পরিমাণ ন্যূনতম ৩০০ টাকা হতে হবে।
+      // যদি চূড়ান্ত বিল ৩০০ টাকার নিচে নেমে আসে, তবুও বিল কমপক্ষে ৩০০ টাকা হিসেবেই কাউন্ট করা হবে।
+      // (যদি কার্টে কোনো আইটেম থাকে, তবেই ৩০০ টাকার রেস্ট্রিকশন কার্যকর হবে)
+      let grandTotal = calculatedGrandTotal;
+      if (subtotal > 0 && grandTotal < 300) {
+        grandTotal = 300;
+      }
 
       document.getElementById('subtotal-val').innerText = `${subtotal} TK`;
       document.getElementById('vat-val').innerText = `${vat.toFixed(1)} TK`;
@@ -1624,7 +1639,6 @@
         completedAt: new Date().toISOString()
       };
 
-      // Inventory Stock Update Call (Completed Order Update Phase vs Normal Phase)
       updateInventoryStock(orderData.items, isEditingCompletedOrder, originalCartItems);
       
       if (appliedCouponCode && couponsData[appliedCouponCode]) {
@@ -1640,7 +1654,6 @@
 
       printCustomerReceiptDirect(orderId, orderData);
 
-      // Save directly to Firestore if online
       if (navigator.onLine) {
         try {
           await setDoc(doc(db, "saffron", "mirpur10", "sales", orderId), orderData);
