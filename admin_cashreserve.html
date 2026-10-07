@@ -226,6 +226,12 @@
             <input type="number" step="0.01" id="owner-withdrawal" class="form-control" placeholder="0.00" value="0" oninput="calculateDrawerCash()">
           </div>
 
+          <!-- ONLINE PAYMENT INPUT FIELD -->
+          <div class="form-group">
+            <label>অনলাইন পে/পেমেন্ট (- Online Payment)</label>
+            <input type="number" step="0.01" id="online-payment" class="form-control" placeholder="0.00" value="0" oninput="calculateDrawerCash()">
+          </div>
+
           <!-- DROPDOWN & AMOUNT FIELD FOR EXCESS / SHORTAGE -->
           <div class="form-group">
             <label>ক্যাশ সমন্বয় ধরন (Cash Adjustment Type)</label>
@@ -329,6 +335,7 @@
               <th>Net Sales (+)</th>
               <th>Expenses (-)</th>
               <th>Owner Taken (-)</th>
+              <th>Online Pay (-)</th>
               <th>Excess (+)</th>
               <th>Shortage (-)</th>
               <th>Taken By</th>
@@ -338,7 +345,7 @@
           </thead>
           <tbody id="cash-table-body">
             <tr>
-              <td colspan="10" style="text-align: center;">Loading cash reserve records...</td>
+              <td colspan="11" style="text-align: center;">Loading cash reserve records...</td>
             </tr>
           </tbody>
         </table>
@@ -589,6 +596,7 @@
       if (existingRecord) {
         document.getElementById("opening-cash").value = existingRecord.openingCash || 0;
         document.getElementById("owner-withdrawal").value = existingRecord.ownerWithdrawal || 0;
+        document.getElementById("online-payment").value = existingRecord.onlinePayment || 0;
         document.getElementById("withdrawn-by").value = existingRecord.withdrawnBy || "N/A";
 
         // Map existing excess / shortage to dropdown and amount
@@ -616,6 +624,7 @@
           document.getElementById("opening-cash").value = "0.00";
         }
         document.getElementById("owner-withdrawal").value = "0";
+        document.getElementById("online-payment").value = "0";
         document.getElementById("adjustment-type").value = "none";
         document.getElementById("adjustment-amount").value = "0";
         document.getElementById("withdrawn-by").value = "N/A";
@@ -683,6 +692,7 @@
       const sales = parseFloat(document.getElementById("today-sales").value) || 0;
       const expenses = parseFloat(document.getElementById("today-expenses").value) || 0;
       const owner = parseFloat(document.getElementById("owner-withdrawal").value) || 0;
+      const onlinePay = parseFloat(document.getElementById("online-payment").value) || 0;
 
       // Handle Dropdown UI selection for Excess / Shortage
       const adjType = document.getElementById("adjustment-type").value;
@@ -701,7 +711,7 @@
       document.getElementById("excess-money").value = excess;
       document.getElementById("shortage-money").value = shortage;
 
-      const cashInDrawer = (opening + sales + excess) - (expenses + owner + shortage);
+      const cashInDrawer = (opening + sales + excess) - (expenses + owner + onlinePay + shortage);
 
       document.getElementById("cash-in-drawer").value = cashInDrawer.toFixed(2);
 
@@ -721,6 +731,7 @@
       const netSales = parseFloat(document.getElementById("today-sales").value) || 0;
       const todayExpenses = parseFloat(document.getElementById("today-expenses").value) || 0;
       const ownerWithdrawal = parseFloat(document.getElementById("owner-withdrawal").value) || 0;
+      const onlinePayment = parseFloat(document.getElementById("online-payment").value) || 0;
       const excessMoney = parseFloat(document.getElementById("excess-money").value) || 0;
       const shortageMoney = parseFloat(document.getElementById("shortage-money").value) || 0;
       const withdrawnBy = document.getElementById("withdrawn-by").value;
@@ -740,6 +751,7 @@
         netSales: netSales,
         todayExpenses: todayExpenses,
         ownerWithdrawal: ownerWithdrawal,
+        onlinePayment: onlinePayment,
         excessMoney: excessMoney,
         shortageMoney: shortageMoney,
         withdrawnBy: withdrawnBy,
@@ -781,7 +793,7 @@
       tbody.innerHTML = "";
 
       if (dataList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center;">No cash reserve records found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align: center;">No cash reserve records found.</td></tr>';
         return;
       }
 
@@ -795,6 +807,7 @@
           <td style="color: #166534; font-weight: 600;">+ ৳ ${parseFloat(item.netSales || 0).toFixed(2)}</td>
           <td style="color: #b91c1c;">- ৳ ${parseFloat(item.todayExpenses || 0).toFixed(2)}</td>
           <td style="color: #b91c1c;">- ৳ ${parseFloat(item.ownerWithdrawal || 0).toFixed(2)}</td>
+          <td style="color: #b91c1c;">- ৳ ${parseFloat(item.onlinePayment || 0).toFixed(2)}</td>
           <td style="color: #166534;">+ ৳ ${parseFloat(item.excessMoney || 0).toFixed(2)}</td>
           <td style="color: #b91c1c;">- ৳ ${parseFloat(item.shortageMoney || 0).toFixed(2)}</td>
           <td><span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: 600;">${item.withdrawnBy || 'N/A'}</span></td>
