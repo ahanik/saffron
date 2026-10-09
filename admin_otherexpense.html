@@ -101,10 +101,11 @@
     .btn-danger { background: #ef4444; color: #fff; padding: 5px 10px; font-size: 12px; }
     .btn-secondary { background: #64748b; color: #fff; padding: 7px 12px; font-size: 12px; }
 
-    /* Expense Table Responsive Container */
+    /* Expense Table Responsive Container - Updated to fill available vertical space */
     .table-responsive { 
       overflow-x: auto; 
-      max-height: 380px; 
+      flex: 1; 
+      min-height: 200px;
       overflow-y: auto; 
       margin-top: 10px; 
       border: 1px solid #e2e8f0;
@@ -201,7 +202,7 @@
     </div>
 
     <!-- EXPENSE LIST TABLE & FILTER -->
-    <div class="card" style="flex: 1; margin-bottom: 0;">
+    <div class="card" style="flex: 1; margin-bottom: 0; display: flex; flex-direction: column;">
       <div class="section-header">Recent Expenses & Filters</div>
       
       <!-- Filter Controls -->
@@ -570,7 +571,7 @@
       document.getElementById("exp-date").value = item.date;
 
       document.getElementById("form-title").innerText = "Update Expense Details (" + item.id + ")";
-      document.getElementById("save-expense-btn").innerText = "Update Expense";
+      document.getElementById("save-expense-btn").innerText = "Save Expense Details";
       document.getElementById("cancel-edit-btn").style.display = "inline-flex";
       
       // Smooth scroll to top form
