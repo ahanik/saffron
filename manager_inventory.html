@@ -65,17 +65,22 @@
     .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .card-title { font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
     
+    .card-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
+    .card-header-bar .card-title { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+
     .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
     .form-group { display: flex; flex-direction: column; gap: 6px; }
     .form-group label { font-size: 13px; font-weight: 600; color: #475569; }
     .form-control { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; }
     .form-control:focus { border-color: #f59e0b; }
 
-    .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 14px; }
+    .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
     .btn-primary { background: #f59e0b; color: #fff; }
     .btn-primary:hover { background: #d97706; }
     .btn-success { background: #10b981; color: #fff; }
     .btn-warning { background: #3b82f6; color: #fff; }
+    .btn-dark { background: #0f172a; color: #fff; box-shadow: 0 2px 4px rgba(15,23,42,0.2); }
+    .btn-dark:hover { background: #1e293b; }
     
     /* Table Styling */
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -84,6 +89,62 @@
     td { font-size: 14px; }
     .low-stock { color: #dc2626; font-weight: bold; background: #fef2f2; }
     .action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* Hidden Container for Printing Statement */
+    #statement-print-area { display: none; }
+
+    /* MODERN PDF PRINT STYLING FOR REMAINING STOCK (FOOD RECIPE STYLED) */
+    @media print {
+      @page { size: A4 portrait; margin: 10mm; }
+      body * { visibility: hidden; }
+
+      body.print-list-mode #statement-print-area, 
+      body.print-list-mode #statement-print-area * { 
+        visibility: visible; 
+      }
+      body.print-list-mode #statement-print-area {
+        display: block !important;
+        position: absolute; left: 0; top: 0; width: 100%;
+        padding: 0; background: #fff; color: #0f172a;
+      }
+
+      /* Statement Page Block Wrapper */
+      .stmt-page-block {
+        page-break-after: always;
+        break-after: page;
+        min-height: 98vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .stmt-page-block:last-child {
+        page-break-after: avoid;
+        break-after: avoid;
+      }
+
+      /* TOP BAR HEADER STATEMENT */
+      .stmt-top-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0f172a; padding-bottom: 10px; margin-bottom: 12px; }
+      .stmt-logo-group { display: flex; align-items: center; gap: 15px; }
+      .stmt-logo { max-width: 120px; height: auto; }
+      .stmt-brand-title { font-size: 22px; font-weight: 900; color: #0f172a; letter-spacing: 1px; text-transform: uppercase; }
+      .stmt-report-badge { background: #0f172a; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+
+      .stmt-meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #f1f5f9; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 15px; }
+      .stmt-meta-item { font-size: 11px; color: #475569; font-weight: 600; }
+      .stmt-meta-item strong { color: #0f172a; font-size: 12px; font-weight: 800; }
+
+      .stmt-cat-title { font-size: 15px; font-weight: 900; color: #fff; background: #0f172a; padding: 8px 12px; margin-top: 10px; margin-bottom: 0; border-radius: 6px 6px 0 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; }
+      
+      /* PRINT TABLES */
+      .stmt-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 1px solid #0f172a; }
+      .stmt-table th { background: #e2e8f0; color: #0f172a; font-weight: 800; padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #0f172a; border-right: 1px solid #cbd5e1; }
+      .stmt-table td { padding: 8px 10px; border-bottom: 1px solid #cbd5e1; border-right: 1px solid #cbd5e1; color: #0f172a; font-size: 12px; vertical-align: middle; }
+
+      .stmt-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; padding-top: 15px; border-top: 2px solid #0f172a; }
+      .stmt-sign-box { text-align: center; width: 200px; }
+      .stmt-sign-line { border-top: 1.5px solid #0f172a; margin-bottom: 4px; }
+      .stmt-sign-text { font-size: 11px; color: #0f172a; font-weight: 800; text-transform: uppercase; }
+    }
   </style>
 </head>
 <body>
@@ -97,17 +158,16 @@
     </div>
 
     <ul class="nav-links">
-<li><a href="manager_inventory.html" class="nav-item active">Stock Management</a></li>
+	<li><a href="manager_inventory.html" class="nav-item active">Stock Management</a></li>
       <li><a href="manager_inventoryreport.html" class="nav-item">Stock Report</a></li>
       <li><a href="manager_employeeexpense.html" class="nav-item">Employee Expense</a></li>
-<li><a href="manager_guestmanagement.html" class="nav-item">Guest Management</a></li>
+	<li><a href="manager_guestmanagement.html" class="nav-item">Guest Management</a></li>
       <li><a href="manager_otherexpense.html" class="nav-item">Other Expense</a></li>
       <li><a href="manager_salesmanagement.html" class="nav-item">Employee Sales report</a></li>
       <li><a href="manager_salesreport.html" class="nav-item">Sales History & Report</a></li>
       <li><a href="manager_costreport.html" class="nav-item">Operating Cost Report</a></li>
       <li><a href="manager_cashreserve.html" class="nav-item">Cash Reserve System</a></li>
       <li><a href="manager_pos.html" class="nav-item">POS System</a></li>
-
     </ul>
   </div>
   
@@ -121,8 +181,6 @@
     <div class="header">
       <h2 id="page-title">ইনভেন্টরি প্যানেল</h2>
       <div class="header-right">
-        <!-- ইউজার ইনফো ব্যাজ -->
-      <!--   <div id="logged-user-badge" class="user-info-badge">👤 ইউজার: লোড হচ্ছে...</div> -->
         <div id="net-status" class="status-badge status-online">🟢 অনলাইন (Auto Syncing)</div>
       </div>
     </div>
@@ -160,31 +218,13 @@
         </form>
       </div>
 
-      <!-- Section 2 & 3: Quantity Action Box (Stock Update) -->
-      <div class="card" id="update-stock-card" style="display: none; background: #fffbe0; border: 1px solid #fde047;">
-        <div class="card-title" id="update-title">স্টক পরিবর্তন করুন</div>
-        <form id="update-stock-form" class="form-grid">
-          <input type="hidden" id="selected-doc-id">
-          <input type="hidden" id="update-type">
-          <input type="hidden" id="current-qty-hidden"> <!-- Added to hold the existing quantity -->
-          <div class="form-group">
-            <label id="update-label">পরিমাণ লিখুন</label>
-            <input type="number" step="any" id="update-qty-input" class="form-control" required>
-          </div>
-          <div class="form-group">
-            <label id="update-price-label">টাকা (TK)</label>
-            <input type="number" step="any" id="update-price-input" class="form-control" placeholder="টাকার পরিমাণ লিখুন" required>
-          </div>
-          <div class="form-group" style="justify-content: flex-end; flex-direction: row; align-items: flex-end; gap: 10px;">
-            <button type="submit" class="btn btn-success">কনফার্ম করুন</button>
-            <button type="button" class="btn" style="background:#cbd5e1" onclick="closeUpdateCard()">বাতিল</button>
-          </div>
-        </form>
-      </div>
-
       <!-- Section 4: Total Remaining Quantity List -->
       <div class="card">
-        <div class="card-title">৪. বর্তমান অবশিষ্ট স্টক (Total Remaining Quantity)</div>
+        <div class="card-header-bar">
+          <span class="card-title">৪. বর্তমান অবশিষ্ট স্টক (Total Remaining Quantity)</span>
+          <button class="btn btn-dark" onclick="window.location.href='manager_specialiteminventory.html';">SPECIAL ITEM UPDATE</button>
+          <button class="btn btn-dark" onclick="printStockReportStatement()">📄 STOCK REPORT DOWNLOAD</button>
+        </div>
         <table>
           <thead>
             <tr>
@@ -204,6 +244,9 @@
     </div>
 
   </div>
+
+  <!-- PRINT CONTAINER FOR PDF / PRINTING STATEMENT -->
+  <div id="statement-print-area"></div>
 
  <script>
     function logoutAdmin() {
@@ -260,6 +303,8 @@
     const inventoryRef = collection(db, "saffron", "mirpur10", "inventory");
     const usersRef = collection(db, "saffron", "mirpur10", "users");
 
+    let inventoryCache = [];
+
     // Network Online/Offline Monitor
     window.addEventListener('online', updateNetStatus);
     window.addEventListener('offline', updateNetStatus);
@@ -302,7 +347,6 @@
         }
       } catch (err) {
         console.error("User info load error: ", err);
-        document.getElementById("logged-user-badge").innerText = `👤 ইউজার লোড হয়নি`;
       }
     }
 
@@ -314,6 +358,7 @@
       const tbody = document.getElementById("inventory-table-body");
       tbody.innerHTML = "";
 
+      inventoryCache = [];
       let activeItemsCount = 0;
 
       snapshot.docs.forEach((docSnap) => {
@@ -324,6 +369,7 @@
           return;
         }
 
+        inventoryCache.push({ id: docId, ...item });
         activeItemsCount++;
         const isLow = item.quantity <= 1000;
 
@@ -334,14 +380,38 @@
           <td>${item.unit || 'Gram'}</td>
           <td>৳ ${item.totalCost || 0}</td>
           <td class="action-btns">
-            <!-- Passed item.quantity in Add/Reduce buttons -->
-            <button class="btn btn-success"  onclick="openUpdateModal('${docId}', '${item.name}', 'add', ${item.quantity || 0})">+ Add Qty</button>
-            <button class="btn" style="visibility: hidden; background:#f97316; color:#fff;" onclick="openUpdateModal('${docId}', '${item.name}', 'reduce', ${item.quantity || 0})">- Reduce Qty</button>
-            <button class="btn btn-warning" style="visibility: hidden" onclick="openUpdateModal('${docId}', '${item.name}', 'edit', ${item.quantity}, ${item.totalCost || 0})">✏️ Edit Qty</button>
+            <button class="btn btn-success" onclick="toggleUpdateRow('${docId}', 'add', ${item.quantity || 0}, ${item.totalCost || 0}, '${item.name}')">+ Add Qty</button>
+            <button class="btn" style=" visibility: hidden; background:#f97316; color:#fff;" onclick="toggleUpdateRow('${docId}', 'reduce', ${item.quantity || 0}, ${item.totalCost || 0}, '${item.name}')">- Reduce Qty</button>
+            <button class="btn btn-warning" style="visibility: hidden;" onclick="toggleUpdateRow('${docId}', 'edit', ${item.quantity || 0}, ${item.totalCost || 0}, '${item.name}')">✏️ Edit Qty</button>
             <button class="btn" style="visibility: hidden; background:#ef4444; color:#fff;" onclick="deleteItem('${docId}', '${item.name}', ${item.quantity}, '${item.unit}')">🗑️ Delete</button>
           </td>
         `;
         tbody.appendChild(tr);
+
+        // Inline Update Row beneath each item
+        const updateTr = document.createElement("tr");
+        updateTr.id = `update-row-${docId}`;
+        updateTr.style.display = "none";
+        updateTr.innerHTML = `
+          <td colspan="5" style="background: #fffbe0; border: 1px solid #fde047; padding: 15px;">
+            <div class="card-title" id="update-title-${docId}" style="font-size: 16px; margin-bottom: 10px;">স্টক পরিবর্তন করুন</div>
+            <form onsubmit="submitInlineUpdate(event, '${docId}', ${item.quantity || 0})" class="form-grid">
+              <div class="form-group">
+                <label id="update-label-${docId}">পরিমাণ লিখুন</label>
+                <input type="number" step="any" id="update-qty-${docId}" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label id="update-price-label-${docId}">টাকা (TK)</label>
+                <input type="number" step="any" id="update-price-${docId}" class="form-control" placeholder="টাকার পরিমাণ লিখুন" required>
+              </div>
+              <div class="form-group" style="justify-content: flex-end; flex-direction: row; align-items: flex-end; gap: 10px;">
+                <button type="submit" class="btn btn-success">কনফার্ম করুন</button>
+                <button type="button" class="btn" style="background:#cbd5e1" onclick="closeInlineRow('${docId}')">বাতিল</button>
+              </div>
+            </form>
+          </td>
+        `;
+        tbody.appendChild(updateTr);
       });
 
       if (activeItemsCount === 0) {
@@ -352,53 +422,28 @@
       alert("ফায়ারবেজ এরর: " + error.message);
     });
 
-    // ADD NEW PRODUCT
-    document.getElementById("add-product-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const name = document.getElementById("prod-name").value.trim();
-      const unit = document.getElementById("prod-unit").value;
-      const qty = parseFloat(document.getElementById("prod-qty").value);
-      const price = parseFloat(document.getElementById("prod-price").value);
+    // INLINE UPDATE ROW TOGGLE & SETUP HANDLERS
+    window.toggleUpdateRow = function(docId, type, currentQty, currentCost, name) {
+      // Hide all other update rows first
+      document.querySelectorAll('[id^="update-row-"]').forEach(row => {
+        if (row.id !== `update-row-${docId}`) {
+          row.style.display = "none";
+        }
+      });
 
-      if (!name) return;
+      const row = document.getElementById(`update-row-${docId}`);
+      if (!row) return;
 
-      const customDocRef = doc(db, "saffron", "mirpur10", "inventory", name);
+      row.dataset.type = type;
 
-      try {
-        await setDoc(customDocRef, {
-          name: name,
-          unit: unit,
-          quantity: qty,
-          totalCost: price,
-          lastPreviousStock: 0,         // Added
-          lastStockAfterUpdate: qty,    // Added
-          isDeleted: false,
-          updatedAt: serverTimestamp()
-        });
-        alert("প্রোডাক্ট সফলভাবে সেভ হয়েছে!");
-        document.getElementById("add-product-form").reset();
-        document.getElementById("prod-unit").value = "Gram";
-      } catch (err) {
-        console.error("Error adding doc: ", err);
-        alert("সেভ হতে সমস্যা হয়েছে: " + err.message);
-      }
-    });
-
-    // UPDATE / EDIT / REDUCE QUANTITY MODAL HANDLER
-    window.openUpdateModal = function(id, name, type, currentQty = 0, currentCost = 0) {
-      document.getElementById("update-stock-card").style.display = "block";
-      document.getElementById("selected-doc-id").value = id;
-      document.getElementById("update-type").value = type;
-      document.getElementById("current-qty-hidden").value = currentQty; // Storing the current qty
-
-      const title = document.getElementById("update-title");
-      const label = document.getElementById("update-label");
-      const input = document.getElementById("update-qty-input");
-      const priceInput = document.getElementById("update-price-input");
-      const priceLabel = document.getElementById("update-price-label");
+      const title = document.getElementById(`update-title-${docId}`);
+      const label = document.getElementById(`update-label-${docId}`);
+      const priceLabel = document.getElementById(`update-price-label-${docId}`);
+      const input = document.getElementById(`update-qty-${docId}`);
+      const priceInput = document.getElementById(`update-price-${docId}`);
 
       if (type === 'add') {
-        title.innerText = `২. পরিমাণ ও টাকা যোগ করুন: ${name}`;
+        title.innerText = `পরিমাণ ও টাকা যোগ করুন: ${name}`;
         label.innerText = `কতটুকু পরিমাণ যোগ করবেন?`;
         priceLabel.innerText = `এই পরিমাণের জন্য কত টাকা খরচ হয়েছে? (TK)`;
         input.value = "";
@@ -410,25 +455,29 @@
         input.value = "";
         priceInput.value = "";
       } else {
-        title.innerText = `৩. কয়ান্টিটি ও মোট টাকা সংশোধন করুন: ${name}`;
+        title.innerText = `কয়ান্টিটি ও মোট টাকা সংশোধন করুন: ${name}`;
         label.innerText = `সঠিক পরিমার্জিত মোট পরিমাণ (New Total Quantity)`;
         priceLabel.innerText = `সংশোধিত মোট খরচ (New Total Cost in TK)`;
         input.value = currentQty;
         priceInput.value = currentCost;
       }
+
+      row.style.display = row.style.display === "table-row" ? "none" : "table-row";
     };
 
-    window.closeUpdateCard = function() {
-      document.getElementById("update-stock-card").style.display = "none";
+    window.closeInlineRow = function(docId) {
+      const row = document.getElementById(`update-row-${docId}`);
+      if (row) {
+        row.style.display = "none";
+      }
     };
 
-    document.getElementById("update-stock-form").addEventListener("submit", async (e) => {
+    window.submitInlineUpdate = async function(e, id, oldQuantity) {
       e.preventDefault();
-      const id = document.getElementById("selected-doc-id").value;
-      const type = document.getElementById("update-type").value;
-      const qtyVal = parseFloat(document.getElementById("update-qty-input").value);
-      const priceVal = parseFloat(document.getElementById("update-price-input").value);
-      const oldQuantity = parseFloat(document.getElementById("current-qty-hidden").value) || 0; // Getting old quantity
+      const row = document.getElementById(`update-row-${id}`);
+      const type = row.dataset.type;
+      const qtyVal = parseFloat(document.getElementById(`update-qty-${id}`).value);
+      const priceVal = parseFloat(document.getElementById(`update-price-${id}`).value);
 
       const itemDocRef = doc(db, "saffron", "mirpur10", "inventory", id);
 
@@ -454,7 +503,6 @@
           });
           alert("স্টক ও খরচ কমানো হয়েছে!");
         } else {
-          // Edit operation
           await updateDoc(itemDocRef, {
             quantity: qtyVal,
             totalCost: priceVal,
@@ -464,10 +512,128 @@
           });
           alert("স্টক ও খরচ আপডেট হয়েছে!");
         }
-        closeUpdateCard();
+        closeInlineRow(id);
       } catch (err) {
         console.error("Error updating stock: ", err);
         alert("আপডেট করতে সমস্যা হয়েছে: " + err.message);
+      }
+    };
+
+    // PRINT / DOWNLOAD REMAINING STOCK PDF STATEMENT
+    window.printStockReportStatement = function() {
+      if (inventoryCache.length === 0) {
+        alert("ডাউনলোড করার মতো কোনো অবশিষ্ট স্টকের ডাটা নেই!");
+        return;
+      }
+
+      let totalCostSum = 0;
+      let tableRowsHTML = '';
+
+      inventoryCache.forEach((item, index) => {
+        const itemCost = parseFloat(item.totalCost || 0);
+        totalCostSum += itemCost;
+
+        tableRowsHTML += `
+          <tr>
+            <td style="text-align: center;"><strong>${index + 1}</strong></td>
+            <td><strong>${item.name || ''}</strong></td>
+            <td style="color:#2563eb; font-weight:800;">${item.quantity || 0}</td>
+            <td>${item.unit || 'Gram'}</td>
+            <td><strong>৳${itemCost.toLocaleString('en-IN')}</strong></td>
+          </tr>
+        `;
+      });
+
+      const statementHTML = `
+        <div class="stmt-page-block">
+          <div>
+            <div class="stmt-top-bar">
+              <div class="stmt-logo-group">
+                <img src="logo.png" width="50" height="60" class="stmt-logo" alt="Saffron" onerror="this.style.display='none'">
+                <div>
+                  <div class="stmt-brand-title">SAFFRON</div>
+                  <div style="color:#475569; font-size:12px; font-weight:700;">Inventory Remaining Stock Report</div>
+                </div>
+              </div>
+              <div class="stmt-report-badge">STOCK STATEMENT</div>
+            </div>
+
+            <div class="stmt-meta-grid">
+              <div class="stmt-meta-item">Branch: <strong>Mirpur 10 Branch</strong></div>
+              <div class="stmt-meta-item">Total Items: <strong>${inventoryCache.length}</strong></div>
+              <div class="stmt-meta-item">Print Date: <strong>${new Date().toLocaleDateString('en-EN')}</strong></div>
+            </div>
+
+            <div class="stmt-cat-title">
+              <span>CURRENT REMAINING INVENTORY ITEMS</span>
+              <span>Total Value: ৳${totalCostSum.toLocaleString('en-IN')}</span>
+            </div>
+            <table class="stmt-table">
+              <thead>
+                <tr>
+                  <th style="width: 8%; text-align: center;">SL</th>
+                  <th style="width: 37%;">Raw Material Item Name</th>
+                  <th style="width: 20%;">Remaining Qty</th>
+                  <th style="width: 15%;">Unit</th>
+                  <th style="width: 20%;">Total Cost (TK)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRowsHTML}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="stmt-footer">
+            <div class="stmt-sign-box">
+              <div class="stmt-sign-line"></div>
+              <div class="stmt-sign-text">Inventory In-Charge</div>
+            </div>
+            <div class="stmt-sign-box">
+              <div class="stmt-sign-line"></div>
+              <div class="stmt-sign-text">Store Supervisor</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const stmtContainer = document.getElementById('statement-print-area');
+      stmtContainer.innerHTML = statementHTML;
+
+      document.body.className = 'print-list-mode';
+      window.print();
+      document.body.className = '';
+    };
+
+    // ADD NEW PRODUCT
+    document.getElementById("add-product-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("prod-name").value.trim();
+      const unit = document.getElementById("prod-unit").value;
+      const qty = parseFloat(document.getElementById("prod-qty").value);
+      const price = parseFloat(document.getElementById("prod-price").value);
+
+      if (!name) return;
+
+      const customDocRef = doc(db, "saffron", "mirpur10", "inventory", name);
+
+      try {
+        await setDoc(customDocRef, {
+          name: name,
+          unit: unit,
+          quantity: qty,
+          totalCost: price,
+          lastPreviousStock: 0,
+          lastStockAfterUpdate: qty,
+          isDeleted: false,
+          updatedAt: serverTimestamp()
+        });
+        alert("প্রোডাক্ট সফলভাবে সেভ হয়েছে!");
+        document.getElementById("add-product-form").reset();
+        document.getElementById("prod-unit").value = "Gram";
+      } catch (err) {
+        console.error("Error adding doc: ", err);
+        alert("সেভ হতে সমস্যা হয়েছে: " + err.message);
       }
     });
 

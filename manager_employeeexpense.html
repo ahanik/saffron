@@ -72,6 +72,7 @@
 
     /* Filter Box Style */
     .filter-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+    .total-display { margin-top: 15px; padding: 12px 15px; background: #fef3c7; border: 1px solid #fde047; border-radius: 6px; font-weight: 700; color: #92400e; display: flex; justify-content: space-between; align-items: center; }
   </style>
 </head>
 <body>
@@ -84,23 +85,18 @@
         <span class="branch-tag">Mirpur 10 Branch</span>
       </div>
 
-
-
  <ul class="nav-links">
-<li><a href="manager_inventory.html" class="nav-item ">Stock Management</a></li>
+	<li><a href="manager_inventory.html" class="nav-item ">Stock Management</a></li>
       <li><a href="manager_inventoryreport.html" class="nav-item">Stock Report</a></li>
       <li><a href="manager_employeeexpense.html" class="nav-item active">Employee Expense</a></li>
-<li><a href="manager_guestmanagement.html" class="nav-item">Guest Management</a></li>
+	<li><a href="manager_guestmanagement.html" class="nav-item">Guest Management</a></li>
       <li><a href="manager_otherexpense.html" class="nav-item">Other Expense</a></li>
       <li><a href="manager_salesmanagement.html" class="nav-item">Employee Sales report</a></li>
       <li><a href="manager_salesreport.html" class="nav-item">Sales History & Report</a></li>
       <li><a href="manager_costreport.html" class="nav-item">Operating Cost Report</a></li>
       <li><a href="manager_cashreserve.html" class="nav-item">Cash Reserve System</a></li>
       <li><a href="manager_pos.html" class="nav-item">POS System</a></li>
-
     </ul>
-
-
 
     </div>
     
@@ -166,8 +162,13 @@
           </div>
 
           <div class="form-group">
-            <label>তারিখ দিয়ে ফিল্টার (Day)</label>
-            <input type="date" id="filter-date" class="form-control" onchange="applyFilters()">
+            <label>From Date</label>
+            <input type="date" id="filter-from-date" class="form-control" onchange="applyFilters()">
+          </div>
+
+          <div class="form-group">
+            <label>To Date</label>
+            <input type="date" id="filter-to-date" class="form-control" onchange="applyFilters()">
           </div>
 
           <div class="form-group">
@@ -179,6 +180,12 @@
             <button class="btn btn-secondary" style="margin-top: auto;" onclick="clearFilters()">ফিল্টার ক্লিয়ার করুন</button>
           </div>
         </div>
+      </div>
+
+      <!-- Total Amount Display Box -->
+      <div class="total-display">
+        <span>Filtered Total Expense:</span>
+        <span id="filtered-total-amount">৳ 0.00</span>
       </div>
 
       <div class="table-responsive">
@@ -372,14 +379,22 @@
     // 4. FILTER AND RENDER EXPENSES IN TABLE
     window.applyFilters = function() {
       const selectedEmp = document.getElementById("filter-employee").value;
-      const selectedDate = document.getElementById("filter-date").value;
+      const fromDate = document.getElementById("filter-from-date").value;
+      const toDate = document.getElementById("filter-to-date").value;
       const selectedMonth = document.getElementById("filter-month").value;
 
       let filteredList = rawExpensesList.filter(item => {
         let matchEmp = selectedEmp ? item.employeeId === selectedEmp : true;
-        let matchDate = selectedDate ? item.date === selectedDate : true;
+        let matchDateRange = true;
+        if (fromDate && toDate) {
+          matchDateRange = item.date >= fromDate && item.date <= toDate;
+        } else if (fromDate) {
+          matchDateRange = item.date >= fromDate;
+        } else if (toDate) {
+          matchDateRange = item.date <= toDate;
+        }
         let matchMonth = selectedMonth ? item.date.startsWith(selectedMonth) : true;
-        return matchEmp && matchDate && matchMonth;
+        return matchEmp && matchDateRange && matchMonth;
       });
 
       // Sort by date descending
@@ -390,7 +405,8 @@
 
     window.clearFilters = function() {
       document.getElementById("filter-employee").value = "";
-      document.getElementById("filter-date").value = "";
+      document.getElementById("filter-from-date").value = "";
+      document.getElementById("filter-to-date").value = "";
       document.getElementById("filter-month").value = "";
       applyFilters();
     };
@@ -399,12 +415,16 @@
       const tbody = document.getElementById("expense-table-body");
       tbody.innerHTML = "";
 
+      let totalAmount = 0;
+
       if (dataList.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">কোনো খরচের রেকর্ড পাওয়া যায়নি।</td></tr>';
+        document.getElementById("filtered-total-amount").innerText = "৳ 0.00";
         return;
       }
 
       dataList.forEach((item) => {
+        totalAmount += Number(item.amount || 0);
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td><code>${item.id}</code></td>
@@ -414,12 +434,14 @@
           <td>${item.title}</td>
           <td>৳ ${item.amount.toFixed(2)}</td>
           <td style="display: flex; gap: 6px;">
-            <button class="btn btn-warning" onclick="editExpense('${item.id}')" style="visibility: hidden">এডিট</button>
-            <button class="btn btn-danger" onclick="deleteExpense('${item.id}')" style="visibility: hidden">ডিলিট</button>
+            <button class="btn btn-warning" style="visibility: hidden;" onclick="editExpense('${item.id}')">এডিট</button>
+            <button class="btn btn-danger" style="visibility: hidden;" onclick="deleteExpense('${item.id}')">ডিলিট</button>
           </td>
         `;
         tbody.appendChild(tr);
       });
+
+      document.getElementById("filtered-total-amount").innerText = `৳ ${totalAmount.toFixed(2)}`;
     }
 
     // 5. EDIT EXPENSE
@@ -455,3 +477,4 @@
   </script>
 </body>
 </html>
+```[cite: 5]

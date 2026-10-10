@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Saffron - POS (Admin)</title>
+  <title>Saffron - POS OFFER(Admin)</title>
 	<link rel="icon" type="image/x-icon" href="faviconlogo.ico">
  <!-- SECURITY CHECK: Redirect if not logged in -->
   <script>
@@ -16,13 +16,18 @@
     :root {
       --bg-dark: #0f172a;
       --bg-card: #1e293b;
-      --primary: #0284c7;
-      --primary-hover: #0369a1;
+      --primary: #d97706;
+      --primary-hover: #b45309;
+      --primary-light: #fef3c7;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --border-color: #334155;
-      --accent-green: #22c55e;
-      --accent-red: #ef4444;
+      --accent-green: #10b981;
+      --accent-green-hover: #059669;
+      --accent-red: #f43f5e;
+      --accent-red-hover: #e11d48;
+      --accent-blue: #3b82f6;
+      --accent-blue-hover: #2563eb;
     }
 
     * {
@@ -37,7 +42,7 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background-color: #f1f5f9;
+      background-color: #f8fafc;
       color: #0f172a;
       display: flex;
       flex-direction: column;
@@ -46,17 +51,18 @@
     /* TOP HEADER */
     .top-header {
       width: 100%;
-      background-color: var(--bg-dark);
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
       color: var(--text-main);
       padding: 10px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       flex-wrap: wrap;
       gap: 10px;
       z-index: 10;
       flex-shrink: 0;
+      border-bottom: 2px solid #f59e0b;
     }
 
     .brand-logo {
@@ -65,12 +71,14 @@
       gap: 10px;
       font-weight: bold;
       font-size: 18px;
+      color: #fbbf24;
+      letter-spacing: 0.5px;
     }
 
     .header-info {
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: 12px;
       font-size: 14px;
       flex-wrap: wrap;
     }
@@ -79,20 +87,23 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 4px 10px;
+      padding: 5px 12px;
       border-radius: 20px;
       font-size: 12px;
       font-weight: bold;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
     }
 
     .status-online {
-      background-color: rgba(34, 197, 94, 0.2);
-      color: #4ade80;
+      background-color: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.3);
     }
 
     .status-offline {
-      background-color: rgba(239, 68, 68, 0.2);
-      color: #f87171;
+      background-color: rgba(244, 63, 94, 0.15);
+      color: #fb7185;
+      border: 1px solid rgba(251, 113, 133, 0.3);
     }
 
     .dot {
@@ -101,8 +112,8 @@
       border-radius: 50%;
     }
 
-    .dot-online { background-color: #22c55e; }
-    .dot-offline { background-color: #ef4444; }
+    .dot-online { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
+    .dot-offline { background-color: #f43f5e; box-shadow: 0 0 8px #f43f5e; }
 
     .user-profile {
       display: flex;
@@ -113,14 +124,21 @@
     }
 
     .btn-logout {
-      background-color: var(--accent-red);
+      background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
       color: #fff;
       border: none;
-      padding: 6px 12px;
-      border-radius: 4px;
+      padding: 6px 14px;
+      border-radius: 6px;
       cursor: pointer;
       font-size: 12px;
       font-weight: bold;
+      box-shadow: 0 2px 4px rgba(225, 29, 72, 0.3);
+      transition: all 0.2s;
+    }
+
+    .btn-logout:hover {
+      background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+      transform: translateY(-1px);
     }
 
     .main-container {
@@ -129,6 +147,7 @@
       width: 100%;
       height: calc(100vh - 56px);
       overflow: hidden;
+      background-color: #f1f5f9;
     }
 
     /* LEFT SIDE: POS MENU */
@@ -148,20 +167,27 @@
       gap: 10px;
       background-color: #fff;
       padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      border: 1px solid #e2e8f0;
       width: 100%;
       flex-shrink: 0;
     }
 
     .search-input {
       flex: 1;
-      padding: 8px 12px;
+      padding: 9px 14px;
       border: 1px solid #cbd5e1;
-      border-radius: 6px;
+      border-radius: 8px;
       outline: none;
       font-size: 14px;
       width: 100%;
+      transition: all 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15);
     }
 
     .category-bar {
@@ -174,7 +200,7 @@
     }
 
     .category-bar::-webkit-scrollbar {
-      height: 4px;
+      height: 5px;
     }
     .category-bar::-webkit-scrollbar-thumb {
       background: #cbd5e1;
@@ -182,26 +208,34 @@
     }
 
     .cat-btn {
-      background-color: #e2e8f0;
-      color: #334155;
-      border: none;
-      padding: 8px 16px;
+      background-color: #fff;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      padding: 8px 18px;
       border-radius: 20px;
       white-space: nowrap;
       cursor: pointer;
-      font-weight: bold;
+      font-weight: 600;
       font-size: 13px;
       transition: all 0.2s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+
+    .cat-btn:hover {
+      background-color: #f8fafc;
+      border-color: #94a3b8;
     }
 
     .cat-btn.active {
-      background-color: var(--primary);
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
       color: #fff;
+      border-color: #d97706;
+      box-shadow: 0 3px 8px rgba(217, 119, 6, 0.3);
     }
 
     .food-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
       gap: 12px;
       overflow-y: auto;
       padding-right: 5px;
@@ -212,67 +246,76 @@
     .food-card {
       background: #fff;
       border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 10px;
-      height: 110px;
+      border-radius: 10px;
+      padding: 12px;
+      height: 115px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       cursor: pointer;
-      transition: transform 0.1s, box-shadow 0.1s;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
     }
 
     .food-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-      border-color: var(--primary);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 15px rgba(217, 119, 6, 0.12);
+      border-color: #f59e0b;
     }
 
     .food-title {
       font-size: 13px;
-      font-weight: bold;
+      font-weight: 700;
       color: #0f172a;
       margin-bottom: 4px;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      line-height: 1.3;
     }
 
     .food-price {
       font-size: 13px;
-      color: #0284c7;
-      font-weight: bold;
+      color: #d97706;
+      font-weight: 800;
     }
 
     .btn-add-food {
       margin-top: 4px;
-      background-color: #f1f5f9;
+      background-color: #f8fafc;
       color: #334155;
       border: 1px solid #cbd5e1;
-      padding: 4px;
-      border-radius: 4px;
+      padding: 5px;
+      border-radius: 6px;
       font-size: 11px;
-      font-weight: bold;
+      font-weight: 700;
       text-align: center;
+      transition: all 0.15s;
+    }
+
+    .food-card:hover .btn-add-food {
+      background-color: #fef3c7;
+      color: #92400e;
+      border-color: #fcd34d;
     }
 
     /* MIDDLE SIDE: CART */
     .cart-section {
       width: 380px;
       background-color: #fff;
-      border-left: 1px solid #cbd5e1;
+      border-left: 1px solid #e2e8f0;
       display: flex;
       flex-direction: column;
-      box-shadow: -2px 0 5px rgba(0,0,0,0.03);
+      box-shadow: -4px 0 12px rgba(0,0,0,0.03);
       flex-shrink: 0;
       height: 100%;
     }
 
     .cart-header {
-      padding: 12px 15px;
+      padding: 14px 18px;
       background-color: #f8fafc;
-      border-bottom: 1px solid #cbd5e1;
+      border-bottom: 1px solid #e2e8f0;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -282,10 +325,11 @@
     .cart-items {
       flex: 1;
       overflow-y: auto;
-      padding: 10px 15px;
+      padding: 12px 15px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
+      background-color: #ffffff;
     }
 
     .cart-item {
@@ -293,29 +337,47 @@
       justify-content: space-between;
       align-items: center;
       background: #f8fafc;
-      padding: 8px;
-      border-radius: 6px;
+      padding: 10px 12px;
+      border-radius: 8px;
       border: 1px solid #e2e8f0;
       font-size: 13px;
+      transition: all 0.15s;
+    }
+
+    .cart-item:hover {
+      border-color: #cbd5e1;
+      background: #f1f5f9;
     }
 
     .qty-btn {
-      background: #e2e8f0;
-      border: none;
-      width: 22px;
-      height: 22px;
-      border-radius: 4px;
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      color: #0f172a;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
       cursor: pointer;
       font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .qty-btn:hover {
+      background: #d97706;
+      color: #fff;
+      border-color: #d97706;
     }
 
     .bill-summary {
-      padding: 12px 15px;
+      padding: 14px 18px;
       background-color: #f8fafc;
-      border-top: 1px solid #cbd5e1;
+      border-top: 1px solid #e2e8f0;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
       font-size: 13px;
       flex-shrink: 0;
     }
@@ -323,14 +385,15 @@
     .bill-row {
       display: flex;
       justify-content: space-between;
+      color: #475569;
     }
 
     .bill-row.total {
-      font-weight: bold;
-      font-size: 16px;
+      font-weight: 800;
+      font-size: 17px;
       color: #0f172a;
-      border-top: 1px dashed #cbd5e1;
-      padding-top: 6px;
+      border-top: 2px dashed #cbd5e1;
+      padding-top: 8px;
       margin-top: 4px;
     }
 
@@ -341,45 +404,80 @@
     }
 
     .discount-inputs input, .discount-inputs select {
-      padding: 4px 6px;
+      padding: 6px 8px;
       border: 1px solid #cbd5e1;
-      border-radius: 4px;
+      border-radius: 6px;
       font-size: 12px;
+      outline: none;
+    }
+
+    .discount-inputs input:focus, .discount-inputs select:focus {
+      border-color: var(--primary);
     }
 
     .cart-actions {
-      padding: 12px 15px;
+      padding: 14px 18px;
       display: flex;
-      gap: 8px;
-      border-top: 1px solid #cbd5e1;
+      gap: 10px;
+      border-top: 1px solid #e2e8f0;
       background: #fff;
       flex-shrink: 0;
     }
 
     .btn-action {
       flex: 1;
-      padding: 10px;
+      padding: 12px;
       border: none;
-      border-radius: 6px;
-      font-weight: bold;
+      border-radius: 8px;
+      font-weight: 700;
       cursor: pointer;
       font-size: 13px;
       text-align: center;
+      transition: all 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
 
-    .btn-hold { background-color: #f59e0b; color: #fff; }
-    .btn-pay { background-color: var(--accent-green); color: #fff; }
-    .btn-clear { background-color: #ef4444; color: #fff; flex: 0.4; }
+    .btn-action:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-hold { 
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
+      color: #fff; 
+      box-shadow: 0 3px 8px rgba(217, 119, 6, 0.25);
+    }
+    .btn-hold:hover {
+      background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    }
+
+    .btn-pay { 
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+      color: #fff; 
+      box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);
+    }
+    .btn-pay:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    }
+
+    .btn-clear { 
+      background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%); 
+      color: #fff; 
+      flex: 0.4; 
+      box-shadow: 0 3px 8px rgba(225, 29, 72, 0.2);
+    }
+    .btn-clear:hover {
+      background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+    }
 
     /* RIGHT SIDE: RUNNING ORDERS & PANEL */
     .running-orders-panel {
-      width: 300px;
+      width: 310px;
       background-color: #f8fafc;
-      border-left: 1px solid #cbd5e1;
+      border-left: 1px solid #e2e8f0;
       display: flex;
       flex-direction: column;
-      padding: 10px;
-      gap: 10px;
+      padding: 12px;
+      gap: 12px;
       flex-shrink: 0;
       height: 100%;
       overflow: hidden;
@@ -387,27 +485,34 @@
 
     .selection-box {
       background: #fff;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      padding: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       flex-shrink: 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
     }
 
     .selection-box select, .selection-box input {
       width: 100%;
-      padding: 6px;
+      padding: 8px 10px;
       border: 1px solid #cbd5e1;
-      border-radius: 4px;
+      border-radius: 6px;
       font-size: 12px;
+      outline: none;
+      transition: all 0.15s;
+    }
+
+    .selection-box select:focus, .selection-box input:focus {
+      border-color: var(--primary);
     }
 
     #running-orders-list {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       overflow-y: auto;
       flex: 1;
       padding-right: 4px;
@@ -415,37 +520,54 @@
 
     .running-card {
       background: #fff;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      padding: 8px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      transition: all 0.15s;
     }
 
     .running-card.active {
-      border-color: var(--primary);
-      background-color: #f0f9ff;
+      border-color: #f59e0b;
+      background-color: #fffdf5;
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
     }
 
     .card-actions {
       display: flex;
-      gap: 4px;
+      gap: 6px;
       margin-top: 4px;
     }
 
     .btn-card {
       flex: 1;
-      padding: 4px;
+      padding: 6px;
       border: none;
-      border-radius: 4px;
+      border-radius: 6px;
       font-size: 11px;
-      font-weight: bold;
+      font-weight: 700;
       cursor: pointer;
+      transition: all 0.15s;
     }
 
-    .btn-kitchen { background-color: #3b82f6; color: #fff; }
-    .btn-edit { background-color: #64748b; color: #fff; }
+    .btn-kitchen { 
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
+      color: #fff; 
+    }
+    .btn-kitchen:hover {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    }
+
+    .btn-edit { 
+      background: linear-gradient(135deg, #64748b 0%, #475569 100%); 
+      color: #fff; 
+    }
+    .btn-edit:hover {
+      background: linear-gradient(135deg, #475569 0%, #334155 100%);
+    }
 
     /* RESPONSIVE */
     @media (max-width: 1200px) {
@@ -466,7 +588,8 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.5);
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(2px);
       justify-content: center;
       align-items: center;
       z-index: 1000;
@@ -474,25 +597,31 @@
 
     .modal-content {
       background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      width: 400px;
+      padding: 24px;
+      border-radius: 12px;
+      width: 420px;
       max-width: 90%;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     }
 
     .variant-opt {
-      padding: 10px;
+      padding: 12px 14px;
       border: 1px solid #cbd5e1;
-      border-radius: 6px;
+      border-radius: 8px;
       display: flex;
       justify-content: space-between;
       cursor: pointer;
+      font-weight: 600;
+      transition: all 0.15s;
     }
 
-    .variant-opt:hover { background-color: #f1f5f9; border-color: var(--primary); }
+    .variant-opt:hover { 
+      background-color: #fef3c7; 
+      border-color: #f59e0b; 
+    }
 
     /* PRINT SECTION */
     #print-section { display: none; }
@@ -528,21 +657,21 @@
   <!-- TOP HEADER -->
   <div class="top-header">
     <div class="brand-logo">
-      <i class="fa-solid fa-utensils" style="color: #0284c7;"></i>
-      <span>Saffron POS</span>
+      <i class="fa-solid fa-utensils" style="color: #f59e0b;"></i>
+      <span>Saffron POS - offer</span>
     </div>
     <div class="header-info">
 
 
-<a href="admin_inventory.html" style="display: inline-block; background:#f59e0b; color:#fff; text-decoration: none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px; text-align: center;">
+<a href="admin_inventory.html" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#fff; text-decoration: none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px; text-align: center; box-shadow: 0 2px 4px rgba(217,119,6,0.3);">
   <i class="fa fa-fw fa-home"></i> MAIN MENU
 </a>
 
-<a href="admin_posoffer.html" style="display: inline-block; background:#f59e0b; color:#fff; text-decoration: none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px; text-align: center;">
-  <i class="fa fa-fw fa-home"></i> POS OFFER SECTION
+<a href="admin_pos.html" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color:#fff; text-decoration: none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px; text-align: center; box-shadow: 0 2px 4px rgba(37,99,235,0.3);">
+  <i class="fa fa-fw fa-home"></i> REGULAR POS SECTION
 </a>
 
-      <button onclick="openCompletedOrdersModal()" style="background:#0284c7; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px;">
+      <button onclick="openCompletedOrdersModal()" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px; box-shadow: 0 2px 4px rgba(3,105,161,0.3);">
         <i class="fa-solid fa-clock-rotate-left"></i> Today Completed Orders
       </button>
       <div id="status-badge" class="status-badge status-online">
@@ -578,8 +707,8 @@
     <!-- RIGHT CART -->
     <div class="cart-section">
       <div class="cart-header">
-        <div style="font-weight:bold;">Order Cart <span id="active-order-id" style="color:#0284c7; font-size:12px;">NEW</span></div>
-        <span id="update-indicator" style="display:none; color:#eab308; font-weight:bold; font-size:11px;">[Editing]</span>
+        <div style="font-weight:bold;">Order Cart <span id="active-order-id" style="color:#d97706; font-size:12px; font-weight: 800;">NEW</span></div>
+        <span id="update-indicator" style="display:none; color:#d97706; font-weight:bold; font-size:11px;">[Editing]</span>
       </div>
 
       <div class="cart-items" id="cart-items">
@@ -613,7 +742,7 @@
 
         <div class="bill-row total">
           <span>Grand Total</span>
-          <span id="grandtotal-val" style="color:#0284c7;">0 TK</span>
+          <span id="grandtotal-val" style="color:#d97706;">0 TK</span>
         </div>
       </div>
 
@@ -628,7 +757,7 @@
     <div class="running-orders-panel">
       <!-- TABLE, WAITER & CUSTOMER SELECTION SECTION -->
       <div class="selection-box">
-        <div style="font-weight:bold; font-size:12px; color:#0f172a;">Order Details</div>
+        <div style="font-weight:bold; font-size:13px; color:#0f172a;">Order Details</div>
         <select id="table-select" onchange="renderTableDropdown()">
           <option value="">Select Table</option>
         </select>
@@ -647,8 +776,8 @@
         <input type="text" id="cust-phone" placeholder="017xxxxxxxx" oninput="calculateBill()">
       </div>
 
-      <div style="font-weight:bold; font-size:14px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:6px; margin-top:5px; flex-shrink:0;">
-        Running Orders <span id="running-count" style="color:#0284c7; font-size:12px;">(0)</span>
+      <div style="font-weight:bold; font-size:14px; color:#0f172a; border-bottom:1px solid #e2e8f0; padding-bottom:6px; margin-top:5px; flex-shrink:0;">
+        Running Orders <span id="running-count" style="color:#d97706; font-size:12px; font-weight: 800;">(0)</span>
       </div>
       <div id="running-orders-list"></div>
     </div>
@@ -660,7 +789,7 @@
     <div class="modal-content">
       <div style="font-weight:bold; font-size:16px;" id="modal-food-title">Select Item Variant</div>
       <div id="variant-options-list" style="display:flex; flex-direction:column; gap:8px;"></div>
-      <button onclick="closeModal('variant-modal')" style="background:#e2e8f0; border:none; padding:8px; border-radius:4px; cursor:pointer; font-weight:bold; align-self:flex-end;">Cancel</button>
+      <button onclick="closeModal('variant-modal')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:bold; align-self:flex-end; color:#475569;">Cancel</button>
     </div>
   </div>
 
@@ -669,7 +798,7 @@
     <div class="modal-content" style="width:600px;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="font-weight:bold; font-size:16px;">Today Completed Orders</div>
-        <button onclick="closeModal('completed-orders-modal')" style="background:none; border:none; font-size:18px; cursor:pointer;">&times;</button>
+        <button onclick="closeModal('completed-orders-modal')" style="background:none; border:none; font-size:18px; cursor:pointer; color: #64748b;">&times;</button>
       </div>
       <input type="text" id="search-completed-order" placeholder="Search by Order ID, Phone or Name..." class="search-input" oninput="renderCompletedOrdersList()">
       <div id="completed-orders-list" style="display:flex; flex-direction:column; gap:8px; max-height:350px; overflow-y:auto;"></div>
@@ -724,6 +853,43 @@
     let isEditingCompletedOrder = false;
     let originalOrderCreatedBy = null;
     let originalCartItems = []; // COMPLETED ORDER EDIT ER SOMOY PURBER ITEMS TRACK RAKHAR JONNO
+
+    // AUTO DISCOUNT CALCULATION FUNCTION WITH RESTRICTIONS
+    function calculateAutoDiscount(item) {
+      const price = item.price || 0;
+      let category = item.category || '';
+
+      if (!category) {
+        const matchedFood = allFoods.find(f => {
+          const rawCartName = (item.name || '').split(' (')[0].trim();
+          return f.name && f.name.trim() === rawCartName;
+        });
+        if (matchedFood && matchedFood.category) {
+          category = matchedFood.category;
+        }
+      }
+
+      const isPlatter = category.toLowerCase().includes('platter') || (item.name && item.name.toLowerCase().includes('platter'));
+
+      // প্লাটারের ৫০% ডিসকাউন্টে ৩০০ টাকার রেস্ট্রিকশন থাকবে না
+      if (isPlatter) {
+        return 50;
+      }
+
+      // অন্যান্য আইটেমের ক্ষেত্রে সাবটোটাল কমপক্ষে ৩০০ টাকা হতে হবে
+      const subtotal = cart.reduce((sum, cartItem) => sum + (cartItem.price * cartItem.qty), 0);
+      if (subtotal < 300) {
+        return 0;
+      }
+
+      if (price < 200) return 0;
+      if (price >= 200 && price <= 299) return 20;
+      if (price >= 300 && price <= 399) return 30;
+      if (price >= 400 && price <= 499) return 40;
+      if (price >= 500) return 50;
+
+      return 0;
+    }
 
     function loadUserInfo() {
       const nameElem = document.getElementById('user-display-name');
@@ -931,7 +1097,6 @@
     function updateInventoryStock(cartItems, isUpdate = false, previousCartItems = []) {
       if (!cartItems || !cartItems.length) return;
 
-      // Completed Order Update er somoy shudhu NOTUN add kora item gulor raw materials biyog hobe
       let itemsToProcess = cartItems;
       if (isUpdate && previousCartItems && previousCartItems.length > 0) {
         itemsToProcess = cartItems.map(cItem => {
@@ -971,7 +1136,6 @@
               const currentInv = cachedInventory[rawName] || rawMaterialsList[rawName];
               let deductionCost = 0;
 
-              // আনুপাতিক হারে খরচ বের করার লজিক: (বর্তমান মোট খরচ / বর্তমান মোট পরিমাণ) * বিক্রিত কাঁচামালের পরিমাণ
               if (currentInv && currentInv.quantity > 0 && currentInv.totalCost > 0) {
                 deductionCost = (currentInv.totalCost / currentInv.quantity) * deductionQty;
               } else {
@@ -1086,18 +1250,18 @@
           const opt = document.createElement('div');
           opt.className = 'variant-opt';
           opt.onclick = () => {
-            addToCart(`${food.name || 'Item'} (${variantName})`, variantPrice);
+            addToCart(`${food.name || 'Item'} (${variantName})`, variantPrice, food.category);
             closeModal('variant-modal');
           };
           opt.innerHTML = `
             <span>${variantName}</span>
-            <span style="color:#0284c7;">${variantPrice} TK</span>
+            <span style="color:#d97706;">${variantPrice} TK</span>
           `;
           list.appendChild(opt);
         });
         document.getElementById('variant-modal').style.display = 'flex';
       } else {
-        addToCart(food.name || 'Item', Number(food.price ?? 0));
+        addToCart(food.name || 'Item', Number(food.price ?? 0), food.category);
       }
     }
 
@@ -1105,12 +1269,12 @@
       document.getElementById(modalId).style.display = 'none';
     }
 
-    window.addToCart = function(itemName, price) {
+    window.addToCart = function(itemName, price, category = '') {
       const existing = cart.find(i => i.name === itemName);
       if(existing) {
         existing.qty += 1;
       } else {
-        cart.push({ name: itemName, price: Number(price), qty: 1 });
+        cart.push({ name: itemName, price: Number(price), qty: 1, category: category });
       }
       renderCart();
     }
@@ -1161,10 +1325,12 @@
 
       container.innerHTML = '';
       cart.forEach((item, idx) => {
+        const discPct = calculateAutoDiscount(item);
+        const discText = discPct > 0 ? ` <span style="color:#10b981; font-weight:bold;">(-${discPct}%)</span>` : '';
         container.innerHTML += `
           <div class="cart-item">
             <div>
-              <div style="font-weight:bold;">${item.name}</div>
+              <div style="font-weight:bold;">${item.name}${discText}</div>
               <div style="color:#64748b;">${item.price} TK x ${item.qty} = ${item.price * item.qty} TK</div>
             </div>
             <div style="display:flex; gap:6px; align-items:center;">
@@ -1209,8 +1375,13 @@
 
     window.calculateBill = function() {
       let subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+      let autoDiscount = cart.reduce((sum, item) => {
+        const discPct = calculateAutoDiscount(item);
+        return sum + ((item.price * item.qty) * discPct / 100);
+      }, 0);
+
       let vat = (subtotal * currentVatRate) / 100;
-      let discount = 0;
+      let discount = autoDiscount;
 
       const couponInput = document.getElementById('coupon-code');
       let couponCode = couponInput.value.trim().toUpperCase();
@@ -1232,73 +1403,87 @@
 
           if (couponPhone && c.maxUses !== undefined && c.usedCount !== undefined && Number(c.maxUses) === Number(c.usedCount)) {
             msgElem.innerText = "Coupon has already been used or expired";
-            msgElem.style.color = "#ef4444";
+            msgElem.style.color = "#f43f5e";
             couponInput.value = '';
             manualDiscInput.disabled = false;
             couponCode = '';
-            discount = 0;
+            discount = autoDiscount;
           } else if(c.expireDate && c.expireDate < today) {
             msgElem.innerText = "Coupon code expired";
-            msgElem.style.color = "#ef4444";
-            discount = 0;
+            msgElem.style.color = "#f43f5e";
+            discount = autoDiscount;
           } else if(minOrderVal > 0 && subtotal < minOrderVal) {
             msgElem.innerText = `Min order TK ${minOrderVal} (excl. VAT) required`;
-            msgElem.style.color = "#ef4444";
-            discount = 0;
+            msgElem.style.color = "#f43f5e";
+            discount = autoDiscount;
           } else if(couponPhone) {
             if(custPhone === '') {
               msgElem.innerText = "This coupon only for specific customer!!!";
-              msgElem.style.color = "#ef4444";
+              msgElem.style.color = "#f43f5e";
               couponInput.value = '';
               manualDiscInput.disabled = false;
               couponCode = ''; 
-              discount = 0;
+              discount = autoDiscount;
             } 
             else if(couponPhone !== custPhone) {
               msgElem.innerText = "Coupon removed! Phone number mismatch.";
-              msgElem.style.color = "#ef4444";
+              msgElem.style.color = "#f43f5e";
               couponInput.value = '';
               manualDiscInput.disabled = false;
               couponCode = '';
-              discount = 0;
+              discount = autoDiscount;
             } 
             else {
               msgElem.innerText = "Coupon applied successfully!";
-              msgElem.style.color = "#22c55e";
+              msgElem.style.color = "#10b981";
               
-              if(c.type === 'flat') discount = Number(c.amount || 0);
+              let cDisc = 0;
+              if(c.type === 'flat') cDisc = Number(c.amount || 0);
               else if(c.type === 'percent') {
-                discount = (subtotal * Number(c.amount || 0)) / 100;
-                if(c.maxDiscount && discount > Number(c.maxDiscount)) discount = Number(c.maxDiscount);
+                cDisc = (subtotal * Number(c.amount || 0)) / 100;
+                if(c.maxDiscount && cDisc > Number(c.maxDiscount)) cDisc = Number(c.maxDiscount);
               }
+              discount = autoDiscount + cDisc;
             }
           } else {
             msgElem.innerText = "Coupon applied successfully!";
-            msgElem.style.color = "#22c55e";
+            msgElem.style.color = "#10b981";
 
-            if(c.type === 'flat') discount = Number(c.amount || 0);
+            let cDisc = 0;
+            if(c.type === 'flat') cDisc = Number(c.amount || 0);
             else if(c.type === 'percent') {
-              discount = (subtotal * Number(c.amount || 0)) / 100;
-              if(c.maxDiscount && discount > Number(c.maxDiscount)) discount = Number(c.maxDiscount);
+              cDisc = (subtotal * Number(c.amount || 0)) / 100;
+              if(c.maxDiscount && cDisc > Number(c.maxDiscount)) cDisc = Number(c.maxDiscount);
             }
+            discount = autoDiscount + cDisc;
           }
         } else {
           msgElem.innerText = "Invalid Coupon Code";
-          msgElem.style.color = "#ef4444";
-          discount = 0;
+          msgElem.style.color = "#f43f5e";
+          discount = autoDiscount;
         }
       }
 
       if(!couponCode && manualDiscountVal > 0) {
+        let mDisc = 0;
         if(manualDiscountType === '%') {
-          discount = (subtotal * manualDiscountVal) / 100;
+          mDisc = (subtotal * manualDiscountVal) / 100;
         } else {
-          discount = manualDiscountVal;
+          mDisc = manualDiscountVal;
         }
+        discount = autoDiscount + mDisc;
       }
 
       discount = Math.min(discount, subtotal);
-      let grandTotal = Math.max(0, (subtotal - discount) + vat);
+      let calculatedGrandTotal = Math.max(0, (subtotal - discount) + vat);
+
+      // নতুন রেস্ট্রিকশন: ডিসকাউন্ট বা অফার যুক্ত হওয়ার পরেও রেস্তোরাঁয় গ্রাহকের সর্বমোট বিলের পরিমাণ ন্যূনতম ৩০০ টাকা হতে হবে।
+      // যদি চূড়ান্ত বিল ৩০০ টাকার নিচে নেমে আসে, তবুও বিল কমপক্ষে ৩০০ টাকা হিসেবেই কাউন্ট করা হবে।
+      // (যদি কার্টে কোনো আইটেম থাকে, তবেই ৩০০ টাকার রেস্ট্রিকশন কার্যকর হবে)
+      let grandTotal = calculatedGrandTotal;
+      if (subtotal > 0 && grandTotal < 300) {
+        grandTotal = 300;
+      }
 
       document.getElementById('subtotal-val').innerText = `${subtotal} TK`;
       document.getElementById('vat-val').innerText = `${vat.toFixed(1)} TK`;
@@ -1322,7 +1507,7 @@
           <div class="running-card ${currentEditingOrderId === order.orderId && !isEditingCompletedOrder ? 'active':''}">
             <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:13px;">
               <span>${idx + 1}. #${order.orderId}</span>
-              <span style="color:#0284c7;">Table: ${order.table}</span>
+              <span style="color:#d97706;">Table: ${order.table}</span>
             </div>
             <div style="font-size:11px; color:#475569;">Served By: ${order.servedBy || 'N/A'}</div>
             <div style="font-size:12px; color:#64748b; margin-top:4px;">Items: ${order.items?.length || 0} | Total: ${order.grandTotal} TK</div>
@@ -1359,13 +1544,13 @@
 
       filtered.forEach(o => {
         container.innerHTML += `
-          <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; display:flex; justify-content:space-between; align-items:center;">
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
             <div>
               <div style="font-weight:bold; font-size:13px; color:#0f172a;">#${o.orderId} (Table: ${o.table})</div>
               <div style="font-size:12px; color:#64748b;">Total: ${o.grandTotal} TK | Name: ${o.customerName || 'N/A'} | Phone: ${o.customerPhone || o.phone || 'N/A'}</div>
               <div style="font-size:11px; color:#94a3b8;">Served By: ${o.servedBy || o.createdBy || o.completedBy || 'Cashier'}</div>
             </div>
-            <button onclick="loadCompletedOrderForEdit('${o.orderId}')" style="background:#0284c7; color:#fff; border:none; padding:6px 10px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:12px;">Edit & Update</button>
+            <button onclick="loadCompletedOrderForEdit('${o.orderId}')" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color:#fff; border:none; padding:8px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:12px; box-shadow: 0 2px 4px rgba(3,105,161,0.2);">Edit & Update</button>
           </div>
         `;
       });
@@ -1502,9 +1687,11 @@
       const printDiv = document.getElementById('print-section');
       let itemsHTML = '';
       (order.items || []).forEach(i => {
+        const discPct = calculateAutoDiscount(i);
+        const discText = discPct > 0 ? ` (-${discPct}%)` : '';
         itemsHTML += `
           <tr>
-            <td style="font-weight:bold;">${i.name}</td>
+            <td style="font-weight:bold;">${i.name}${discText}</td>
             <td class="text-right" style="font-weight:bold;">x${i.qty}</td>
           </tr>
         `;
@@ -1584,7 +1771,6 @@
         completedAt: new Date().toISOString()
       };
 
-      // Inventory Stock Update Call (Completed Order Update Phase vs Normal Phase)
       updateInventoryStock(orderData.items, isEditingCompletedOrder, originalCartItems);
       
       if (appliedCouponCode && couponsData[appliedCouponCode]) {
@@ -1600,7 +1786,6 @@
 
       printCustomerReceiptDirect(orderId, orderData);
 
-      // Save directly to Firestore if online
       if (navigator.onLine) {
         try {
           await setDoc(doc(db, "saffron", "mirpur10", "sales", orderId), orderData);
@@ -1656,9 +1841,11 @@
       const printDiv = document.getElementById('print-section');
       let itemsHTML = '';
       (order.items || []).forEach(i => {
+        const discPct = calculateAutoDiscount(i);
+        const discText = discPct > 0 ? ` (-${discPct}%)` : '';
         itemsHTML += `
           <tr>
-            <td>${i.name}<br><small>${i.price} x ${i.qty}</small></td>
+            <td>${i.name}${discText}<br><small>${i.price} x ${i.qty}</small></td>
             <td class="text-right">${i.price * i.qty} TK</td>
           </tr>
         `;

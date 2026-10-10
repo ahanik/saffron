@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,8 +17,9 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body { display: flex; height: 100vh; background-color: #f4f6f9; color: #333; }
     
-    /* Sidebar Layout */
-    .sidebar { width: 250px; background-color: #1e293b; color: #fff; display: flex; flex-direction: column; justify-content: space-between; flex-shrink: 0; }
+    /* Sidebar Layout (Matched exactly with admin_inventory.html) */
+    .sidebar { width: 250px; background-color: #1e293b; color: #fff; display: flex; flex-direction: column; position: relative; }
+
     .brand { 
       padding: 20px 15px; 
       text-align: center; 
@@ -30,25 +30,35 @@
       align-items: center;
       justify-content: center;
     }
-    .brand-logo { width: 120px; height: 50px; object-fit: contain; margin-bottom: 6px; display: block; }
-    .branch-tag { font-size: 12px; color: #94a3b8; }
+    .brand-logo {
+      width: 120px;            
+      height: 50px;  
+      object-fit: contain;          
+      margin-bottom: 6px;
+      display: block;
+    }
+    .sidebar a {
+      text-decoration: none !important;
+    }
+
+    .logout-btn { color: #ef4444; border-top: 1px solid #334155; padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; text-decoration: none; position: absolute; bottom: 0; width: 100%; }
+    .logout-btn:hover { background-color: #334155; color: #f87171; }
+
+    .branch-tag { display: block; font-size: 12px; color: #94a3b8; font-weight: normal; }
     
     .nav-links { list-style: none; padding: 20px 0; }
-    .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; color: #cbd5e1; text-decoration: none !important; transition: 0.2s; }
+    .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 16px; transition: 0.2s; color: #cbd5e1; }
     .nav-item:hover, .nav-item.active { background-color: #334155; color: #fff; border-left: 4px solid #f59e0b; }
     
-    .logout-item { color: #ef4444 !important; border-top: 1px solid #334155; padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; text-decoration: none !important; }
-    .logout-item:hover { background-color: #334155; color: #f87171 !important; }
-
-    /* Main Content Area */
-    .main-content { flex: 1; padding: 30px; overflow-y: auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    /* Main Content Area (Matched with admin_inventory.html) */
+    .main-content { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); flex-shrink: 0; }
     .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
     .status-online { background: #dcfce7; color: #166534; }
     .status-offline { background: #fee2e2; color: #991b1b; }
 
     /* Card & Forms */
-    .card { background: #fff; border-radius: 8px; padding: 25px; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); flex-shrink: 0; }
     .section-header { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 15px; border-left: 4px solid #f59e0b; padding-left: 10px; }
     
     .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
@@ -60,25 +70,34 @@
     .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; justify-content: center; }
     .btn-primary { background: #f59e0b; color: #fff; }
     .btn-primary:hover { background: #d97706; }
-    .btn-warning { background: #0284c7; color: #fff; padding: 6px 12px; font-size: 12px; }
-    .btn-danger { background: #ef4444; color: #fff; padding: 6px 12px; font-size: 12px; }
+    .btn-warning { background: #0284c7; color: #fff; padding: 4px 10px; font-size: 12px; }
+    .btn-danger { background: #ef4444; color: #fff; padding: 4px 10px; font-size: 12px; }
     .btn-secondary { background: #64748b; color: #fff; padding: 8px 14px; font-size: 13px; }
 
-    /* Expense Table */
-    .table-responsive { overflow-x: auto; margin-top: 15px; }
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-    th, td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
-    th { background-color: #f8fafc; color: #475569; font-weight: 600; }
+    /* Expense Table Responsive Container - Compact & Fitted */
+    .table-responsive { 
+      overflow-x: auto; 
+      flex: 1; 
+      min-height: 200px;
+      overflow-y: auto; 
+      margin-top: 15px; 
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+    }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+    th { background-color: #f8fafc; color: #475569; font-weight: 600; position: sticky; top: 0; z-index: 1; font-size: 13px; }
     tr:hover { background-color: #f1f5f9; }
 
     /* Filter Box Style */
-    .filter-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+    .filter-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
     .add-opt { font-weight: bold; color: #d97706; background-color: #fef3c7; }
+    .total-display { margin-top: 10px; padding: 10px 12px; background: #fef3c7; border: 1px solid #fde047; border-radius: 6px; font-weight: 700; color: #92400e; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
   </style>
 </head>
 <body>
 
-  <!-- Sidebar -->
+  <!-- Sidebar Structure Fixed to admin_inventory.html -->
   <div class="sidebar">
     <div>
       <div class="brand">
@@ -86,30 +105,30 @@
         <span class="branch-tag">Mirpur 10 Branch</span>
       </div>
 
-    <!-- ২. নেভিগেশন লিঙ্ক সেকশন -->
-    <ul class="nav-links">
-<li><a href="manager_inventory.html" class="nav-item ">Stock Management</a></li>
+      <ul class="nav-links">
+	<li><a href="manager_inventory.html" class="nav-item ">Stock Management</a></li>
       <li><a href="manager_inventoryreport.html" class="nav-item">Stock Report</a></li>
       <li><a href="manager_employeeexpense.html" class="nav-item">Employee Expense</a></li>
-<li><a href="manager_guestmanagement.html" class="nav-item">Guest Management</a></li>
+	<li><a href="manager_guestmanagement.html" class="nav-item">Guest Management</a></li>
       <li><a href="manager_otherexpense.html" class="nav-item active">Other Expense</a></li>
       <li><a href="manager_salesmanagement.html" class="nav-item">Employee Sales report</a></li>
       <li><a href="manager_salesreport.html" class="nav-item">Sales History & Report</a></li>
       <li><a href="manager_costreport.html" class="nav-item">Operating Cost Report</a></li>
       <li><a href="manager_cashreserve.html" class="nav-item">Cash Reserve System</a></li>
       <li><a href="manager_pos.html" class="nav-item">POS System</a></li>
-
-    </ul>
-  
+      </ul>
     </div>
     
-    <a href="#" class="logout-item" onclick="logoutAdmin()">🚪 Logout</a>
+    <a href="#" class="logout-btn" onclick="logoutAdmin()">🚪 Logout</a>
   </div>
 
-  <!-- Main Content -->
+  <!-- Main Content Area -->
   <div class="main-content">
     <div class="header">
-      <h2>Other Expenses</h2><h3>(বাজারসহ রেষ্টুরেন্টের অন্যান্য খরচ)</h3>
+      <div>
+        <h2 style="font-size: 20px;">Other Expenses</h2>
+        <span style="font-size: 13px; color: #64748b;">(বাজারসহ রেষ্টুরেন্টের অন্যান্য খরচ)</span>
+      </div>
       <div id="net-status" class="status-badge status-online">🟢 Online (Auto Syncing)</div>
     </div>
 
@@ -143,7 +162,7 @@
           </div>
         </div>
 
-        <div style="margin-top: 20px; display: flex; gap: 10px;">
+        <div style="margin-top: 15px; display: flex; gap: 10px;">
           <button type="submit" id="save-expense-btn" class="btn btn-primary" style="flex: 1;">Save Expense Details</button>
           <button type="button" id="cancel-edit-btn" class="btn btn-secondary" style="display: none;" onclick="resetForm()">Cancel</button>
         </div>
@@ -151,7 +170,7 @@
     </div>
 
     <!-- EXPENSE LIST TABLE & FILTER -->
-    <div class="card">
+    <div class="card" style="flex: 1; margin-bottom: 0; display: flex; flex-direction: column;">
       <div class="section-header">Recent Expenses & Filters</div>
       
       <!-- Filter Controls -->
@@ -165,8 +184,13 @@
           </div>
 
           <div class="form-group">
-            <label>Filter by Date (Day)</label>
-            <input type="date" id="filter-date" class="form-control" onchange="applyFilters()">
+            <label>From Date</label>
+            <input type="date" id="filter-from-date" class="form-control" onchange="applyFilters()">
+          </div>
+
+          <div class="form-group">
+            <label>To Date</label>
+            <input type="date" id="filter-to-date" class="form-control" onchange="applyFilters()">
           </div>
 
           <div class="form-group">
@@ -180,12 +204,18 @@
         </div>
       </div>
 
+      <!-- Total Amount Display Box -->
+      <div class="total-display">
+        <span>Filtered Total Expense:</span>
+        <span id="filtered-total-amount">৳ 0.00</span>
+      </div>
+
       <div class="table-responsive">
         <table>
           <thead>
             <tr>
               <th>Document ID</th>
-              <th>Date</th>
+              <th>Date & Time</th>
               <th>Expense Type</th>
               <th>Description</th>
               <th>Amount (BDT)</th>
@@ -356,10 +386,14 @@
         return;
       }
 
-      // Document ID Format: category_title_date
+      // Unique Document ID Format: category_title_timestamp (To prevent overwrite when title is same)
       const cleanCat = sanitizeForId(category);
       const cleanTitle = sanitizeForId(title);
-      const docId = editingId || `${cleanCat}_${cleanTitle}_${date}`;
+      const docId = editingId || `${cleanCat}_${cleanTitle}_${Date.now()}`;
+
+      // Existing item check for preserving original creation timestamp on edit
+      const existingItem = editingId ? rawExpensesList.find(item => item.id === editingId) : null;
+      const createdAt = existingItem && existingItem.createdAt ? existingItem.createdAt : new Date().toISOString();
 
       const expensePayload = {
         id: docId,
@@ -367,7 +401,7 @@
         title: title,
         amount: amount,
         date: date,
-        createdAt: new Date().toISOString()
+        createdAt: createdAt
       };
 
       try {
@@ -401,25 +435,51 @@
     // 4. FILTER AND RENDER EXPENSES IN TABLE
     window.applyFilters = function() {
       const selectedCat = document.getElementById("filter-category").value;
-      const selectedDate = document.getElementById("filter-date").value;
+      const fromDate = document.getElementById("filter-from-date").value;
+      const toDate = document.getElementById("filter-to-date").value;
       const selectedMonth = document.getElementById("filter-month").value;
+
+      const isSearchActive = Boolean(selectedCat || fromDate || toDate || selectedMonth);
 
       let filteredList = rawExpensesList.filter(item => {
         let matchCat = selectedCat ? item.category === selectedCat : true;
-        let matchDate = selectedDate ? item.date === selectedDate : true;
+        let matchDateRange = true;
+        if (fromDate && toDate) {
+          matchDateRange = item.date >= fromDate && item.date <= toDate;
+        } else if (fromDate) {
+          matchDateRange = item.date >= fromDate;
+        } else if (toDate) {
+          matchDateRange = item.date <= toDate;
+        }
         let matchMonth = selectedMonth ? item.date.startsWith(selectedMonth) : true;
-        return matchCat && matchDate && matchMonth;
+        
+        // If no filter is applied, restrict default view to last 30 days
+        let match30Days = true;
+        if (!isSearchActive && item.date) {
+          const itemDate = new Date(item.date);
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          thirtyDaysAgo.setHours(0, 0, 0, 0);
+          match30Days = itemDate >= thirtyDaysAgo;
+        }
+
+        return matchCat && matchDateRange && matchMonth && match30Days;
       });
 
-      // Sort by date descending
-      filteredList.sort((a, b) => new Date(b.date) - new Date(a.date));
+      // Sort by creation timestamp / date descending (Latest entry on top)
+      filteredList.sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : new Date(a.date).getTime();
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : new Date(b.date).getTime();
+        return timeB - timeA;
+      });
 
       renderTable(filteredList);
     };
 
     window.clearFilters = function() {
       document.getElementById("filter-category").value = "";
-      document.getElementById("filter-date").value = "";
+      document.getElementById("filter-from-date").value = "";
+      document.getElementById("filter-to-date").value = "";
       document.getElementById("filter-month").value = "";
       applyFilters();
     };
@@ -428,26 +488,43 @@
       const tbody = document.getElementById("expense-table-body");
       tbody.innerHTML = "";
 
+      let totalAmount = 0;
+
       if (dataList.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No expense records found.</td></tr>';
+        document.getElementById("filtered-total-amount").innerText = "৳ 0.00";
         return;
       }
 
       dataList.forEach((item) => {
+        totalAmount += Number(item.amount || 0);
+
+        // Format Date & Time
+        let formattedDateTime = item.date || "N/A";
+        if (item.createdAt) {
+          const dt = new Date(item.createdAt);
+          if (!isNaN(dt.getTime())) {
+            const timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            formattedDateTime = `${item.date} (${timeStr})`;
+          }
+        }
+
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td><code>${item.id}</code></td>
-          <td>${item.date}</td>
+          <td><code style="font-size: 11px;">${item.id}</code></td>
+          <td>${formattedDateTime}</td>
           <td><strong>${item.category}</strong></td>
           <td>${item.title}</td>
           <td>৳ ${item.amount.toFixed(2)}</td>
-          <td style="display: flex; gap: 6px;">
-            <button class="btn btn-warning" onclick="editExpense('${item.id}')">Edit</button>
-            <button class="btn btn-danger" style="visibility: hidden" onclick="deleteExpense('${item.id}')">Delete</button>
+          <td style="display: flex; gap: 4px;">
+            <button class="btn btn-warning" style="visibility: hidden;" onclick="editExpense('${item.id}')">Edit</button>
+            <button class="btn btn-danger" style="visibility: hidden;" onclick="deleteExpense('${item.id}')">Delete</button>
           </td>
         `;
         tbody.appendChild(tr);
       });
+
+      document.getElementById("filtered-total-amount").innerText = `৳ ${totalAmount.toFixed(2)}`;
     }
 
     // 5. EDIT EXPENSE
@@ -462,11 +539,12 @@
       document.getElementById("exp-date").value = item.date;
 
       document.getElementById("form-title").innerText = "Update Expense Details (" + item.id + ")";
-      document.getElementById("save-expense-btn").innerText = "Update Expense";
+      document.getElementById("save-expense-btn").innerText = "Save Expense Details";
       document.getElementById("cancel-edit-btn").style.display = "inline-flex";
       
       // Smooth scroll to top form
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const mainContent = document.querySelector('.main-content');
+      if (mainContent) mainContent.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     // 6. DELETE EXPENSE
