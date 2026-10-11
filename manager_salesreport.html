@@ -591,9 +591,9 @@
           </td>
           <td>${item.createdBy || item.completedBy || 'Cashier'}</td>
           <td class="action-btns">
-            <button class="btn btn-warning" style="padding:4px 8px; font-size:11px;" onclick="openEditModal('${orderId}')">👁️ বিস্তারিত</button>
+            <button class="btn btn-warning" style="padding:4px 8px;  visibility: hidden; font-size:11px;" onclick="openEditModal('${orderId}')">👁️ বিস্তারিত</button>
             <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="reprintPosReceipt('${orderId}')">🖨️ POS রসিদ</button>
-            <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteSaleOrder('${orderId}')">🗑️ ডিলিট</button>
+            <button class="btn btn-danger" style="padding:4px 8px; visibility: hidden; font-size:11px;" onclick="deleteSaleOrder('${orderId}')">🗑️ ডিলিট</button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -905,9 +905,9 @@
           <td><strong>${item.grandTotal || 0} TK</strong></td>
           <td>${item.createdBy || item.completedBy || 'Cashier'}</td>
           <td class="action-btns">
-            <button class="btn btn-warning" style="padding:4px 8px; font-size:11px;" onclick="openEditModal('${orderId}')">👁️ বিস্তারিত/এডিট</button>
+            <button class="btn btn-warning" style="padding:4px 8px;  visibility: hidden; font-size:11px;" onclick="openEditModal('${orderId}')">👁️ বিস্তারিত/এডিট</button>
             <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="reprintPosReceipt('${orderId}')">🖨️ POS রসিদ</button>
-            <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteSaleOrder('${orderId}')">🗑️ ডিলিট</button>
+            <button class="btn btn-danger" style="padding:4px 8px;  visibility: hidden; font-size:11px;" onclick="deleteSaleOrder('${orderId}')">🗑️ ডিলিট</button>
           </td>
         `;
         tbody.appendChild(tr);
