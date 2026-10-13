@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saffron - POS Update Logs (Admin)</title>
+  <link rel="icon" type="image/x-icon" href="faviconlogo.ico">
+  
+  <!-- SECURITY CHECK -->
+  <script>
+    if (localStorage.getItem('saffron_admin_logged_in') !== 'true') {
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #f4f6f9; color: #333; padding: 30px; }
+    .main-content { max-width: 1200px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .card { background: #fff; border-radius: 8px; padding: 25px; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .section-header { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 15px; border-left: 4px solid #f59e0b; padding-left: 10px; }
+    
+    .btn { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-secondary { background: #64748b; color: #fff; }
+    .btn-success { background: #16a34a; color: #fff; }
+    .btn-success:hover { background: #15803d; }
+
+    .table-responsive { overflow-x: auto; margin-top: 15px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+    th, td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
+    th { background-color: #f8fafc; color: #475569; font-weight: 600; }
+    tr:hover { background-color: #f1f5f9; }
+    
+    .badge-pending { background: #fef3c7; color: #b45309; padding: 3px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; }
+    .badge-known { background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+  <div class="main-content">
+    <div class="header">
+      <div>
+        <h2>POS Update Logs & Audit History</h2>
+        <h3 style="font-size: 13px; color: #64748b; margin-top: 4px;">(পস সিস্টেমে বিল আপডেট করার হিস্ট্রি ও ম্যানেজার ট্র্যাকিং)</h3>
+      </div>
+      <div>
+        <a href="admin_salesreport.html" class="btn btn-secondary">⬅ Go to POS</a>
+      </div>
+    </div>
+
+    <!-- PENDING LOGS (AWAITING ADMIN OK) -->
+    <div class="card" style="border-top: 4px solid #f59e0b;">
+      <div class="section-header">Pending Update Logs (Action Required)</div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Manager / Staff</th>
+              <th>Table</th>
+              <th>Updated Total</th>
+              <th>Update Reason / Note</th>
+              <th>Date & Time</th>
+              <th>Status</th>
+              <th style="text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="pending-logs-tbody">
+            <tr><td colspan="8" style="text-align: center; color: #64748b;">Loading logs...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ADMIN KNOWN LOGS HISTORY -->
+    <div class="card" style="border-top: 4px solid #16a34a;">
+      <div class="section-header">Admin Known Logs (Reviewed History)</div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Manager / Staff</th>
+              <th>Table</th>
+              <th>Updated Total</th>
+              <th>Update Reason / Note</th>
+              <th>Date & Time</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="known-logs-tbody">
+            <tr><td colspan="7" style="text-align: center; color: #64748b;">No reviewed logs found.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIREBASE MODULE SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+    import { 
+      initializeFirestore, 
+      persistentLocalCache, 
+      persistentMultipleTabManager,
+      collection, 
+      onSnapshot,
+      doc,
+      updateDoc
+    } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAq_vQ7ARn1TdMOOp1rtJqFOd1K4yUupP4",
+      authDomain: "saffron-65736.firebaseapp.com",
+      databaseURL: "https://saffron-65736-default-rtdb.firebaseio.com",
+      projectId: "saffron-65736",
+      storageBucket: "saffron-65736.firebasestorage.app",
+      messagingSenderId: "599450614604",
+      appId: "1:599450614604:web:e6be0bc5cb56dc867cede9",
+      measurementId: "G-FC5894HZEM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+    });
+
+    const logsRef = collection(db, "saffron", "mirpur10", "pos_update_logs");
+
+    onSnapshot(logsRef, (snapshot) => {
+      let pendingList = [];
+      let knownList = [];
+
+      if (!snapshot.empty) {
+        snapshot.docs.forEach(docSnap => {
+          const data = { id: docSnap.id, ...docSnap.data() };
+          if (data.status === "Admin Known") {
+            knownList.push(data);
+          } else {
+            pendingList.push(data);
+          }
+        });
+      }
+
+      pendingList.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      knownList.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+      renderPendingLogs(pendingList);
+      renderKnownLogs(knownList);
+    });
+
+    function renderPendingLogs(list) {
+      const tbody = document.getElementById("pending-logs-tbody");
+      tbody.innerHTML = "";
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #64748b;">কোনো পেন্ডিং আপডেট লগ নেই।</td></tr>';
+        return;
+      }
+
+      list.forEach(item => {
+        const timeStr = item.timestamp ? new Date(item.timestamp).toLocaleString() : 'N/A';
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>#${item.orderId}</strong></td>
+            <td><span style="background: #e2e8f0; padding: 3px 8px; border-radius: 4px; font-weight: 600; font-size: 12px;">${item.updatedBy || 'Manager'}</span></td>
+            <td>${item.table}</td>
+            <td style="font-weight: bold; color: #0284c7;">৳ ${parseFloat(item.grandTotal || 0).toFixed(2)}</td>
+            <td style="color: #b91c1c; font-weight:500;">${item.reason || 'N/A'}</td>
+            <td>${timeStr}</td>
+            <td><span class="badge-pending">⏳ Pending Admin OK</span></td>
+            <td style="text-align: right;">
+              <button class="btn btn-success" onclick="markAsKnown('${item.id}')">✓ OK (Admin Known)</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function renderKnownLogs(list) {
+      const tbody = document.getElementById("known-logs-tbody");
+      tbody.innerHTML = "";
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b;">কোনো রিভিউ করা হিস্ট্রি নেই।</td></tr>';
+        return;
+      }
+
+      list.forEach(item => {
+        const timeStr = item.timestamp ? new Date(item.timestamp).toLocaleString() : 'N/A';
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>#${item.orderId}</strong></td>
+            <td><span style="background: #e2e8f0; padding: 3px 8px; border-radius: 4px; font-weight: 600; font-size: 12px;">${item.updatedBy || 'Manager'}</span></td>
+            <td>${item.table}</td>
+            <td style="font-weight: bold; color: #0284c7;">৳ ${parseFloat(item.grandTotal || 0).toFixed(2)}</td>
+            <td>${item.reason || 'N/A'}</td>
+            <td>${timeStr}</td>
+            <td><span class="badge-known">✓ Admin Known</span></td>
+          </tr>
+        `;
+      });
+    }
+
+    window.markAsKnown = async function(id) {
+      if (confirm("আপনি কি নিশ্চিত যে এই আপডেটটি চেক করেছেন এবং এটি 'Admin Known' এ পাঠাতে চান?")) {
+        try {
+          await updateDoc(doc(db, "saffron", "mirpur10", "pos_update_logs", id), {
+            status: "Admin Known"
+          });
+          alert("সফলভাবে 'Admin Known' সেকশনে স্থানান্তরিত হয়েছে!");
+        } catch (err) {
+          alert("এরর: " + err.message);
+        }
+      }
+    };
+  </script>
+</body>
+</html>
