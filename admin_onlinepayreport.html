@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saffron - Online Pay Report, Manual Entry & Withdrawal</title>
+  <link rel="icon" type="image/x-icon" href="faviconlogo.ico">
+  
+  <!-- SECURITY CHECK: Redirect if not logged in -->
+  <script>
+    if (localStorage.getItem('saffron_admin_logged_in') !== 'true') {
+      window.location.href = "index.html";
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #f4f6f9; color: #333; padding: 30px; }
+    
+    /* Main Content Area (Full Width without Sidebar) */
+    .main-content { max-width: 1200px; margin: 0 auto; }
+    
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .status-online { background: #dcfce7; color: #166534; }
+    .status-offline { background: #fee2e2; color: #991b1b; }
+
+    /* Summary Card */
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .summary-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .summary-card h4 { font-size: 12px; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .summary-card .amount { font-size: 22px; font-weight: bold; color: #0f172a; }
+    .summary-card.highlight { background: #fef3c7; border-color: #f59e0b; }
+    .summary-card.highlight .amount { color: #b45309; }
+    .summary-card.success { background: #f0fdf4; border-color: #22c55e; }
+    .summary-card.success .amount { color: #15803d; }
+
+    /* Card & Forms */
+    .card { background: #fff; border-radius: 8px; padding: 25px; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .section-header { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 15px; border-left: 4px solid #f59e0b; padding-left: 10px; display: flex; justify-content: space-between; align-items: center; }
+    
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; font-weight: 600; color: #475569; }
+    .form-control { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; background: #fff; color: #1e293b; }
+    .form-control:focus { border-color: #0284c7; }
+
+    .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; justify-content: center; text-decoration: none; }
+    .btn-primary { background: #f59e0b; color: #fff; }
+    .btn-primary:hover { background: #d97706; }
+    .btn-success { background: #16a34a; color: #fff; }
+    .btn-success:hover { background: #15803d; }
+    .btn-secondary { background: #64748b; color: #fff; }
+    .btn-secondary:hover { background: #475569; }
+    .btn-del { background: #ef4444; color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .btn-del:hover { background: #dc2626; }
+
+    /* Table Styling */
+    .table-responsive { overflow-x: auto; margin-top: 15px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+    th, td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
+    th { background-color: #f8fafc; color: #475569; font-weight: 600; }
+    tr:hover { background-color: #f1f5f9; }
+    .checkbox-col { width: 40px; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    <div class="header">
+      <div>
+        <h2>Online Payment Report & Withdrawal Management</h2>
+        <h3 style="font-size: 13px; color: #64748b; margin-top: 4px;">(ম্যানুয়াল এন্ট্রি, মাল্টিপল সিলেক্ট ও চার্জসহ উইথড্রল সিস্টেম)</h3>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <a href="admin_cashreserve.html" class="btn btn-secondary">⬅ Go to Cash Reserve</a>
+        <div id="net-status" class="status-badge status-online">🟢 Online (Auto Syncing)</div>
+      </div>
+    </div>
+
+    <!-- SUMMARY CARDS -->
+    <div class="summary-grid">
+      <div class="summary-card highlight">
+        <h4>উপলব্ধ অনলাইন পেমেন্ট (Available Balance)</h4>
+        <div class="amount" id="disp-available-balance">৳ 0.00</div>
+      </div>
+      <div class="summary-card success">
+        <h4>মোট উইথড্রকৃত টাকা (Total Withdrawn)</h4>
+        <div class="amount" id="disp-total-withdrawn">৳ 0.00</div>
+      </div>
+    </div>
+
+    <!-- MANUAL ONLINE PAYMENT ENTRY CARD -->
+    <div class="card">
+      <div class="section-header"><span>ম্যানুয়াল অনলাইন পেমেন্ট এন্ট্রি (Manual Entry)</span></div>
+      <form id="manual-online-pay-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>পেমেন্ট মেথড (Payment Method) *</label>
+            <select id="manual-pay-method" class="form-control" required>
+              <option value="">মেথড লোড হচ্ছে...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>ট্রানজেকশন আইডি / রেফারেন্স (Txn ID / Ref) *</label>
+            <input type="text" id="manual-pay-ref" class="form-control" placeholder="যেমন: TRX12345678" required>
+          </div>
+          <div class="form-group">
+            <label>টাকার পরিমাণ (Amount BDT) *</label>
+            <input type="number" step="0.01" id="manual-pay-amount" class="form-control" placeholder="0.00" required>
+          </div>
+          <div class="form-group">
+            <label>তারিখ (Date) *</label>
+            <input type="date" id="manual-pay-date" class="form-control" required>
+          </div>
+        </div>
+        <div style="margin-top: 15px;">
+          <button type="submit" class="btn btn-primary">➕ অনলাইন পেমেন্ট সেভ করুন</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ONLINE PAY REPORT & WITHDRAW TABLE -->
+    <div class="card">
+      <div class="section-header">
+        <span>Available Online Payments (Unwithdrawn)</span>
+        <button type="button" class="btn btn-success" onclick="openWithdrawModal()">💸 Withdraw Selected Items</button>
+      </div>
+      <p style="font-size: 13px; color: #64748b; margin-bottom: 10px;">নিচের তালিকা থেকে যে পেমেন্টগুলো উইথড্র করতে চান সেগুলোর পাশের বাক্সে টিক দিন এবং উপরের উইথড্র বাটনে ক্লিক করুন।</p>
+      
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th class="checkbox-col"><input type="checkbox" id="select-all" onclick="toggleSelectAll(this)"></th>
+              <th>Serial / ID</th>
+              <th>Date</th>
+              <th>Payment Method</th>
+              <th>Reference / Txn ID</th>
+              <th>Time Recorded</th>
+              <th>Amount (BDT)</th>
+              <th style="text-align: right;">অ্যাকশন</th>
+            </tr>
+          </thead>
+          <tbody id="online-pay-report-tbody">
+            <tr>
+              <td colspan="8" style="text-align: center; color: #64748b;">Loading online payment records...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- WITHDRAWAL HISTORY TABLE -->
+    <div class="card">
+      <div class="section-header"><span>Withdrawal History & Cashout Charges</span></div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Withdrawal ID</th>
+              <th>Date & Time</th>
+              <th>Selected Items Count</th>
+              <th>Subtotal Amount</th>
+              <th>Cashout Charge (+)</th>
+              <th>Net Withdrawn Amount (Total Deducted)</th>
+            </tr>
+          </thead>
+          <tbody id="withdrawal-table-body">
+            <tr><td colspan="6" style="text-align: center; color:#64748b;">No withdrawal history found.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- WITHDRAW MODAL -->
+  <div id="withdraw-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:#fff; padding:25px; border-radius:8px; width:400px; max-width:90%;">
+      <h3 style="margin-bottom:15px; color:#0f172a;">Confirm Withdrawal & Cashout Charge</h3>
+      <form id="withdraw-action-form" onsubmit="processWithdrawal(event)">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>Selected Subtotal Amount:</label>
+          <input type="text" id="modal-subtotal" class="form-control" readonly style="font-weight:bold;">
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>ক্যাশ আউট চার্জ (Cashout Charge BDT) *</label>
+          <input type="number" step="0.01" id="modal-charge" class="form-control" placeholder="0.00" required oninput="calculateNetWithdraw()">
+        </div>
+        <div class="form-group" style="margin-bottom:15px;">
+          <label>সর্বমোট কর্তনসহ উইথড্র পরিমাণ (Net Total):</label>
+          <input type="text" id="modal-net-total" class="form-control" readonly style="font-weight:bold; color:#166534; background:#f0fdf4;">
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button type="submit" class="btn btn-success" style="flex:1;">Confirm Withdraw</button>
+          <button type="button" class="btn btn-secondary" onclick="closeWithdrawModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('manual-pay-date').valueAsDate = new Date();
+  </script>
+
+  <!-- FIREBASE MODULE SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+    import { 
+      initializeFirestore, 
+      persistentLocalCache, 
+      persistentMultipleTabManager,
+      collection, 
+      onSnapshot,
+      doc,
+      setDoc,
+      deleteDoc
+    } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAq_vQ7ARn1TdMOOp1rtJqFOd1K4yUupP4",
+      authDomain: "saffron-65736.firebaseapp.com",
+      databaseURL: "https://saffron-65736-default-rtdb.firebaseio.com",
+      projectId: "saffron-65736",
+      storageBucket: "saffron-65736.firebasestorage.app",
+      messagingSenderId: "599450614604",
+      appId: "1:599450614604:web:e6be0bc5cb56dc867cede9",
+      measurementId: "G-FC5894HZEM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    let db;
+    try {
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager()
+        })
+      });
+    } catch (e) { console.warn("Offline cache error", e); }
+
+    const cashReserveRef = collection(db, "saffron", "mirpur10", "cash_reserve");
+    const paymentMethodsRef = collection(db, "saffron", "mirpur10", "payment_methods");
+    const manualPaymentsRef = collection(db, "saffron", "mirpur10", "manual_online_payments");
+    const withdrawalsRef = collection(db, "saffron", "mirpur10", "online_withdrawals");
+
+    window.addEventListener('online', updateNetStatus);
+    window.addEventListener('offline', updateNetStatus);
+
+    function updateNetStatus() {
+      const netBadge = document.getElementById("net-status");
+      if (navigator.onLine) {
+        netBadge.className = "status-badge status-online";
+        netBadge.innerHTML = "🟢 Online (Auto Syncing)";
+      } else {
+        netBadge.className = "status-badge status-offline";
+        netBadge.innerHTML = "🔴 Offline (Saved Locally)";
+      }
+    }
+
+    // 1. LOAD PAYMENT METHODS
+    onSnapshot(paymentMethodsRef, (snapshot) => {
+      const select = document.getElementById("manual-pay-method");
+      select.innerHTML = '<option value="">-- পেমেন্ট মেথড নির্বাচন করুন --</option>';
+
+      if (!snapshot.empty) {
+        snapshot.docs.forEach(docSnap => {
+          const method = docSnap.id;
+          select.innerHTML += `<option value="${method}">${method}</option>`;
+        });
+      } else {
+        select.innerHTML = '<option value="">কোনো মেথড পাওয়া যায়নি (Coupon পেজে সেটআপ করুন)</option>';
+      }
+    });
+
+    // 2. SUBMIT MANUAL ONLINE PAYMENT
+    document.getElementById("manual-online-pay-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const method = document.getElementById("manual-pay-method").value;
+      const refId = document.getElementById("manual-pay-ref").value.trim();
+      const amount = parseFloat(document.getElementById("manual-pay-amount").value) || 0;
+      const date = document.getElementById("manual-pay-date").value;
+
+      if (!method) {
+        alert("দয়া করে পেমেন্ট মেথড নির্বাচন করুন!");
+        return;
+      }
+      if (amount <= 0) {
+        alert("সঠিক টাকার পরিমাণ প্রদান করুন!");
+        return;
+      }
+
+      const docId = `manual_pay_${Date.now()}`;
+      const payload = {
+        id: docId,
+        platform: method,
+        reference: refId,
+        amount: amount,
+        date: date,
+        type: "Manual Entry",
+        isWithdrawn: false,
+        updatedAt: new Date().toISOString()
+      };
+
+      try {
+        await setDoc(doc(db, "saffron", "mirpur10", "manual_online_payments", docId), payload);
+        alert("ম্যানুয়াল অনলাইন পেমেন্ট সফলভাবে সেভ হয়েছে!");
+        document.getElementById("manual-online-pay-form").reset();
+        document.getElementById('manual-pay-date').valueAsDate = new Date();
+      } catch (err) {
+        alert("এরর: " + err.message);
+      }
+    });
+
+    // 3. LISTENERS FOR DATA
+    let cashReserveData = [];
+    let manualPayData = [];
+    let rawWithdrawals = [];
+
+    onSnapshot(cashReserveRef, (snapshot) => {
+      cashReserveData = [];
+      if (!snapshot.empty) {
+        snapshot.docs.forEach(docSnap => {
+          const data = docSnap.data();
+          if (parseFloat(data.onlinePayment || 0) > 0) {
+            cashReserveData.push({
+              id: `cr_${data.date}`,
+              date: data.date,
+              platform: "Cash Reserve Auto",
+              reference: `CR-${data.date}`,
+              amount: parseFloat(data.onlinePayment),
+              updatedAt: data.updatedAt || new Date().toISOString(),
+              isWithdrawn: data.isWithdrawn || false,
+              isManual: false
+            });
+          }
+        });
+      }
+      mergeAndRenderReports();
+    });
+
+    onSnapshot(manualPaymentsRef, (snapshot) => {
+      manualPayData = [];
+      if (!snapshot.empty) {
+        snapshot.docs.forEach(docSnap => {
+          const data = docSnap.data();
+          manualPayData.push({
+            id: data.id,
+            date: data.date,
+            platform: data.platform,
+            reference: data.reference,
+            amount: parseFloat(data.amount),
+            updatedAt: data.updatedAt,
+            isWithdrawn: data.isWithdrawn || false,
+            isManual: true
+          });
+        });
+      }
+      mergeAndRenderReports();
+    });
+
+    onSnapshot(withdrawalsRef, (snapshot) => {
+      rawWithdrawals = [];
+      if (!snapshot.empty) {
+        snapshot.docs.forEach(docSnap => {
+          rawWithdrawals.push(docSnap.data());
+        });
+      }
+      renderWithdrawalHistory();
+    });
+
+    let currentUnwithdrawnList = [];
+
+    function mergeAndRenderReports() {
+      const combined = [...cashReserveData, ...manualPayData];
+      combined.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      currentUnwithdrawnList = combined.filter(item => item.isWithdrawn !== true);
+
+      const tbody = document.getElementById("online-pay-report-tbody");
+      tbody.innerHTML = "";
+
+      let availableBalance = 0;
+
+      if (currentUnwithdrawnList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #64748b;">কোনো পেন্ডিং অনলাইন পেমেন্ট রেকর্ড পাওয়া যায়নি।</td></tr>';
+        document.getElementById("disp-available-balance").innerText = "৳ 0.00";
+        return;
+      }
+
+      currentUnwithdrawnList.forEach((item, index) => {
+        availableBalance += item.amount;
+        const tr = document.createElement("tr");
+        const timeStr = item.updatedAt ? new Date(item.updatedAt).toLocaleString() : 'N/A';
+
+        let actionBtn = `<span style="color:#64748b; font-size:12px;">Auto</span>`;
+        if (item.isManual) {
+          actionBtn = `<button class="btn-del" onclick="deleteManualPayment('${item.id}')">Delete</button>`;
+        }
+
+        tr.innerHTML = `
+          <td class="checkbox-col"><input type="checkbox" class="row-checkbox" value="${item.id}" data-amount="${item.amount}"></td>
+          <td><strong>#${index + 1}</strong></td>
+          <td>${item.date}</td>
+          <td><span style="background: #e2e8f0; padding: 3px 8px; border-radius: 4px; font-weight: 600; font-size: 12px;">${item.platform}</span></td>
+          <td><code>${item.reference}</code></td>
+          <td>${timeStr}</td>
+          <td style="font-weight: bold; color: #166534;">৳ ${item.amount.toFixed(2)}</td>
+          <td style="text-align: right;">${actionBtn}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById("disp-available-balance").innerText = "৳ " + availableBalance.toFixed(2);
+    }
+
+    function renderWithdrawalHistory() {
+      let totalWithdrawnSum = 0;
+      const wTbody = document.getElementById("withdrawal-table-body");
+      wTbody.innerHTML = "";
+
+      if (rawWithdrawals.length === 0) {
+        wTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color:#64748b;">No withdrawal history found.</td></tr>';
+      } else {
+        rawWithdrawals.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        rawWithdrawals.forEach(w => {
+          totalWithdrawnSum += parseFloat(w.netAmount || 0);
+          const tr = document.createElement("tr");
+          const timeStr = w.timestamp ? new Date(w.timestamp).toLocaleString() : 'N/A';
+          tr.innerHTML = `
+            <td><code>${w.id}</code></td>
+            <td>${timeStr}</td>
+            <td>${w.itemIds.length} Items</td>
+            <td>৳ ${parseFloat(w.subtotal || 0).toFixed(2)}</td>
+            <td style="color: #b91c1c;">+ ৳ ${parseFloat(w.charge || 0).toFixed(2)}</td>
+            <td><strong style="color: #15803d;">৳ ${parseFloat(w.netAmount || 0).toFixed(2)}</strong></td>
+          `;
+          wTbody.appendChild(tr);
+        });
+      }
+
+      document.getElementById("disp-total-withdrawn").innerText = "৳ " + totalWithdrawnSum.toFixed(2);
+    }
+
+    window.toggleSelectAll = function(selectAllCheckbox) {
+      const checkboxes = document.querySelectorAll('.row-checkbox');
+      checkboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
+    };
+
+    window.openWithdrawModal = function() {
+      const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+      if (checkboxes.length === 0) {
+        alert("দয়া করে অন্তত একটি পেমেন্ট সিলেক্ট করুন!");
+        return;
+      }
+
+      let subtotal = 0;
+      checkboxes.forEach(cb => {
+        subtotal += parseFloat(cb.getAttribute('data-amount') || 0);
+      });
+
+      document.getElementById("modal-subtotal").value = subtotal.toFixed(2);
+      document.getElementById("modal-charge").value = "";
+      // চার্জ যোগ হয়ে নেট টোটাল দেখাবে (Subtotal + Charge)
+      document.getElementById("modal-net-total").value = subtotal.toFixed(2);
+      document.getElementById("withdraw-modal").style.display = "flex";
+    };
+
+    window.closeWithdrawModal = function() {
+      document.getElementById("withdraw-modal").style.display = "none";
+    };
+
+    window.calculateNetWithdraw = function() {
+      const subtotal = parseFloat(document.getElementById("modal-subtotal").value) || 0;
+      const charge = parseFloat(document.getElementById("modal-charge").value) || 0;
+      // সাবটোটালের সাথে চার্জ যোগ করে সর্বমোট কর্তন পরিমাণ হিসাব করা হচ্ছে
+      const net = subtotal + charge;
+      document.getElementById("modal-net-total").value = net.toFixed(2);
+    };
+
+    window.processWithdrawal = async function(e) {
+      e.preventDefault();
+      const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+      let itemIds = [];
+      let subtotal = 0;
+
+      checkboxes.forEach(cb => {
+        itemIds.push(cb.value);
+        subtotal += parseFloat(cb.getAttribute('data-amount') || 0);
+      });
+
+      const charge = parseFloat(document.getElementById("modal-charge").value);
+      if (isNaN(charge) || charge < 0) {
+        alert("সঠিক ক্যাশ আউট চার্জ প্রদান করুন!");
+        return;
+      }
+
+      // চার্জ যোগ হয়ে সর্বমোট কর্তন পরিমাণ (Net Total) নির্ধারিত হবে এবং মূল ব্যালেন্স থেকে সাবটোটাল+চার্জ কর্তন হবে
+      const netAmount = subtotal + charge;
+      const withdrawId = `wdr_${Date.now()}`;
+
+      const withdrawalPayload = {
+        id: withdrawId,
+        itemIds: itemIds,
+        subtotal: subtotal,
+        charge: charge,
+        netAmount: netAmount,
+        timestamp: new Date().toISOString()
+      };
+
+      try {
+        for (let id of itemIds) {
+          const item = currentUnwithdrawnList.find(p => p.id === id);
+          if (item) {
+            if (item.isManual) {
+              await setDoc(doc(db, "saffron", "mirpur10", "manual_online_payments", id), { ...item, isWithdrawn: true });
+            } else {
+              const datePart = id.replace('cr_', '');
+              await setDoc(doc(db, "saffron", "mirpur10", "cash_reserve", `reserve_${datePart}`), { isWithdrawn: true }, { merge: true });
+            }
+          }
+        }
+
+        await setDoc(doc(db, "saffron", "mirpur10", "online_withdrawals", withdrawId), withdrawalPayload);
+
+        alert("Withdrawal completed successfully with charge added to net total!");
+        closeWithdrawModal();
+      } catch (err) {
+        alert("Error processing withdrawal: " + err.message);
+      }
+    };
+
+    window.deleteManualPayment = async function(id) {
+      if (confirm("এই ম্যানুয়াল পেমেন্ট রেকর্ডটি মুছে ফেলতে চান?")) {
+        try {
+          await deleteDoc(doc(db, "saffron", "mirpur10", "manual_online_payments", id));
+          alert("সফলভাবে মুছে ফেলা হয়েছে!");
+        } catch (err) {
+          alert("এরর: " + err.message);
+        }
+      }
+    };
+  </script>
+</body>
+</html>
