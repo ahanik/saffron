@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Saffron - POS (Admin)</title>
+  <title>Saffron - POS (Manager)</title>
 	<link rel="icon" type="image/x-icon" href="faviconlogo.ico">
  <!-- SECURITY CHECK: Redirect if not logged in -->
   <script>
@@ -542,6 +542,7 @@
   <i class="fa fa-fw fa-home"></i> POS OFFER SECTION
 </a>
 
+
       <button onclick="openCompletedOrdersModal()" style="background:#0284c7; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:12px;">
         <i class="fa-solid fa-clock-rotate-left"></i> Today Completed Orders
       </button>
@@ -624,7 +625,7 @@
       </div>
     </div>
 
-    <!-- RUNNING ORDERS & SELECTION PANEL -->
+    <!-- RUNNING ORDERS & PANEL -->
     <div class="running-orders-panel">
       <!-- TABLE, WAITER & CUSTOMER SELECTION SECTION -->
       <div class="selection-box">
@@ -644,7 +645,7 @@
         </select>
 
         <input type="text" id="cust-name" placeholder="Customer Name (Optional)">
-        <input type="text" id="cust-phone" placeholder="017xxxxxxxx" oninput="calculateBill()">
+        <input type="text" id="cust-phone" placeholder="017xxxxxxxx">
       </div>
 
       <div style="font-weight:bold; font-size:14px; color:#0f172a; border-bottom:1px solid #cbd5e1; padding-bottom:6px; margin-top:5px; flex-shrink:0;">
@@ -723,7 +724,7 @@
     let currentEditingOrderId = null;
     let isEditingCompletedOrder = false;
     let originalOrderCreatedBy = null;
-    let originalCartItems = []; // COMPLETED ORDER EDIT ER SOMOY PURBER ITEMS TRACK RAKHAR JONNO
+    let originalCartItems = [];
 
     function loadUserInfo() {
       const nameElem = document.getElementById('user-display-name');
@@ -931,7 +932,6 @@
     function updateInventoryStock(cartItems, isUpdate = false, previousCartItems = []) {
       if (!cartItems || !cartItems.length) return;
 
-      // Completed Order Update er somoy shudhu NOTUN add kora item gulor raw materials biyog hobe
       let itemsToProcess = cartItems;
       if (isUpdate && previousCartItems && previousCartItems.length > 0) {
         itemsToProcess = cartItems.map(cItem => {
@@ -971,7 +971,6 @@
               const currentInv = cachedInventory[rawName] || rawMaterialsList[rawName];
               let deductionCost = 0;
 
-              // আনুপাতিক হারে খরচ বের করার লজিক: (বর্তমান মোট খরচ / বর্তমান মোট পরিমাণ) * বিক্রিত কাঁচামালের পরিমাণ
               if (currentInv && currentInv.quantity > 0 && currentInv.totalCost > 0) {
                 deductionCost = (currentInv.totalCost / currentInv.quantity) * deductionQty;
               } else {
@@ -1136,7 +1135,6 @@
       document.getElementById('btn-pay-action').innerText = '💳 Pay & Final Print';
       document.getElementById('cust-name').value = '';
       document.getElementById('cust-phone').value = '';
-      document.getElementById('cust-phone').placeholder = '017xxxxxxxx';
       
       const manualDisc = document.getElementById('manual-discount');
       const couponInput = document.getElementById('coupon-code');
@@ -1385,8 +1383,6 @@
       document.getElementById('btn-hold-action').style.display = 'none';
       document.getElementById('btn-pay-action').innerText = '🔄 Update & Print Receipt';
 
-      document.getElementById('cust-phone').placeholder = "017xxxxxxxx (Required)";
-
       cart = JSON.parse(JSON.stringify(order.items || []));
       renderTableDropdown();
 
@@ -1473,8 +1469,6 @@
       document.getElementById('update-indicator').style.display = 'none';
       document.getElementById('btn-hold-action').style.display = 'block';
       document.getElementById('btn-pay-action').innerText = '💳 Pay & Final Print';
-      
-      document.getElementById('cust-phone').placeholder = "017xxxxxxxx";
 
       cart = [...order.items];
       
@@ -1546,13 +1540,18 @@
       if(!selectedTable) return alert("Please select a table first!");
       if(!servedBy) return alert("Please select waiter also!");
 
-      if (isEditingCompletedOrder && !custPhone) {
-        return alert("Customer Phone Number is mandatory when updating a completed order!");
-      }
-
       let updateReason = "";
       if(isEditingCompletedOrder) {
-        updateReason = prompt("Enter reason for updating this order (Optional):") || "Item/Price Revision";
+        // আপডেট করার কারণ বাধ্যতামূলক (Mandatory) করা হয়েছে
+        while (!updateReason || updateReason.trim() === "") {
+          updateReason = prompt("বিল আপডেট করার কারণ (Reason) আবশ্যিক লিখুন:");
+          if (updateReason === null) {
+            return; // Cancel করলে অপারেশন বন্ধ হবে
+          }
+          if (updateReason.trim() === "") {
+            alert("আপডেটের কারণ লেখা বাধ্যতামূলক!");
+          }
+        }
       }
 
       const orderId = currentEditingOrderId ? currentEditingOrderId : generateUniqueOrderId();
@@ -1584,9 +1583,24 @@
         completedAt: new Date().toISOString()
       };
 
-      // Inventory Stock Update Call (Completed Order Update Phase vs Normal Phase)
       updateInventoryStock(orderData.items, isEditingCompletedOrder, originalCartItems);
       
+      // যদি completed order এডিট করা হয়, তবে অ্যাডমিনের দেখার জন্য আলাদা আপডেট লগ কালেকশনে সেভ হবে
+      if (isEditingCompletedOrder) {
+        const logId = `log_${Date.now()}`;
+        const updateLogPayload = {
+          id: logId,
+          orderId: orderId,
+          updatedBy: currentUser,
+          reason: updateReason,
+          table: selectedTable,
+          grandTotal: orderData.grandTotal,
+          timestamp: new Date().toISOString(),
+          status: "Pending Admin Known" // অ্যাডমিন ওকে করার আগে এই স্ট্যাটাসে থাকবে
+        };
+        setDoc(doc(db, "saffron", "mirpur10", "pos_update_logs", logId), updateLogPayload).catch(err => console.log(err));
+      }
+
       if (appliedCouponCode && couponsData[appliedCouponCode]) {
         try {
           const couponRef = doc(db, "saffron", "mirpur10", "coupons", appliedCouponCode);
@@ -1600,7 +1614,6 @@
 
       printCustomerReceiptDirect(orderId, orderData);
 
-      // Save directly to Firestore if online
       if (navigator.onLine) {
         try {
           await setDoc(doc(db, "saffron", "mirpur10", "sales", orderId), orderData);
@@ -1683,11 +1696,11 @@
 
       printDiv.innerHTML = `
         ${updateHeader}
-  <img src="poslogo.png" style="max-width: 50px; display: block; margin: 0 auto;" alt="Logo">
-<div class="receipt-title">SAFFRON</div>
+        <img src="poslogo.png" style="max-width: 50px; display: block; margin: 0 auto;" alt="Logo">
+        <div class="receipt-title">SAFFRON</div>
         <div class="receipt-subtitle">TAHMID SQUARE</div>
-<div class="receipt-subtitle">13/1, Senpara porbota, Mirpur-10, Dhaka-1216</div>
-<div class="receipt-subtitle">Phone - 01343-831878</div>
+        <div class="receipt-subtitle">13/1, Senpara porbota, Mirpur-10, Dhaka-1216</div>
+        <div class="receipt-subtitle">Phone - 01343-831878</div>
         <div class="receipt-divider"></div>
         <div class="receipt-info">
           <div><strong>Order ID:</strong> #${orderId}</div>
@@ -1716,11 +1729,11 @@
         <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:14px;"><span>Grand Total:</span><span>${order.grandTotal} TK</span></div>
         <div style="display:flex; justify-content:space-between; margin-top:4px;"><span>Payment Method:</span><span>${order.paymentMethod}</span></div>
         <div class="offer-box">
-<div class="offer-box-title">YOUR FEEDBACK IS VALUABLE TO US!</div>
+          <div class="offer-box-title">YOUR FEEDBACK IS VALUABLE TO US!</div>
           <div>How was your experience?</div>
-	<div>____________________________________________________</div>
-	<div>____________________________________________________</div>
-	<div>Phone no: _________________________________________</div>
+          <div>____________________________________________________</div>
+          <div>____________________________________________________</div>
+          <div>Phone no: _________________________________________</div>
         </div>
         <div class="receipt-footer">
           <div>Thank you for dining with us!</div>
