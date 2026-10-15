@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Saffron - Online Pay Report, Manual Entry & Withdrawal</title>
+  <title>Saffron - Online Pay & Bank Management</title>
   <link rel="icon" type="image/x-icon" href="faviconlogo.ico">
   
   <!-- SECURITY CHECK: Redirect if not logged in -->
@@ -15,15 +15,45 @@
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: #f4f6f9; color: #333; padding: 30px; }
+    body { display: flex; height: 100vh; background-color: #f4f6f9; color: #333; overflow: hidden; }
     
-    /* Main Content Area (Full Width without Sidebar) */
-    .main-content { max-width: 1200px; margin: 0 auto; }
+    /* Sidebar Layout */
+    .sidebar { width: 250px; background-color: #1e293b; color: #fff; display: flex; flex-direction: column; justify-content: space-between; flex-shrink: 0; }
+    .brand { 
+      padding: 20px 15px; 
+      text-align: center; 
+      background: #0f172a; 
+      border-bottom: 1px solid #334155; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .brand-logo { width: 120px; height: 50px; object-fit: contain; margin-bottom: 6px; display: block; }
+    .branch-tag { font-size: 12px; color: #94a3b8; }
+    
+    .nav-links { list-style: none; padding: 20px 0; overflow-y: auto; flex: 1; }
+    .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; color: #cbd5e1; text-decoration: none !important; transition: 0.2s; }
+    .nav-item:hover, .nav-item.active { background-color: #334155; color: #fff; border-left: 4px solid #f59e0b; }
+    
+    .logout-item { color: #ef4444 !important; border-top: 1px solid #334155; padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px; text-decoration: none !important; }
+    .logout-item:hover { background-color: #334155; color: #f87171 !important; }
+
+    /* Main Content Area */
+    .main-content { flex: 1; padding: 30px; overflow-y: auto; height: 100vh; }
     
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
     .status-online { background: #dcfce7; color: #166534; }
     .status-offline { background: #fee2e2; color: #991b1b; }
+
+    /* Tab Buttons Navigation */
+    .tab-menu { display: flex; gap: 12px; margin-bottom: 25px; }
+    .tab-btn { padding: 12px 24px; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; background: #e2e8f0; color: #475569; transition: 0.2s; }
+    .tab-btn.active { background: #f59e0b; color: #fff; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3); }
+
+    .tab-section { display: none; }
+    .tab-section.active { display: block; }
 
     /* Summary Card */
     .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
@@ -34,6 +64,8 @@
     .summary-card.highlight .amount { color: #b45309; }
     .summary-card.success { background: #f0fdf4; border-color: #22c55e; }
     .summary-card.success .amount { color: #15803d; }
+    .summary-card.info { background: #eff6ff; border-color: #3b82f6; }
+    .summary-card.info .amount { color: #1d4ed8; }
 
     /* Card & Forms */
     .card { background: #fff; border-radius: 8px; padding: 25px; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -52,8 +84,12 @@
     .btn-success:hover { background: #15803d; }
     .btn-secondary { background: #64748b; color: #fff; }
     .btn-secondary:hover { background: #475569; }
-    .btn-del { background: #ef4444; color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-    .btn-del:hover { background: #dc2626; }
+    .btn-info { background: #0284c7; color: #fff; }
+    .btn-info:hover { background: #0369a1; }
+    .btn-danger { background: #dc2626; color: #fff; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-warning { background: #d97706; color: #fff; }
+    .btn-warning:hover { background: #b45309; }
 
     /* Table Styling */
     .table-responsive { overflow-x: auto; margin-top: 15px; }
@@ -62,123 +98,304 @@
     th { background-color: #f8fafc; color: #475569; font-weight: 600; }
     tr:hover { background-color: #f1f5f9; }
     .checkbox-col { width: 40px; text-align: center; }
+
+    /* Bank Profile Box */
+    .bank-profile-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .bank-profile-item label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+    .bank-profile-item div { font-size: 16px; font-weight: bold; color: #0f172a; margin-top: 4px; }
+
+    /* Hidden Container for PDF / Printing Statement */
+    #statement-print-area { display: none; }
+
+    @media print {
+      @page { size: A4 portrait; margin: 10mm; }
+      body * { visibility: hidden; }
+
+      body.print-list-mode #statement-print-area, 
+      body.print-list-mode #statement-print-area * { 
+        visibility: visible; 
+      }
+      body.print-list-mode #statement-print-area {
+        display: block !important;
+        position: absolute; left: 0; top: 0; width: 100%;
+        padding: 0; background: #fff; color: #0f172a;
+      }
+
+      .stmt-page-block {
+        page-break-after: always;
+        break-after: page;
+        min-height: 98vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .stmt-page-block:last-child {
+        page-break-after: avoid;
+        break-after: avoid;
+      }
+
+      .stmt-top-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0f172a; padding-bottom: 10px; margin-bottom: 12px; }
+      .stmt-logo-group { display: flex; align-items: center; gap: 15px; }
+      .stmt-logo { max-width: 120px; height: auto; }
+      .stmt-brand-title { font-size: 22px; font-weight: 900; color: #0f172a; letter-spacing: 1px; text-transform: uppercase; }
+      .stmt-report-badge { background: #0f172a; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+
+      .stmt-meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #f1f5f9; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 15px; }
+      .stmt-meta-item { font-size: 11px; color: #475569; font-weight: 600; }
+      .stmt-meta-item strong { color: #0f172a; font-size: 12px; font-weight: 800; }
+
+      .stmt-cat-title { font-size: 15px; font-weight: 900; color: #fff; background: #0f172a; padding: 8px 12px; margin-top: 10px; margin-bottom: 0; border-radius: 6px 6px 0 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; }
+      
+      .stmt-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 1px solid #0f172a; }
+      .stmt-table th { background: #e2e8f0; color: #0f172a; font-weight: 800; padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #0f172a; border-right: 1px solid #cbd5e1; }
+      .stmt-table td { padding: 8px 10px; border-bottom: 1px solid #cbd5e1; border-right: 1px solid #cbd5e1; color: #0f172a; font-size: 12px; vertical-align: middle; }
+
+      .stmt-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; padding-top: 15px; border-top: 2px solid #0f172a; }
+      .stmt-sign-box { text-align: center; width: 200px; }
+      .stmt-sign-line { border-top: 1.5px solid #0f172a; margin-bottom: 4px; }
+      .stmt-sign-text { font-size: 11px; color: #0f172a; font-weight: 800; text-transform: uppercase; }
+    }
   </style>
 </head>
 <body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div>
+      <div class="brand">
+        <img src="logo.png" alt="Saffron Logo" class="brand-logo" onerror="this.onerror=null; this.src='https://via.placeholder.com/120x50?text=Saffron+Logo';">
+        <span class="branch-tag">Mirpur 10 Branch</span>
+      </div>
+
+      <ul class="nav-links">
+        <li><a href="admin_inventory.html" class="nav-item">Stock Management</a></li>
+        <li><a href="admin_inventoryreport.html" class="nav-item">Stock Report</a></li>
+        <li><a href="admin_food.html" class="nav-item">Food Management</a></li>
+        <li><a href="admin_employees.html" class="nav-item">Employee Management</a></li>
+        <li><a href="admin_guestmanagement.html" class="nav-item">Guest Management</a></li>
+        <li><a href="admin_coupon.html" class="nav-item">Coupon & Others</a></li>
+        <li><a href="admin_employeeexpense.html" class="nav-item">Employee Expense</a></li>
+        <li><a href="admin_otherexpense.html" class="nav-item">Other Expense</a></li>
+        <li><a href="admin_salesmanagement.html" class="nav-item">Employee Sales report</a></li>
+        <li><a href="admin_salesreport.html" class="nav-item">Sales History & Report</a></li>
+        <li><a href="admin_costreport.html" class="nav-item">Operating Cost Report</a></li>
+        <li><a href="admin_onlinepayreport.html" class="nav-item active">Online Payment & Bank</a></li>
+        <li><a href="admin_cashreserve.html" class="nav-item">Cash Reserve System</a></li>
+        <li><a href="admin_pos.html" class="nav-item">POS System</a></li>
+      </ul>
+    </div>
+    
+    <a href="#" class="logout-item" onclick="logoutAdmin()">🚪 Logout</a>
+  </div>
 
   <!-- Main Content Area -->
   <div class="main-content">
     <div class="header">
       <div>
-        <h2>Online Payment Report & Withdrawal Management</h2>
-        <h3 style="font-size: 13px; color: #64748b; margin-top: 4px;">(ম্যানুয়াল এন্ট্রি, মাল্টিপল সিলেক্ট ও চার্জসহ উইথড্রল সিস্টেম)</h3>
+        <h2>Online Payment & Bank Management</h2>
+        <h3 style="font-size: 13px; color: #64748b; margin-top: 4px;">(অনলাইন পেমেন্ট, ব্যাংক উইথড্র ও এডিট অ্যাকাউন্ট সিস্টেম)</h3>
       </div>
       <div style="display: flex; align-items: center; gap: 12px;">
-        <a href="admin_cashreserve.html" class="btn btn-secondary">⬅ Go to Cash Reserve</a>
         <div id="net-status" class="status-badge status-online">🟢 Online (Auto Syncing)</div>
       </div>
     </div>
 
-    <!-- SUMMARY CARDS -->
-    <div class="summary-grid">
-      <div class="summary-card highlight">
-        <h4>উপলব্ধ অনলাইন পেমেন্ট (Available Balance)</h4>
-        <div class="amount" id="disp-available-balance">৳ 0.00</div>
+    <!-- TAB SELECTION BUTTONS -->
+    <div class="tab-menu">
+      <button class="tab-btn active" id="tab-btn-online" onclick="switchTab('online')">💳 অনলাইন পেমেন্ট সেকশন</button>
+      <button class="tab-btn" id="tab-btn-bank" onclick="switchTab('bank')">🏦 ব্যাংক অ্যাকাউন্ট ও স্টেটমেন্ট</button>
+    </div>
+
+    <!-- TAB 1: ONLINE PAYMENT SECTION -->
+    <div class="tab-section active" id="section-online">
+      <div class="summary-grid">
+        <div class="summary-card highlight">
+          <h4>উপলব্ধ অনলাইন পেমেন্ট (Available Balance)</h4>
+          <div class="amount" id="disp-available-balance">৳ 0.00</div>
+        </div>
+        <div class="summary-card success">
+          <h4>মোট উইথড্রকৃত টাকা (Total Withdrawn)</h4>
+          <div class="amount" id="disp-total-withdrawn">৳ 0.00</div>
+        </div>
       </div>
-      <div class="summary-card success">
-        <h4>মোট উইথড্রকৃত টাকা (Total Withdrawn)</h4>
-        <div class="amount" id="disp-total-withdrawn">৳ 0.00</div>
+
+      <!-- MANUAL ONLINE PAYMENT ENTRY CARD -->
+      <div class="card">
+        <div class="section-header"><span>ম্যানুয়াল অনলাইন পেমেন্ট এন্ট্রি (Manual Entry)</span></div>
+        <form id="manual-online-pay-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>পেমেন্ট মেথড (Payment Method) *</label>
+              <select id="manual-pay-method" class="form-control" required>
+                <option value="">মেথড লোড হচ্ছে...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>ট্রানজেকশন আইডি / রেফারেন্স (Txn ID / Ref) *</label>
+              <input type="text" id="manual-pay-ref" class="form-control" placeholder="যেমন: TRX12345678" required>
+            </div>
+            <div class="form-group">
+              <label>টাকার পরিমাণ (Amount BDT) *</label>
+              <input type="number" step="0.01" id="manual-pay-amount" class="form-control" placeholder="0.00" required>
+            </div>
+            <div class="form-group">
+              <label>তারিখ (Date) *</label>
+              <input type="date" id="manual-pay-date" class="form-control" required>
+            </div>
+          </div>
+          <div style="margin-top: 15px;">
+            <button type="submit" class="btn btn-primary">➕ অনলাইন পেমেন্ট সেভ করুন</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- ONLINE PAY REPORT & WITHDRAW TABLE -->
+      <div class="card">
+        <div class="section-header">
+          <span>Available Online Payments (Unwithdrawn)</span>
+          <button type="button" class="btn btn-success" onclick="openWithdrawModal()">💸 Withdraw Selected Items</button>
+        </div>
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 10px;">নিচের তালিকা থেকে যে পেমেন্টগুলো উইথড্র করতে চান সেগুলোর পাশের বাক্সে টিক দিন এবং উপরের উইথড্র বাটনে ক্লিক করুন।</p>
+        
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th class="checkbox-col"><input type="checkbox" id="select-all" onclick="toggleSelectAll(this)"></th>
+                <th>Serial / ID</th>
+                <th>Date</th>
+                <th>Payment Method</th>
+                <th>Reference / Txn ID</th>
+                <th>Time Recorded</th>
+                <th>Amount (BDT)</th>
+                <th style="text-align: right;">অ্যাকশন</th>
+              </tr>
+            </thead>
+            <tbody id="online-pay-report-tbody">
+              <tr>
+                <td colspan="8" style="text-align: center; color: #64748b;">Loading online payment records...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- WITHDRAWAL HISTORY TABLE -->
+      <div class="card">
+        <div class="section-header"><span>Withdrawal History & Cashout Charges</span></div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Withdrawal ID</th>
+                <th>Date & Time</th>
+                <th>Selected Items Count</th>
+                <th>Subtotal Amount</th>
+                <th>Cashout Charge (+)</th>
+                <th>Net Withdrawn Amount</th>
+                <th>Deposited Bank Account</th>
+                <th>Withdrawal Reason</th>
+              </tr>
+            </thead>
+            <tbody id="withdrawal-table-body">
+              <tr><td colspan="8" style="text-align: center; color:#64748b;">No withdrawal history found.</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- MANUAL ONLINE PAYMENT ENTRY CARD -->
-    <div class="card">
-      <div class="section-header"><span>ম্যানুয়াল অনলাইন পেমেন্ট এন্ট্রি (Manual Entry)</span></div>
-      <form id="manual-online-pay-form">
-        <div class="form-grid">
-          <div class="form-group">
-            <label>পেমেন্ট মেথড (Payment Method) *</label>
-            <select id="manual-pay-method" class="form-control" required>
-              <option value="">মেথড লোড হচ্ছে...</option>
-            </select>
+    <!-- TAB 2: BANK ACCOUNT & STATEMENT SECTION (SINGLE ACCOUNT) -->
+    <div class="tab-section" id="section-bank">
+      <!-- ADD BANK ACCOUNT CARD (Shows ONLY if no account exists) -->
+      <div class="card" id="add-bank-card" style="border-top: 4px solid #0284c7; display: none;">
+        <div class="section-header"><span>ব্যাংক অ্যাকাউন্ট যোগ করুন (Single Account Only)</span></div>
+        <form id="bank-account-form" onsubmit="addBankAccount(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>ব্যাংক বা মোবাইল ব্যাংকিং নাম *</label>
+              <input type="text" id="bank-name" class="form-control" placeholder="যেমন: City Bank / bKash / DBBL" required>
+            </div>
+            <div class="form-group">
+              <label>একাউন্ট হোল্ডার নাম *</label>
+              <input type="text" id="bank-holder-name" class="form-control" placeholder="যেমন: Saffron Restaurant" required>
+            </div>
+            <div class="form-group">
+              <label>একাউন্ট নাম্বার *</label>
+              <input type="text" id="bank-acc-no" class="form-control" placeholder="যেমন: 1234567890" required>
+            </div>
+            <div class="form-group">
+              <label>প্রাথমিক ব্যালেন্স (Initial Balance BDT)</label>
+              <input type="number" step="0.01" id="bank-init-balance" class="form-control" placeholder="0.00" value="0">
+            </div>
           </div>
-          <div class="form-group">
-            <label>ট্রানজেকশন আইডি / রেফারেন্স (Txn ID / Ref) *</label>
-            <input type="text" id="manual-pay-ref" class="form-control" placeholder="যেমন: TRX12345678" required>
+          <div style="margin-top: 15px;">
+            <button type="submit" class="btn btn-info">➕ ব্যাংক অ্যাকাউন্ট সেভ করুন</button>
           </div>
-          <div class="form-group">
-            <label>টাকার পরিমাণ (Amount BDT) *</label>
-            <input type="number" step="0.01" id="manual-pay-amount" class="form-control" placeholder="0.00" required>
+        </form>
+      </div>
+
+      <!-- BANK ACCOUNT DETAILS (SHOWS ON TOP WHEN ACCOUNT EXISTS) -->
+      <div class="card" id="bank-details-card" style="display: none;">
+        <div class="section-header">
+          <span>Registered Bank Account Details</span>
+          <button class="btn btn-warning" onclick="openEditBankModal()">✏️ Edit Account Info</button>
+        </div>
+        <div class="bank-profile-box">
+          <div class="bank-profile-item">
+            <label>BANK NAME</label>
+            <div id="det-bank-name">-</div>
           </div>
-          <div class="form-group">
-            <label>তারিখ (Date) *</label>
-            <input type="date" id="manual-pay-date" class="form-control" required>
+          <div class="bank-profile-item">
+            <label>ACCOUNT HOLDER NAME</label>
+            <div id="det-holder-name">-</div>
+          </div>
+          <div class="bank-profile-item">
+            <label>ACCOUNT NUMBER</label>
+            <div id="det-acc-no">-</div>
+          </div>
+          <div class="bank-profile-item">
+            <label>CURRENT BALANCE</label>
+            <div id="det-balance" style="color: #166534;">৳ 0.00</div>
           </div>
         </div>
-        <div style="margin-top: 15px;">
-          <button type="submit" class="btn btn-primary">➕ অনলাইন পেমেন্ট সেভ করুন</button>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="btn btn-primary" onclick="openAddMoneyModal()">➕ DEPOSIT (CREDIT)</button>
+          <button class="btn btn-danger" onclick="openBankWithdrawModal()">💸 WITHDRAW (DEBIT)</button>
+          <button class="btn btn-secondary" onclick="printBankStatementPDF()" style="margin-left: auto;">📄 ACCOUNT STATEMENT DOWNLOAD</button>
         </div>
-      </form>
-    </div>
-
-    <!-- ONLINE PAY REPORT & WITHDRAW TABLE -->
-    <div class="card">
-      <div class="section-header">
-        <span>Available Online Payments (Unwithdrawn)</span>
-        <button type="button" class="btn btn-success" onclick="openWithdrawModal()">💸 Withdraw Selected Items</button>
       </div>
-      <p style="font-size: 13px; color: #64748b; margin-bottom: 10px;">নিচের তালিকা থেকে যে পেমেন্টগুলো উইথড্র করতে চান সেগুলোর পাশের বাক্সে টিক দিন এবং উপরের উইথড্র বাটনে ক্লিক করুন।</p>
-      
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr>
-              <th class="checkbox-col"><input type="checkbox" id="select-all" onclick="toggleSelectAll(this)"></th>
-              <th>Serial / ID</th>
-              <th>Date</th>
-              <th>Payment Method</th>
-              <th>Reference / Txn ID</th>
-              <th>Time Recorded</th>
-              <th>Amount (BDT)</th>
-              <th style="text-align: right;">অ্যাকশন</th>
-            </tr>
-          </thead>
-          <tbody id="online-pay-report-tbody">
-            <tr>
-              <td colspan="8" style="text-align: center; color: #64748b;">Loading online payment records...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
 
-    <!-- WITHDRAWAL HISTORY TABLE -->
-    <div class="card">
-      <div class="section-header"><span>Withdrawal History & Cashout Charges</span></div>
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr>
-              <th>Withdrawal ID</th>
-              <th>Date & Time</th>
-              <th>Selected Items Count</th>
-              <th>Subtotal Amount</th>
-              <th>Cashout Charge (+)</th>
-              <th>Net Withdrawn Amount (Total Deducted)</th>
-            </tr>
-          </thead>
-          <tbody id="withdrawal-table-body">
-            <tr><td colspan="6" style="text-align: center; color:#64748b;">No withdrawal history found.</td></tr>
-          </tbody>
-        </table>
+      <!-- BANK STATEMENT TABLE (CREDIT / DEBIT TRANSACTION HISTORY) -->
+      <div class="card" id="bank-statement-card" style="display: none;">
+        <div class="section-header"><span>ব্যাংক স্টেটমেন্ট (Transaction Statement)</span></div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Date & Time</th>
+                <th>Transaction Type</th>
+                <th>Description / Reason</th>
+                <th>Credit</th>
+                <th>Debit</th>
+              </tr>
+            </thead>
+            <tbody id="bank-statement-tbody">
+              <tr><td colspan="5" style="text-align: center; color: #64748b;">কোনো লেনদেন পাওয়া যায়নি।</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- WITHDRAW MODAL -->
+  <!-- PRINT / PDF CONTAINER -->
+  <div id="statement-print-area"></div>
+
+  <!-- ONLINE PAYMENT WITHDRAW MODAL -->
   <div id="withdraw-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
-    <div style="background:#fff; padding:25px; border-radius:8px; width:400px; max-width:90%;">
-      <h3 style="margin-bottom:15px; color:#0f172a;">Confirm Withdrawal & Cashout Charge</h3>
+    <div style="background:#fff; padding:25px; border-radius:8px; width:420px; max-width:90%;">
+      <h3 style="margin-bottom:15px; color:#0f172a;">Confirm Withdrawal & Bank Deposit</h3>
       <form id="withdraw-action-form" onsubmit="processWithdrawal(event)">
         <div class="form-group" style="margin-bottom:12px;">
           <label>Selected Subtotal Amount:</label>
@@ -188,9 +405,13 @@
           <label>ক্যাশ আউট চার্জ (Cashout Charge BDT) *</label>
           <input type="number" step="0.01" id="modal-charge" class="form-control" placeholder="0.00" required oninput="calculateNetWithdraw()">
         </div>
-        <div class="form-group" style="margin-bottom:15px;">
+        <div class="form-group" style="margin-bottom:12px;">
           <label>সর্বমোট কর্তনসহ উইথড্র পরিমাণ (Net Total):</label>
           <input type="text" id="modal-net-total" class="form-control" readonly style="font-weight:bold; color:#166534; background:#f0fdf4;">
+        </div>
+        <div class="form-group" style="margin-bottom:15px;">
+          <label>উইথড্র করার কারণ (Withdrawal Reason) *</label>
+          <input type="text" id="modal-withdraw-reason" class="form-control" placeholder="যেমন: Daily Online Sales Cashout" required>
         </div>
         <div style="display:flex; gap:10px;">
           <button type="submit" class="btn btn-success" style="flex:1;">Confirm Withdraw</button>
@@ -200,8 +421,96 @@
     </div>
   </div>
 
+  <!-- EDIT BANK ACCOUNT MODAL -->
+  <div id="edit-bank-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:#fff; padding:25px; border-radius:8px; width:400px; max-width:90%;">
+      <h3 style="margin-bottom:15px; color:#0f172a;">Edit Bank Account Info</h3>
+      <form onsubmit="submitEditBankAccount(event)">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>ব্যাংক বা মোবাইল ব্যাংকিং নাম *</label>
+          <input type="text" id="edit-bank-name" class="form-control" required>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>একাউন্ট হোল্ডার নাম *</label>
+          <input type="text" id="edit-bank-holder-name" class="form-control" required>
+        </div>
+        <div class="form-group" style="margin-bottom:15px;">
+          <label>একাউন্ট নাম্বার *</label>
+          <input type="text" id="edit-bank-acc-no" class="form-control" required>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button type="submit" class="btn btn-primary" style="flex:1;">Update Account</button>
+          <button type="button" class="btn btn-secondary" onclick="closeEditBankModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD MONEY TO BANK MODAL -->
+  <div id="add-money-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:#fff; padding:25px; border-radius:8px; width:380px; max-width:90%;">
+      <h3 style="margin-bottom:15px; color:#0f172a;">Add Money to Bank Account</h3>
+      <form onsubmit="submitAddMoney(event)">
+        <div class="form-group" style="margin-bottom:15px;">
+          <label>জমা করার পরিমাণ (Amount BDT) *</label>
+          <input type="number" step="0.01" id="add-money-amount" class="form-control" placeholder="0.00" required>
+        </div>
+        <div class="form-group" style="margin-bottom:15px;">
+          <label>বিবরণ / কারণ (Reason) *</label>
+          <input type="text" id="add-money-reason" class="form-control" placeholder="যেমন: Direct Cash Deposit" required>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button type="submit" class="btn btn-primary" style="flex:1;">Add Money</button>
+          <button type="button" class="btn btn-secondary" onclick="closeAddMoneyModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- BANK WITHDRAW MODAL (DEBIT) -->
+  <div id="bank-withdraw-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:#fff; padding:25px; border-radius:8px; width:380px; max-width:90%;">
+      <h3 style="margin-bottom:15px; color:#0f172a;">Withdraw Money from Bank</h3>
+      <form onsubmit="submitBankWithdraw(event)">
+        <div class="form-group" style="margin-bottom:15px;">
+          <label>উইথড্র করার পরিমাণ (Amount BDT) *</label>
+          <input type="number" step="0.01" id="bank-withdraw-amount" class="form-control" placeholder="0.00" required>
+        </div>
+        <div class="form-group" style="margin-bottom:15px;">
+          <label>উইথড্র করার কারণ (Withdrawal Reason) *</label>
+          <input type="text" id="bank-withdraw-reason" class="form-control" placeholder="যেমন: Restaurant Utility Bill Payment" required>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button type="submit" class="btn btn-danger" style="flex:1;">Withdraw</button>
+          <button type="button" class="btn btn-secondary" onclick="closeBankWithdrawModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     document.getElementById('manual-pay-date').valueAsDate = new Date();
+
+    function logoutAdmin() {
+      if (confirm("Are you sure you want to log out?")) {
+        localStorage.removeItem('saffron_admin_logged_in');
+        window.location.href = "index.html";
+      }
+    }
+
+    // TAB SWITCHING LOGIC
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-section').forEach(sec => sec.classList.remove('active'));
+
+      if (tabName === 'online') {
+        document.getElementById('tab-btn-online').classList.add('active');
+        document.getElementById('section-online').classList.add('active');
+      } else if (tabName === 'bank') {
+        document.getElementById('tab-btn-bank').classList.add('active');
+        document.getElementById('section-bank').classList.add('active');
+      }
+    }
   </script>
 
   <!-- FIREBASE MODULE SCRIPT -->
@@ -215,7 +524,8 @@
       onSnapshot,
       doc,
       setDoc,
-      deleteDoc
+      updateDoc,
+      increment
     } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -243,6 +553,8 @@
     const paymentMethodsRef = collection(db, "saffron", "mirpur10", "payment_methods");
     const manualPaymentsRef = collection(db, "saffron", "mirpur10", "manual_online_payments");
     const withdrawalsRef = collection(db, "saffron", "mirpur10", "online_withdrawals");
+    const bankAccountsRef = collection(db, "saffron", "mirpur10", "bank_accounts");
+    const bankTransactionsRef = collection(db, "saffron", "mirpur10", "bank_transactions");
 
     window.addEventListener('online', updateNetStatus);
     window.addEventListener('offline', updateNetStatus);
@@ -269,11 +581,321 @@
           select.innerHTML += `<option value="${method}">${method}</option>`;
         });
       } else {
-        select.innerHTML = '<option value="">কোনো মেথড পাওয়া যায়নি (Coupon পেজে সেটআপ করুন)</option>';
+        select.innerHTML = '<option value="">কোনো মেথড পাওয়া যায়নি</option>';
       }
     });
 
-    // 2. SUBMIT MANUAL ONLINE PAYMENT
+    // 2. SINGLE BANK ACCOUNT & STATEMENT MANAGEMENT
+    window.addBankAccount = async function(e) {
+      e.preventDefault();
+      const bankName = document.getElementById("bank-name").value.trim();
+      const holderName = document.getElementById("bank-holder-name").value.trim();
+      const accNo = document.getElementById("bank-acc-no").value.trim();
+      const initBalance = parseFloat(document.getElementById("bank-init-balance").value) || 0;
+
+      const docId = `bank_primary`;
+      const payload = {
+        id: docId,
+        bankName: bankName,
+        holderName: holderName,
+        accountNumber: accNo,
+        balance: initBalance,
+        updatedAt: new Date().toISOString()
+      };
+
+      try {
+        await setDoc(doc(db, "saffron", "mirpur10", "bank_accounts", docId), payload);
+        
+        if (initBalance > 0) {
+          const txnId = `txn_${Date.now()}`;
+          await setDoc(doc(db, "saffron", "mirpur10", "bank_transactions", txnId), {
+            id: txnId,
+            type: "Credit",
+            amount: initBalance,
+            reason: "Initial Balance",
+            timestamp: new Date().toISOString()
+          });
+        }
+
+        alert("ব্যাংক অ্যাকাউন্ট সফলভাবে সেভ করা হয়েছে!");
+      } catch (err) {
+        alert("এরর: " + err.message);
+      }
+    };
+
+    let activeSingleBankId = null;
+    let currentBankBalance = 0;
+    let cachedBankInfo = {};
+    let cachedTransactions = [];
+
+    onSnapshot(bankAccountsRef, (snapshot) => {
+      const addCard = document.getElementById("add-bank-card");
+      const detailsCard = document.getElementById("bank-details-card");
+      const statementCard = document.getElementById("bank-statement-card");
+
+      if (snapshot.empty) {
+        addCard.style.display = "block";
+        detailsCard.style.display = "none";
+        statementCard.style.display = "none";
+        activeSingleBankId = null;
+        currentBankBalance = 0;
+        cachedBankInfo = {};
+      } else {
+        const docSnap = snapshot.docs[0];
+        const b = docSnap.data();
+        activeSingleBankId = b.id;
+        currentBankBalance = parseFloat(b.balance || 0);
+        cachedBankInfo = b;
+
+        document.getElementById("det-bank-name").innerText = b.bankName;
+        document.getElementById("det-holder-name").innerText = b.holderName;
+        document.getElementById("det-acc-no").innerText = b.accountNumber;
+        document.getElementById("det-balance").innerText = "৳ " + currentBankBalance.toFixed(2);
+
+        addCard.style.display = "none";
+        detailsCard.style.display = "block";
+        statementCard.style.display = "block";
+      }
+    });
+
+    // LISTEN TO BANK TRANSACTIONS (STATEMENT)
+    onSnapshot(bankTransactionsRef, (snapshot) => {
+      const tbody = document.getElementById("bank-statement-tbody");
+      tbody.innerHTML = "";
+      cachedTransactions = [];
+
+      if (snapshot.empty) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #64748b;">কোনো লেনদেন পাওয়া যায়নি।</td></tr>';
+        return;
+      }
+
+      snapshot.docs.forEach(d => cachedTransactions.push(d.data()));
+      cachedTransactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+      cachedTransactions.forEach(t => {
+        const timeStr = t.timestamp ? new Date(t.timestamp).toLocaleString() : 'N/A';
+        const isCredit = t.type === "Credit";
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${timeStr}</td>
+            <td><span style="font-weight:600; color:${isCredit ? '#166534' : '#b91c1c'};">${t.type}</span></td>
+            <td>${t.reason || 'N/A'}</td>
+            <td style="font-weight: bold; color: #166534;">${isCredit ? '৳ ' + parseFloat(t.amount).toFixed(2) : '-'}</td>
+            <td style="font-weight: bold; color: #b91c1c;">${!isCredit ? '৳ ' + parseFloat(t.amount).toFixed(2) : '-'}</td>
+          </tr>
+        `;
+      });
+    });
+
+    window.openEditBankModal = function() {
+      document.getElementById("edit-bank-name").value = cachedBankInfo.bankName || "";
+      document.getElementById("edit-bank-holder-name").value = cachedBankInfo.holderName || "";
+      document.getElementById("edit-bank-acc-no").value = cachedBankInfo.accountNumber || "";
+      document.getElementById("edit-bank-modal").style.display = "flex";
+    };
+
+    window.closeEditBankModal = function() {
+      document.getElementById("edit-bank-modal").style.display = "none";
+    };
+
+    window.submitEditBankAccount = async function(e) {
+      e.preventDefault();
+      const bankName = document.getElementById("edit-bank-name").value.trim();
+      const holderName = document.getElementById("edit-bank-holder-name").value.trim();
+      const accNo = document.getElementById("edit-bank-acc-no").value.trim();
+
+      if (!activeSingleBankId) return;
+
+      try {
+        await updateDoc(doc(db, "saffron", "mirpur10", "bank_accounts", activeSingleBankId), {
+          bankName: bankName,
+          holderName: holderName,
+          accountNumber: accNo,
+          updatedAt: new Date().toISOString()
+        });
+        alert("ব্যাংক অ্যাকাউন্ট তথ্য সফলভাবে আপডেট করা হয়েছে!");
+        closeEditBankModal();
+      } catch (err) {
+        alert("Error updating account: " + err.message);
+      }
+    };
+
+    window.openAddMoneyModal = function() {
+      document.getElementById("add-money-amount").value = "";
+      document.getElementById("add-money-reason").value = "";
+      document.getElementById("add-money-modal").style.display = "flex";
+    };
+
+    window.closeAddMoneyModal = function() {
+      document.getElementById("add-money-modal").style.display = "none";
+    };
+
+    window.submitAddMoney = async function(e) {
+      e.preventDefault();
+      const amt = parseFloat(document.getElementById("add-money-amount").value) || 0;
+      const reason = document.getElementById("add-money-reason").value.trim();
+      if (amt <= 0) return alert("সঠিক পরিমাণ প্রদান করুন!");
+      if (!reason) return alert("কারণ (Reason) লিখুন!");
+      if (!activeSingleBankId) return alert("কোনো ব্যাংক অ্যাকাউন্ট নেই!");
+
+      try {
+        await updateDoc(doc(db, "saffron", "mirpur10", "bank_accounts", activeSingleBankId), {
+          balance: increment(amt),
+          updatedAt: new Date().toISOString()
+        });
+
+        const txnId = `txn_${Date.now()}`;
+        await setDoc(doc(db, "saffron", "mirpur10", "bank_transactions", txnId), {
+          id: txnId,
+          type: "Credit",
+          amount: amt,
+          reason: reason,
+          timestamp: new Date().toISOString()
+        });
+
+        alert("সফলভাবে ব্যাংক অ্যাকাউন্টে টাকা জমা হয়েছে!");
+        closeAddMoneyModal();
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    };
+
+    window.openBankWithdrawModal = function() {
+      document.getElementById("bank-withdraw-amount").value = "";
+      document.getElementById("bank-withdraw-reason").value = "";
+      document.getElementById("bank-withdraw-modal").style.display = "flex";
+    };
+
+    window.closeBankWithdrawModal = function() {
+      document.getElementById("bank-withdraw-modal").style.display = "none";
+    };
+
+    window.submitBankWithdraw = async function(e) {
+      e.preventDefault();
+      const amt = parseFloat(document.getElementById("bank-withdraw-amount").value) || 0;
+      const reason = document.getElementById("bank-withdraw-reason").value.trim();
+
+      if (amt <= 0) return alert("সঠিক পরিমাণ প্রদান করুন!");
+      if (!reason) return alert("উইথড্র করার কারণ (Reason) লিখুন!");
+      if (amt > currentBankBalance) return alert("ব্যাংক অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই! বর্তমান ব্যালেন্স: ৳ " + currentBankBalance.toFixed(2));
+      if (!activeSingleBankId) return alert("কোনো ব্যাংক অ্যাকাউন্ট নেই!");
+
+      try {
+        await updateDoc(doc(db, "saffron", "mirpur10", "bank_accounts", activeSingleBankId), {
+          balance: increment(-amt),
+          updatedAt: new Date().toISOString()
+        });
+
+        const txnId = `txn_${Date.now()}`;
+        await setDoc(doc(db, "saffron", "mirpur10", "bank_transactions", txnId), {
+          id: txnId,
+          type: "Debit",
+          amount: amt,
+          reason: reason,
+          timestamp: new Date().toISOString()
+        });
+
+        alert("ব্যাংক অ্যাকাউন্ট থেকে সফলভাবে টাকা উইথড্র করা হয়েছে!");
+        closeBankWithdrawModal();
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    };
+
+    window.printBankStatementPDF = function() {
+      if (cachedTransactions.length === 0) {
+        alert("ডাউনলোড করার মতো কোনো স্টেটমেন্ট ডাটা নেই!");
+        return;
+      }
+
+      let tableRowsHTML = '';
+      let totalCredit = 0;
+      let totalDebit = 0;
+
+      cachedTransactions.forEach((t, index) => {
+        const timeStr = t.timestamp ? new Date(t.timestamp).toLocaleString() : 'N/A';
+        const isCredit = t.type === "Credit";
+        const amt = parseFloat(t.amount || 0);
+
+        if (isCredit) totalCredit += amt;
+        else totalDebit += amt;
+
+        tableRowsHTML += `
+          <tr>
+            <td style="text-align: center;">${index + 1}</td>
+            <td>${timeStr}</td>
+            <td><strong style="color:${isCredit ? '#166534' : '#b91c1c'};">${t.type}</strong></td>
+            <td>${t.reason || 'N/A'}</td>
+            <td style="color: #166534; font-weight:700;">${isCredit ? '৳ ' + amt.toLocaleString('en-IN') : '-'}</td>
+            <td style="color: #b91c1c; font-weight:700;">${!isCredit ? '৳ ' + amt.toLocaleString('en-IN') : '-'}</td>
+          </tr>
+        `;
+      });
+
+      const statementHTML = `
+        <div class="stmt-page-block">
+          <div>
+            <div class="stmt-top-bar">
+              <div class="stmt-logo-group">
+                <img src="logo.png" width="50" height="60" class="stmt-logo" alt="Saffron" onerror="this.style.display='none'">
+                <div>
+                  <div class="stmt-brand-title">SAFFRON</div>
+                  <div style="color:#475569; font-size:12px; font-weight:700;">Bank Account Statement Report</div>
+                </div>
+              </div>
+              <div class="stmt-report-badge">BANK STATEMENT</div>
+            </div>
+
+            <div class="stmt-meta-grid">
+              <div class="stmt-meta-item">Bank Name: <strong>${cachedBankInfo.bankName || 'N/A'}</strong></div>
+              <div class="stmt-meta-item">Account No: <strong>${cachedBankInfo.accountNumber || 'N/A'}</strong></div>
+              <div class="stmt-meta-item">Print Date: <strong>${new Date().toLocaleDateString('en-EN')}</strong></div>
+            </div>
+
+            <div class="stmt-cat-title">
+              <span>Account Holder: ${cachedBankInfo.holderName || 'N/A'}</span>
+              <span>Current Balance: ৳${currentBankBalance.toLocaleString('en-IN')}</span>
+            </div>
+            <table class="stmt-table">
+              <thead>
+                <tr>
+                  <th style="width: 6%; text-align: center;">SL</th>
+                  <th style="width: 24%;">Date & Time</th>
+                  <th style="width: 14%;">Type</th>
+                  <th style="width: 30%;">Description / Reason</th>
+                  <th style="width: 13%;">Credit (+)</th>
+                  <th style="width: 13%;">Debit (-)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRowsHTML}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="stmt-footer">
+            <div class="stmt-sign-box">
+              <div class="stmt-sign-line"></div>
+              <div class="stmt-sign-text">Prepared By</div>
+            </div>
+            <div class="stmt-sign-box">
+              <div class="stmt-sign-line"></div>
+              <div class="stmt-sign-text">Authorized Signature</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const stmtContainer = document.getElementById('statement-print-area');
+      stmtContainer.innerHTML = statementHTML;
+
+      document.body.className = 'print-list-mode';
+      window.print();
+      document.body.className = '';
+    };
+
+    // 3. SUBMIT MANUAL ONLINE PAYMENT
     document.getElementById("manual-online-pay-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const method = document.getElementById("manual-pay-method").value;
@@ -281,14 +903,8 @@
       const amount = parseFloat(document.getElementById("manual-pay-amount").value) || 0;
       const date = document.getElementById("manual-pay-date").value;
 
-      if (!method) {
-        alert("দয়া করে পেমেন্ট মেথড নির্বাচন করুন!");
-        return;
-      }
-      if (amount <= 0) {
-        alert("সঠিক টাকার পরিমাণ প্রদান করুন!");
-        return;
-      }
+      if (!method) return alert("দয়া করে পেমেন্ট মেথড নির্বাচন করুন!");
+      if (amount <= 0) return alert("সঠিক টাকার পরিমাণ প্রদান করুন!");
 
       const docId = `manual_pay_${Date.now()}`;
       const payload = {
@@ -312,7 +928,7 @@
       }
     });
 
-    // 3. LISTENERS FOR DATA
+    // 4. LISTENERS FOR DATA
     let cashReserveData = [];
     let manualPayData = [];
     let rawWithdrawals = [];
@@ -420,7 +1036,7 @@
       wTbody.innerHTML = "";
 
       if (rawWithdrawals.length === 0) {
-        wTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color:#64748b;">No withdrawal history found.</td></tr>';
+        wTbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color:#64748b;">No withdrawal history found.</td></tr>';
       } else {
         rawWithdrawals.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         rawWithdrawals.forEach(w => {
@@ -434,6 +1050,8 @@
             <td>৳ ${parseFloat(w.subtotal || 0).toFixed(2)}</td>
             <td style="color: #b91c1c;">+ ৳ ${parseFloat(w.charge || 0).toFixed(2)}</td>
             <td><strong style="color: #15803d;">৳ ${parseFloat(w.netAmount || 0).toFixed(2)}</strong></td>
+            <td><span style="background:#eff6ff; color:#1d4ed8; padding:3px 8px; border-radius:4px; font-weight:600; font-size:12px;">${w.bankName || 'N/A'}</span></td>
+            <td>${w.reason || 'N/A'}</td>
           `;
           wTbody.appendChild(tr);
         });
@@ -448,11 +1066,14 @@
     };
 
     window.openWithdrawModal = function() {
-      const checkboxes = document.querySelectorAll('.row-checkbox:checked');
-      if (checkboxes.length === 0) {
-        alert("দয়া করে অন্তত একটি পেমেন্ট সিলেক্ট করুন!");
+      if (!activeSingleBankId) {
+        alert("দয়া করে আগে 'ব্যাংক অ্যাকাউন্ট সেকশন' থেকে একটি ব্যাংক অ্যাকাউন্ট অ্যাড করে নিন!");
+        switchTab('bank');
         return;
       }
+
+      const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+      if (checkboxes.length === 0) return alert("দয়া করে অন্তত একটি পেমেন্ট সিলেক্ট করুন!");
 
       let subtotal = 0;
       checkboxes.forEach(cb => {
@@ -461,8 +1082,8 @@
 
       document.getElementById("modal-subtotal").value = subtotal.toFixed(2);
       document.getElementById("modal-charge").value = "";
-      // চার্জ যোগ হয়ে নেট টোটাল দেখাবে (Subtotal + Charge)
       document.getElementById("modal-net-total").value = subtotal.toFixed(2);
+      document.getElementById("modal-withdraw-reason").value = "";
       document.getElementById("withdraw-modal").style.display = "flex";
     };
 
@@ -473,7 +1094,6 @@
     window.calculateNetWithdraw = function() {
       const subtotal = parseFloat(document.getElementById("modal-subtotal").value) || 0;
       const charge = parseFloat(document.getElementById("modal-charge").value) || 0;
-      // সাবটোটালের সাথে চার্জ যোগ করে সর্বমোট কর্তন পরিমাণ হিসাব করা হচ্ছে
       const net = subtotal + charge;
       document.getElementById("modal-net-total").value = net.toFixed(2);
     };
@@ -490,25 +1110,30 @@
       });
 
       const charge = parseFloat(document.getElementById("modal-charge").value);
-      if (isNaN(charge) || charge < 0) {
-        alert("সঠিক ক্যাশ আউট চার্জ প্রদান করুন!");
-        return;
-      }
+      const reason = document.getElementById("modal-withdraw-reason").value.trim();
 
-      // চার্জ যোগ হয়ে সর্বমোট কর্তন পরিমাণ (Net Total) নির্ধারিত হবে এবং মূল ব্যালেন্স থেকে সাবটোটাল+চার্জ কর্তন হবে
+      if (isNaN(charge) || charge < 0) return alert("সঠিক ক্যাশ আউট চার্জ প্রদান করুন!");
+      if (!reason) return alert("উইথড্র করার কারণ (Reason) লিখুন!");
+      if (!activeSingleBankId) return alert("কোনো ব্যাংক অ্যাকাউন্ট সেট করা নেই!");
+
       const netAmount = subtotal + charge;
       const withdrawId = `wdr_${Date.now()}`;
 
-      const withdrawalPayload = {
-        id: withdrawId,
-        itemIds: itemIds,
-        subtotal: subtotal,
-        charge: charge,
-        netAmount: netAmount,
-        timestamp: new Date().toISOString()
-      };
-
       try {
+        await updateDoc(doc(db, "saffron", "mirpur10", "bank_accounts", activeSingleBankId), {
+          balance: increment(netAmount),
+          updatedAt: new Date().toISOString()
+        });
+
+        const txnId = `txn_${Date.now()}`;
+        await setDoc(doc(db, "saffron", "mirpur10", "bank_transactions", txnId), {
+          id: txnId,
+          type: "Credit",
+          amount: netAmount,
+          reason: `Online Withdrawal: ${reason}`,
+          timestamp: new Date().toISOString()
+        });
+
         for (let id of itemIds) {
           const item = currentUnwithdrawnList.find(p => p.id === id);
           if (item) {
@@ -521,9 +1146,21 @@
           }
         }
 
+        const withdrawalPayload = {
+          id: withdrawId,
+          itemIds: itemIds,
+          subtotal: subtotal,
+          charge: charge,
+          netAmount: netAmount,
+          bankId: activeSingleBankId,
+          bankName: cachedBankInfo.bankName || "Registered Bank",
+          reason: reason,
+          timestamp: new Date().toISOString()
+        };
+
         await setDoc(doc(db, "saffron", "mirpur10", "online_withdrawals", withdrawId), withdrawalPayload);
 
-        alert("Withdrawal completed successfully with charge added to net total!");
+        alert("Withdrawal completed successfully and added to bank statement!");
         closeWithdrawModal();
       } catch (err) {
         alert("Error processing withdrawal: " + err.message);
@@ -536,7 +1173,7 @@
           await deleteDoc(doc(db, "saffron", "mirpur10", "manual_online_payments", id));
           alert("সফলভাবে মুছে ফেলা হয়েছে!");
         } catch (err) {
-          alert("এরর: " + err.message);
+          alert("Error: " + err.message);
         }
       }
     };
