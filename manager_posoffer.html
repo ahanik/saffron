@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Saffron - POS OFFER (Manager)</title>
+  <title>Saffron - POS OFFER(Manager)</title>
 	<link rel="icon" type="image/x-icon" href="faviconlogo.ico">
  <!-- SECURITY CHECK: Redirect if not logged in -->
   <script>
@@ -856,7 +856,6 @@
 
     // AUTO DISCOUNT CALCULATION FUNCTION WITH RESTRICTIONS
     function calculateAutoDiscount(item) {
-      const price = item.price || 0;
       let category = item.category || '';
 
       if (!category) {
@@ -871,22 +870,10 @@
 
       const isPlatter = category.toLowerCase().includes('platter') || (item.name && item.name.toLowerCase().includes('platter'));
 
-      // প্লাটারের ৫০% ডিসকাউন্টে ৩০০ টাকার রেস্ট্রিকশন থাকবে না
+      // শুধুমাত্র প্লাটার (Platter) সেকশনের আইটেমগুলোতে ৫০% ডিসকাউন্ট থাকবে, বাকি সব আইটেমের ডিসকাউন্ট থাকবে না
       if (isPlatter) {
         return 50;
       }
-
-      // অন্যান্য আইটেমের ক্ষেত্রে সাবটোটাল কমপক্ষে ৩০০ টাকা হতে হবে
-      const subtotal = cart.reduce((sum, cartItem) => sum + (cartItem.price * cartItem.qty), 0);
-      if (subtotal < 300) {
-        return 0;
-      }
-
-      if (price < 200) return 0;
-      if (price >= 200 && price <= 299) return 20;
-      if (price >= 300 && price <= 399) return 30;
-      if (price >= 400 && price <= 499) return 40;
-      if (price >= 500) return 50;
 
       return 0;
     }
@@ -1475,12 +1462,7 @@
       }
 
       discount = Math.min(discount, subtotal);
-      let calculatedGrandTotal = Math.max(0, (subtotal - discount) + vat);
-
-      let grandTotal = calculatedGrandTotal;
-      if (subtotal > 0 && grandTotal < 300) {
-        grandTotal = 300;
-      }
+      let grandTotal = Math.max(0, (subtotal - discount) + vat);
 
       document.getElementById('subtotal-val').innerText = `${subtotal} TK`;
       document.getElementById('vat-val').innerText = `${vat.toFixed(1)} TK`;
@@ -1867,11 +1849,11 @@
 
       printDiv.innerHTML = `
         ${updateHeader}
-        <img src="poslogo.png" style="max-width: 50px; display: block; margin: 0 auto;" alt="Logo">
-        <div class="receipt-title">SAFFRON</div>
+  <img src="poslogo.png" style="max-width: 50px; display: block; margin: 0 auto;" alt="Logo">
+<div class="receipt-title">SAFFRON</div>
         <div class="receipt-subtitle">TAHMID SQUARE</div>
-        <div class="receipt-subtitle">13/1, Senpara porbota, Mirpur-10, Dhaka-1216</div>
-        <div class="receipt-subtitle">Phone - 01343-831878</div>
+<div class="receipt-subtitle">13/1, Senpara porbota, Mirpur-10, Dhaka-1216</div>
+<div class="receipt-subtitle">Phone - 01343-831878</div>
         <div class="receipt-divider"></div>
         <div class="receipt-info">
           <div><strong>Order ID:</strong> #${orderId}</div>
@@ -1900,11 +1882,11 @@
         <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:14px;"><span>Grand Total:</span><span>${order.grandTotal} TK</span></div>
         <div style="display:flex; justify-content:space-between; margin-top:4px;"><span>Payment Method:</span><span>${order.paymentMethod}</span></div>
         <div class="offer-box">
-          <div class="offer-box-title">YOUR FEEDBACK IS VALUABLE TO US!</div>
+<div class="offer-box-title">YOUR FEEDBACK IS VALUABLE TO US!</div>
           <div>How was your experience?</div>
-          <div>____________________________________________________</div>
-          <div>____________________________________________________</div>
-          <div>Phone no: _________________________________________</div>
+	<div>____________________________________________________</div>
+	<div>____________________________________________________</div>
+	<div>Phone no: _________________________________________</div>
         </div>
         <div class="receipt-footer">
           <div>Thank you for dining with us!</div>

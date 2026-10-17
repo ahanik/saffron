@@ -856,7 +856,6 @@
 
     // AUTO DISCOUNT CALCULATION FUNCTION WITH RESTRICTIONS
     function calculateAutoDiscount(item) {
-      const price = item.price || 0;
       let category = item.category || '';
 
       if (!category) {
@@ -871,22 +870,10 @@
 
       const isPlatter = category.toLowerCase().includes('platter') || (item.name && item.name.toLowerCase().includes('platter'));
 
-      // প্লাটারের ৫০% ডিসকাউন্টে ৩০০ টাকার রেস্ট্রিকশন থাকবে না
+      // শুধুমাত্র প্লাটার (Platter) সেকশনের আইটেমগুলোতে ৫০% ডিসকাউন্ট থাকবে, বাকি সব আইটেমের ডিসকাউন্ট থাকবে না
       if (isPlatter) {
         return 50;
       }
-
-      // অন্যান্য আইটেমের ক্ষেত্রে সাবটোটাল কমপক্ষে ৩০০ টাকা হতে হবে
-      const subtotal = cart.reduce((sum, cartItem) => sum + (cartItem.price * cartItem.qty), 0);
-      if (subtotal < 300) {
-        return 0;
-      }
-
-      if (price < 200) return 0;
-      if (price >= 200 && price <= 299) return 20;
-      if (price >= 300 && price <= 399) return 30;
-      if (price >= 400 && price <= 499) return 40;
-      if (price >= 500) return 50;
 
       return 0;
     }
@@ -1475,15 +1462,7 @@
       }
 
       discount = Math.min(discount, subtotal);
-      let calculatedGrandTotal = Math.max(0, (subtotal - discount) + vat);
-
-      // নতুন রেস্ট্রিকশন: ডিসকাউন্ট বা অফার যুক্ত হওয়ার পরেও রেস্তোরাঁয় গ্রাহকের সর্বমোট বিলের পরিমাণ ন্যূনতম ৩০০ টাকা হতে হবে।
-      // যদি চূড়ান্ত বিল ৩০০ টাকার নিচে নেমে আসে, তবুও বিল কমপক্ষে ৩০০ টাকা হিসেবেই কাউন্ট করা হবে।
-      // (যদি কার্টে কোনো আইটেম থাকে, তবেই ৩০০ টাকার রেস্ট্রিকশন কার্যকর হবে)
-      let grandTotal = calculatedGrandTotal;
-      if (subtotal > 0 && grandTotal < 300) {
-        grandTotal = 300;
-      }
+      let grandTotal = Math.max(0, (subtotal - discount) + vat);
 
       document.getElementById('subtotal-val').innerText = `${subtotal} TK`;
       document.getElementById('vat-val').innerText = `${vat.toFixed(1)} TK`;
