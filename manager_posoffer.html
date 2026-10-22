@@ -255,6 +255,7 @@
       cursor: pointer;
       transition: all 0.2s ease;
       box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      position: relative;
     }
 
     .food-card:hover {
@@ -279,6 +280,17 @@
       font-size: 13px;
       color: #d97706;
       font-weight: 800;
+    }
+
+    .offer-badge {
+      font-size: 10px;
+      background-color: #10b981;
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: bold;
+      margin-left: 4px;
+      display: inline-block;
     }
 
     .btn-add-food {
@@ -646,7 +658,7 @@
       .receipt-table th, .receipt-table td { text-align: left; padding: 2px 0; }
       .text-right { text-align: right !important; }
       .text-center { text-align: center !important; }
-      .offer-box { border: 1px dashed #000; padding: 6mm; margin-top: 8px; font-size: 10px; }
+      .offer-box { border: 1px dashed #000; padding: 6px; margin-top: 8px; font-size: 10px; }
       .offer-box-title { font-weight: bold; margin-bottom: 4px; }
       .receipt-footer { text-align: center; margin-top: 10px; font-size: 10px; }
     }
@@ -852,7 +864,7 @@
     let currentEditingOrderId = null;
     let isEditingCompletedOrder = false;
     let originalOrderCreatedBy = null;
-    let originalCartItems = []; 
+    let originalCartItems = []; // COMPLETED ORDER EDIT ER SOMOY PURBER ITEMS TRACK RAKHAR JONNO
 
     // AUTO DISCOUNT CALCULATION FUNCTION WITH RESTRICTIONS
     function calculateAutoDiscount(item) {
@@ -870,6 +882,7 @@
 
       const isPlatter = category.toLowerCase().includes('platter') || (item.name && item.name.toLowerCase().includes('platter'));
 
+      // শুধুমাত্র প্লাটার (Platter) সেকশনের আইটেমগুলোতে ৫০% ডিসকাউন্ট থাকবে, বাকি সব আইটেমের ডিসকাউন্ট থাকবে না
       if (isPlatter) {
         return 50;
       }
@@ -1204,12 +1217,15 @@
         const hasVariants = Array.isArray(variantsList) && variantsList.length > 0;
         let priceDisplay = hasVariants ? `${variantsList[0]?.price ?? food.price ?? 0} TK +` : `${food.price ?? 0} TK`;
 
+        const isPlatter = (food.category || '').toLowerCase().includes('platter') || (food.name || '').toLowerCase().includes('platter');
+        const offerTag = isPlatter ? `<span class="offer-badge">50% OFF</span>` : '';
+
         const card = document.createElement('div');
         card.className = 'food-card';
         card.onclick = () => handleFoodClick(food.id);
         card.innerHTML = `
           <div>
-            <div class="food-title">${food.name || 'Unnamed Item'}</div>
+            <div class="food-title">${food.name || 'Unnamed Item'}${offerTag}</div>
             <div class="food-price">${priceDisplay}</div>
           </div>
           <button class="btn-add-food">${hasVariants ? 'Select Variant' : 'Add to Cart'}</button>
@@ -1720,11 +1736,11 @@
         while (true) {
           updateReason = prompt("Enter reason for updating this order (Mandatory):");
           if (updateReason === null) {
-            return; // যদি ইউজার ক্যানসেল করে তাহলে প্রসেস বন্ধ থাকবে
+            return;
           }
           updateReason = updateReason.trim();
           if (updateReason !== "") {
-            break; // সঠিক কারণ লিখলে লুপ থেকে বের হয়ে যাবে
+            break;
           }
           alert("Order update reason cannot be empty! Please provide a valid reason.");
         }
