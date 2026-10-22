@@ -765,7 +765,7 @@
       </div>
     </div>
 
-    <!-- RUNNING ORDERS & SELECTION PANEL -->
+    <!-- RUNNING ORDERS & PANEL -->
     <div class="running-orders-panel">
       <!-- TABLE, WAITER & CUSTOMER SELECTION SECTION -->
       <div class="selection-box">
@@ -1734,7 +1734,7 @@
       let updateReason = "";
       if(isEditingCompletedOrder) {
         while (true) {
-          updateReason = prompt("Enter reason for updating this order (Mandatory):");
+          updateReason = prompt("বিল আপডেট করার কারণ (Reason) আবশ্যিক লিখুন:");
           if (updateReason === null) {
             return;
           }
@@ -1742,7 +1742,7 @@
           if (updateReason !== "") {
             break;
           }
-          alert("Order update reason cannot be empty! Please provide a valid reason.");
+          alert("আপডেটের কারণ লেখা বাধ্যতামূলক!");
         }
       }
 
@@ -1777,6 +1777,22 @@
 
       updateInventoryStock(orderData.items, isEditingCompletedOrder, originalCartItems);
       
+      // যদি completed order এডিট করা হয়, তবে অ্যাডমিনের দেখার জন্য আলাদা আপডেট লগ কালেকশনে সেভ হবে
+      if (isEditingCompletedOrder) {
+        const logId = `log_${Date.now()}`;
+        const updateLogPayload = {
+          id: logId,
+          orderId: orderId,
+          updatedBy: currentUser,
+          reason: updateReason,
+          table: selectedTable,
+          grandTotal: orderData.grandTotal,
+          timestamp: new Date().toISOString(),
+          status: "Pending Admin Known"
+        };
+        setDoc(doc(db, "saffron", "mirpur10", "pos_update_logs", logId), updateLogPayload).catch(err => console.log(err));
+      }
+
       if (appliedCouponCode && couponsData[appliedCouponCode]) {
         try {
           const couponRef = doc(db, "saffron", "mirpur10", "coupons", appliedCouponCode);
