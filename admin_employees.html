@@ -81,7 +81,11 @@
     .btn-danger { background: #ef4444; color: #fff; }
     .btn-success { background: #10b981; color: #fff; }
 
-    /* User Grid Styling */
+    /* Role Group & User Grid Styling */
+    .role-group-section { margin-bottom: 30px; }
+    .role-group-title { font-size: 17px; font-weight: 700; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+    .role-group-title .count-badge { background: #f1f5f9; color: #475569; font-size: 12px; padding: 2px 8px; border-radius: 12px; font-weight: 600; }
+    
     .user-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
     .user-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; }
     .user-card:hover { transform: translateY(-4px); border-color: #f59e0b; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
@@ -264,7 +268,7 @@
             </select>
           </div>
 
-          <!-- PIN FOR MANAGER & CASHIER ONLY -->
+          <!-- PIN FOR MANAGER & CASHIER ONLY (HIDDEN IF JOB LEFT) -->
           <div class="form-group" id="pin-container" style="display: none;">
             <label>ওয়েবসাইট লগইন পিন (PIN) *</label>
             <input type="password" id="u-pin" class="form-control" placeholder="৪ থেকে ৬ ডিজিটের পিন" maxlength="6">
@@ -317,9 +321,9 @@
       </form>
     </div>
 
-    <!-- SECTION 2: EXISTING USER LIST -->
+    <!-- SECTION 2: EXISTING USER LIST (CATEGORIZED BY ROLE) -->
     <div id="section-existing-users" class="card" style="display: none;">
-      <div class="user-grid" id="user-card-list">
+      <div id="user-card-list">
         <div>ডাটা লোড হচ্ছে...</div>
       </div>
     </div>
@@ -373,6 +377,7 @@
 
     function handlePositionChange(position) {
       const editingId = document.getElementById("editing-user-id").value;
+      const jobStatus = document.getElementById("u-status").value;
       const adminCount = Object.values(globalUsersCache).filter(u => u.position === "এডমিন/ওউনার" && u.id !== editingId).length;
 
       if (position === "এডমিন/ওউনার" && adminCount >= 2) {
@@ -395,10 +400,15 @@
       adminOldPassContainer.style.display = "none";
       adminConfirmPassContainer.style.display = "none";
 
-      if (position === "ম্যানেজার" || position === "ক্যাশিয়ার") {
-        pinContainer.style.display = "flex";
-        pinInput.required = true;
-      } else if (position === "এডমিন/ওউনার") {
+      // যদি জব স্ট্যাটাস "জব লেফট" হয়, তবে পিন ফিল্ড টোটালি হাইড থাকবে যাতে সেট করা না যায়
+      if (jobStatus !== "জব লেফট") {
+        if (position === "ম্যানেজার" || position === "ক্যাশিয়ার") {
+          pinContainer.style.display = "flex";
+          pinInput.required = true;
+        }
+      }
+
+      if (position === "এডমিন/ওউনার") {
         if (editingId && globalUsersCache[editingId]?.adminPassword) {
           adminOldPassContainer.style.display = "flex";
           adminPassContainer.style.display = "flex";
@@ -415,13 +425,29 @@
     function toggleLeftDate(status) {
       const leftDateContainer = document.getElementById("leftdate-container");
       const leftDateInput = document.getElementById("u-leftdate");
+      const pinContainer = document.getElementById("pin-container");
+      const pinInput = document.getElementById("u-pin");
+
       if (status === "জব লেফট") {
         leftDateContainer.style.display = "flex";
         leftDateInput.required = true;
+        // জব লেফট সিলেক্ট করলে পিন ইনপুট সেকশন হাইড ও ভ্যালু ক্লিয়ার করে দেওয়া হবে
+        if (pinContainer) pinContainer.style.display = "none";
+        if (pinInput) {
+          pinInput.value = "";
+          pinInput.required = false;
+        }
       } else {
         leftDateContainer.style.display = "none";
         leftDateInput.required = false;
         leftDateInput.value = "";
+        
+        // রানিং হলে পজিশন অনুযায়ী আবার পিন ফিল্ড দেখাবে
+        const position = document.getElementById("u-position").value;
+        if (position === "ম্যানেজার" || position === "ক্যাশিয়ার") {
+          if (pinContainer) pinContainer.style.display = "flex";
+          if (pinInput) pinInput.required = true;
+        }
       }
     }
 
@@ -554,6 +580,7 @@
       }
 
       const position = document.getElementById("u-position").value;
+      const jobStatus = document.getElementById("u-status").value;
       const phone = document.getElementById("u-phone").value.trim();
 
       if (position === "এডমিন/ওউনার") {
@@ -595,9 +622,17 @@
         }
       }
 
+      // যদি জব স্ট্যাটাস "জব লেফট" হয়, তবে লগইন পিন টোটালি মুছে ফেলা (খালি স্ট্রিং) হবে যাতে লগইন করতে না পারে
+      let finalLoginPin = "";
+      if (jobStatus !== "জব লেফট") {
+        if (position === "ম্যানেজার" || position === "ক্যাশিয়ার" || position === "এডমিন/ওউনার") {
+          finalLoginPin = document.getElementById("u-pin").value.trim() || "";
+        }
+      }
+
       const nameClean = document.getElementById("u-name").value.trim().replace(/[^a-zA-Z0-9]/g, "_");
-	const phoneClean = phone.replace(/[^0-9]/g, "");
-	const docId = editingId || `${nameClean}_${phoneClean}`;
+      const phoneClean = phone.replace(/[^0-9]/g, "");
+      const docId = editingId || `${nameClean}_${phoneClean}`;
       let auditLogs = previousData?.auditLogs || [];
 
       const updatedPayload = {
@@ -615,9 +650,9 @@
         guarantorPhone: document.getElementById("u-gphone").value.trim(),
         guarantorNid: document.getElementById("u-gnid").value.trim(),
         position: position,
-        loginPin: (position === "ম্যানেজার" || position === "ক্যাশিয়ার") ? (document.getElementById("u-pin").value.trim() || "") : "",
+        loginPin: finalLoginPin,
         adminPassword: position === "এডমিন/ওউনার" ? finalAdminPassword : "",
-        status: document.getElementById("u-status").value,
+        status: jobStatus,
         entryDate: document.getElementById("u-entrydate").value,
         leftDate: document.getElementById("u-leftdate").value || "",
         salary: parseFloat(document.getElementById("u-salary").value) || 0,
@@ -655,36 +690,122 @@
       toggleLeftDate("");
     }
 
-    // Real-Time Sync
+    // Real-Time Sync & Grouped Step-by-Step Display
     onSnapshot(usersRef, (snapshot) => {
-      const grid = document.getElementById("user-card-list");
-      grid.innerHTML = "";
+      const container = document.getElementById("user-card-list");
+      container.innerHTML = "";
       globalUsersCache = {};
 
       if (snapshot.empty) {
-        grid.innerHTML = "<div>কোনো ইউজার পাওয়া যায়নি। নতুন ইউজার যুক্ত করুন।</div>";
+        container.innerHTML = "<div>কোনো ইউজার পাওয়া যায়নি। নতুন ইউজার যুক্ত করুন।</div>";
         return;
       }
+
+      const roleOrder = [
+        "এডমিন/ওউনার",
+        "ম্যানেজার",
+        "ক্যাশিয়ার",
+        "শেফ",
+        "অ্যাসিস্ট্যান্ট শেফ",
+        "ওয়েটার",
+        "হেল্পার",
+        "ক্লিনার",
+        "কমিস"
+      ];
+
+      const activeGrouped = {};
+      roleOrder.forEach(r => activeGrouped[r] = []);
+      const jobLeftUsers = [];
 
       snapshot.docs.forEach((docSnap) => {
         const u = docSnap.data();
         globalUsersCache[u.id] = u;
 
-        const card = document.createElement("div");
-        card.className = "user-card";
-        card.onclick = () => showUserDetailsModal(u.id);
-
-        card.innerHTML = `
-          <img src="${u.photoBase64 || 'https://via.placeholder.com/80'}" class="user-card-img" alt="${u.name}">
-          <div class="user-card-name">${u.name}</div>
-          <div class="user-card-phone">📞 ${u.phone}</div>
-          <div>
-            <span class="badge-pos">${u.position}</span>
-            ${u.isFixedAdmin ? `<span class="badge-pos badge-fixed">🔒 Fixed Admin</span>` : ''}
-          </div>
-        `;
-        grid.appendChild(card);
+        if (u.status === "জব লেফট") {
+          jobLeftUsers.push(u);
+        } else {
+          if (!activeGrouped[u.position]) {
+            activeGrouped[u.position] = [];
+          }
+          activeGrouped[u.position].push(u);
+        }
       });
+
+      // ১. রানিং ইউজারদের ক্যাটাগরি অনুযায়ী সাজিয়ে হেডারসহ রেন্ডার
+      roleOrder.forEach(role => {
+        const usersInRole = activeGrouped[role];
+        if (usersInRole && usersInRole.length > 0) {
+          const roleSection = document.createElement("div");
+          roleSection.className = "role-group-section";
+
+          const roleHeader = document.createElement("div");
+          roleHeader.className = "role-group-title";
+          roleHeader.innerHTML = `👤 ${role} <span class="count-badge">${usersInRole.length}</span>`;
+          roleSection.appendChild(roleHeader);
+
+          const grid = document.createElement("div");
+          grid.className = "user-grid";
+
+          usersInRole.forEach(u => {
+            const card = document.createElement("div");
+            card.className = "user-card";
+            card.onclick = () => showUserDetailsModal(u.id);
+
+            card.innerHTML = `
+              <img src="${u.photoBase64 || 'https://via.placeholder.com/80'}" class="user-card-img" alt="${u.name}">
+              <div class="user-card-name">${u.name}</div>
+              <div class="user-card-phone">📞 ${u.phone}</div>
+              <div>
+                <span class="badge-pos">${u.position}</span>
+                ${u.isFixedAdmin ? `<span class="badge-pos badge-fixed">🔒 Fixed Admin</span>` : ''}
+              </div>
+            `;
+            grid.appendChild(card);
+          });
+
+          roleSection.appendChild(grid);
+          container.appendChild(roleSection);
+        }
+      });
+
+      // ২. জব লেফট হওয়া ইউজারদের সবার নিচে একত্রে সেকশন করে দেখানো
+      if (jobLeftUsers.length > 0) {
+        const leftSection = document.createElement("div");
+        leftSection.className = "role-group-section";
+        leftSection.style.marginTop = "20px";
+
+        const leftHeader = document.createElement("div");
+        leftHeader.className = "role-group-title";
+        leftHeader.style.color = "#ef4444";
+        leftHeader.style.borderColor = "#fca5a5";
+        leftHeader.innerHTML = `🚪 জব লেফট (Inactive Staff) <span class="count-badge" style="background:#fee2e2; color:#991b1b;">${jobLeftUsers.length}</span>`;
+        leftSection.appendChild(leftHeader);
+
+        const leftGrid = document.createElement("div");
+        leftGrid.className = "user-grid";
+
+        jobLeftUsers.forEach(u => {
+          const card = document.createElement("div");
+          card.className = "user-card";
+          card.style.opacity = "0.75";
+          card.style.backgroundColor = "#fafafa";
+          card.onclick = () => showUserDetailsModal(u.id);
+
+          card.innerHTML = `
+            <img src="${u.photoBase64 || 'https://via.placeholder.com/80'}" class="user-card-img" alt="${u.name}">
+            <div class="user-card-name">${u.name}</div>
+            <div class="user-card-phone">📞 ${u.phone}</div>
+            <div>
+              <span class="badge-pos" style="background:#e2e8f0; color:#475569;">${u.position}</span>
+              <span style="background:#fee2e2; color:#991b1b; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold; margin-left:4px;">Job Left</span>
+            </div>
+          `;
+          leftGrid.appendChild(card);
+        });
+
+        leftSection.appendChild(leftGrid);
+        container.appendChild(leftSection);
+      }
     });
 
     // Details Modal View
@@ -721,7 +842,7 @@
           <div><strong>যোগদানের তারিখ:</strong> ${u.entryDate}</div>
           ${u.leftDate ? `<div><strong>জব লেফট তারিখ:</strong> ${u.leftDate}</div>` : ''}
           <div><strong>স্যালারি:</strong> BDT ${u.salary}</div>
-          ${u.loginPin ? `<div><strong>লগইন পিন:</strong> ***${u.loginPin.slice(-2)}</div>` : ''}
+          ${u.loginPin ? `<div><strong>লগইন পিন:</strong> ***${u.loginPin.slice(-2)}</div>` : '<div><strong>লগইন পিন:</strong> সম্পূর্ণ ডিলিট করা হয়েছে ❌</div>'}
           ${u.position === 'এডমিন/ওউনার' ? `<div><strong>এডমিন সিকিউরিটি:</strong> পাসওয়ার্ড সংরক্ষিত 🔒</div>` : ''}
         </div>
 
