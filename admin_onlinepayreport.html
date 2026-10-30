@@ -64,8 +64,6 @@
     .summary-card.highlight .amount { color: #b45309; }
     .summary-card.success { background: #f0fdf4; border-color: #22c55e; }
     .summary-card.success .amount { color: #15803d; }
-    .summary-card.info { background: #eff6ff; border-color: #3b82f6; }
-    .summary-card.info .amount { color: #1d4ed8; }
 
     /* Card & Forms */
     .card { background: #fff; border-radius: 8px; padding: 25px; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -97,12 +95,18 @@
     th, td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
     th { background-color: #f8fafc; color: #475569; font-weight: 600; }
     tr:hover { background-color: #f1f5f9; }
-    .checkbox-col { width: 40px; text-align: center; }
 
     /* Bank Profile Box */
     .bank-profile-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
     .bank-profile-item label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; }
     .bank-profile-item div { font-size: 16px; font-weight: bold; color: #0f172a; margin-top: 4px; }
+
+    /* Pagination controls */
+    .pagination-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; font-size: 14px; color: #475569; }
+    .pagination-btns { display: flex; gap: 8px; }
+    .page-btn { padding: 6px 12px; border: 1px solid #cbd5e1; background: #fff; border-radius: 4px; cursor: pointer; font-weight: 600; }
+    .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .page-btn.active { background: #f59e0b; color: #fff; border-color: #f59e0b; }
 
     /* Hidden Container for PDF / Printing Statement */
     #statement-print-area { display: none; }
@@ -252,16 +256,31 @@
       <!-- ONLINE PAY REPORT & WITHDRAW TABLE -->
       <div class="card">
         <div class="section-header">
-          <span>Available Online Payments (Unwithdrawn)</span>
-          <button type="button" class="btn btn-success" onclick="openWithdrawModal()">💸 Withdraw Selected Items</button>
+          <span>Available Online Payments (Unwithdrawn History)</span>
+          <button type="button" class="btn btn-success" onclick="openWithdrawModal()">💸 Withdraw All Available Balance</button>
         </div>
-        <p style="font-size: 13px; color: #64748b; margin-bottom: 10px;">নিচের তালিকা থেকে যে পেমেন্টগুলো উইথড্র করতে চান সেগুলোর পাশের বাক্সে টিক দিন এবং উপরের উইথড্র বাটনে ক্লিক করুন।</p>
         
+        <!-- FILTER BAR -->
+        <div class="form-grid" style="margin-bottom: 15px; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
+          <div class="form-group">
+            <label>প্ল্যাটফর্ম ফিল্টার</label>
+            <select id="filter-platform" class="form-control" onchange="applyFilters()">
+              <option value="">সকল প্ল্যাটফর্ম</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>তারিখ অনুযায়ী ফিল্টার</label>
+            <input type="date" id="filter-date" class="form-control" onchange="applyFilters()">
+          </div>
+          <div class="form-group" style="display: flex; align-items: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="resetFilters()">রিসেট ফিল্টার</button>
+          </div>
+        </div>
+
         <div class="table-responsive">
           <table>
             <thead>
               <tr>
-                <th class="checkbox-col"><input type="checkbox" id="select-all" onclick="toggleSelectAll(this)"></th>
                 <th>Serial / ID</th>
                 <th>Date</th>
                 <th>Payment Method</th>
@@ -273,10 +292,20 @@
             </thead>
             <tbody id="online-pay-report-tbody">
               <tr>
-                <td colspan="8" style="text-align: center; color: #64748b;">Loading online payment records...</td>
+                <td colspan="7" style="text-align: center; color: #64748b;">Loading online payment records...</td>
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- PAGINATION BAR -->
+        <div class="pagination-bar">
+          <div id="pagination-info">Showing 0 to 0 of 0 entries</div>
+          <div class="pagination-btns">
+            <button class="page-btn" id="prev-page-btn" onclick="changePage(-1)">Previous</button>
+            <span id="page-numbers" style="align-self: center; font-weight: 600; padding: 0 10px;">Page 1</span>
+            <button class="page-btn" id="next-page-btn" onclick="changePage(1)">Next</button>
+          </div>
         </div>
       </div>
 
@@ -289,7 +318,7 @@
               <tr>
                 <th>Withdrawal ID</th>
                 <th>Date & Time</th>
-                <th>Selected Items Count</th>
+                <th>Items Count</th>
                 <th>Subtotal Amount</th>
                 <th>Cashout Charge (+)</th>
                 <th>Net Withdrawn Amount</th>
@@ -363,6 +392,7 @@
           <button class="btn btn-primary" onclick="openAddMoneyModal()">➕ DEPOSIT (CREDIT)</button>
           <button class="btn btn-danger" onclick="openBankWithdrawModal()">💸 WITHDRAW (DEBIT)</button>
           <button class="btn btn-secondary" onclick="printBankStatementPDF()" style="margin-left: auto;">📄 ACCOUNT STATEMENT DOWNLOAD</button>
+          <button class="btn btn-info" onclick="openDeleteHistoryModal()">📜 ডিলিট হিস্ট্রি দেখুন</button>
         </div>
       </div>
 
@@ -378,10 +408,11 @@
                 <th>Description / Reason</th>
                 <th>Credit</th>
                 <th>Debit</th>
+                <th style="text-align: right;">অ্যাকশন</th>
               </tr>
             </thead>
             <tbody id="bank-statement-tbody">
-              <tr><td colspan="5" style="text-align: center; color: #64748b;">কোনো লেনদেন পাওয়া যায়নি।</td></tr>
+              <tr><td colspan="6" style="text-align: center; color: #64748b;">কোনো লেনদেন পাওয়া যায়নি।</td></tr>
             </tbody>
           </table>
         </div>
@@ -395,10 +426,10 @@
   <!-- ONLINE PAYMENT WITHDRAW MODAL -->
   <div id="withdraw-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
     <div style="background:#fff; padding:25px; border-radius:8px; width:420px; max-width:90%;">
-      <h3 style="margin-bottom:15px; color:#0f172a;">Confirm Withdrawal & Bank Deposit</h3>
+      <h3 style="margin-bottom:15px; color:#0f172a;">Confirm Total Balance Withdrawal</h3>
       <form id="withdraw-action-form" onsubmit="processWithdrawal(event)">
         <div class="form-group" style="margin-bottom:12px;">
-          <label>Selected Subtotal Amount:</label>
+          <label>Total Available Balance:</label>
           <input type="text" id="modal-subtotal" class="form-control" readonly style="font-weight:bold;">
         </div>
         <div class="form-group" style="margin-bottom:12px;">
@@ -488,6 +519,50 @@
     </div>
   </div>
 
+  <!-- TRANSACTION DELETE REASON MODAL -->
+  <div id="delete-txn-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:#fff; padding:25px; border-radius:8px; width:380px; max-width:90%;">
+      <h3 style="margin-bottom:15px; color:#dc2626;">ট্রানজেকশন ডিলিট করার কারণ</h3>
+      <form onsubmit="confirmDeleteTransaction(event)">
+        <input type="hidden" id="del-txn-id">
+        <div class="form-group" style="margin-bottom:15px;">
+          <label>কেন ডিলিট করা হচ্ছে তার কারণ লিখুন *</label>
+          <textarea id="del-txn-reason" class="form-control" rows="3" placeholder="ডিলিট করার সুনির্দিষ্ট কারণ..." required></textarea>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button type="submit" class="btn btn-danger" style="flex:1;">ডিলিট কনফার্ম করুন</button>
+          <button type="button" class="btn btn-secondary" onclick="closeDeleteTxnModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TRANSACTION DELETE HISTORY MODAL -->
+  <div id="delete-history-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:#fff; padding:25px; border-radius:8px; width:700px; max-width:95%; max-height:85vh; display:flex; flex-direction:column;">
+      <h3 style="margin-bottom:15px; color:#0f172a;">ব্যাংক ট্রানজেকশন ডিলিট হিস্ট্রি</h3>
+      <div style="overflow-y:auto; flex:1; margin-bottom:15px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Date & Time</th>
+              <th>Type</th>
+              <th>Original Reason</th>
+              <th>Amount</th>
+              <th>Deletion Reason</th>
+            </tr>
+          </thead>
+          <tbody id="delete-history-tbody">
+            <tr><td colspan="5" style="text-align: center; color:#64748b;">কোনো ডিলিট হিস্ট্রি পাওয়া যায়নি।</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="text-align: right;">
+        <button type="button" class="btn btn-secondary" onclick="closeDeleteHistoryModal()">বন্ধ করুন</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     document.getElementById('manual-pay-date').valueAsDate = new Date();
 
@@ -525,6 +600,7 @@
       doc,
       setDoc,
       updateDoc,
+      deleteDoc,
       increment
     } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
@@ -555,6 +631,7 @@
     const withdrawalsRef = collection(db, "saffron", "mirpur10", "online_withdrawals");
     const bankAccountsRef = collection(db, "saffron", "mirpur10", "bank_accounts");
     const bankTransactionsRef = collection(db, "saffron", "mirpur10", "bank_transactions");
+    const bankDeletedTransactionsRef = collection(db, "saffron", "mirpur10", "bank_deleted_transactions");
 
     window.addEventListener('online', updateNetStatus);
     window.addEventListener('offline', updateNetStatus);
@@ -573,16 +650,23 @@
     // 1. LOAD PAYMENT METHODS
     onSnapshot(paymentMethodsRef, (snapshot) => {
       const select = document.getElementById("manual-pay-method");
-      select.innerHTML = '<option value="">-- পেমেন্ট মেথড নির্বাচন করুন --</option>';
+      const filterSelect = document.getElementById("filter-platform");
+      
+      let optionsHTML = '<option value="">-- পেমেন্ট মেথড নির্বাচন করুন --</option>';
+      let filterOptionsHTML = '<option value="">সকল প্ল্যাটফর্ম</option>';
 
       if (!snapshot.empty) {
         snapshot.docs.forEach(docSnap => {
           const method = docSnap.id;
-          select.innerHTML += `<option value="${method}">${method}</option>`;
+          optionsHTML += `<option value="${method}">${method}</option>`;
+          filterOptionsHTML += `<option value="${method}">${method}</option>`;
         });
       } else {
-        select.innerHTML = '<option value="">কোনো মেথড পাওয়া যায়নি</option>';
+        optionsHTML = '<option value="">কোনো মেথড পাওয়া যায়নি</option>';
       }
+
+      select.innerHTML = optionsHTML;
+      filterSelect.innerHTML = filterOptionsHTML;
     });
 
     // 2. SINGLE BANK ACCOUNT & STATEMENT MANAGEMENT
@@ -627,6 +711,7 @@
     let currentBankBalance = 0;
     let cachedBankInfo = {};
     let cachedTransactions = [];
+    let cachedDeletedTransactions = [];
 
     onSnapshot(bankAccountsRef, (snapshot) => {
       const addCard = document.getElementById("add-bank-card");
@@ -665,11 +750,11 @@
       cachedTransactions = [];
 
       if (snapshot.empty) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #64748b;">কোনো লেনদেন পাওয়া যায়নি।</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b;">কোনো লেনদেন পাওয়া যায়নি।</td></tr>';
         return;
       }
 
-      snapshot.docs.forEach(d => cachedTransactions.push(d.data()));
+      snapshot.docs.forEach(d => cachedTransactions.push({ firestoreId: d.id, ...d.data() }));
       cachedTransactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
       cachedTransactions.forEach(t => {
@@ -683,10 +768,92 @@
             <td>${t.reason || 'N/A'}</td>
             <td style="font-weight: bold; color: #166534;">${isCredit ? '৳ ' + parseFloat(t.amount).toFixed(2) : '-'}</td>
             <td style="font-weight: bold; color: #b91c1c;">${!isCredit ? '৳ ' + parseFloat(t.amount).toFixed(2) : '-'}</td>
+            <td style="text-align: right;"><button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="promptDeleteTransaction('${t.firestoreId}')">ডিলিট</button></td>
           </tr>
         `;
       });
     });
+
+    // LISTEN TO BANK DELETED TRANSACTIONS
+    onSnapshot(bankDeletedTransactionsRef, (snapshot) => {
+      cachedDeletedTransactions = [];
+      if (!snapshot.empty) {
+        snapshot.docs.forEach(d => cachedDeletedTransactions.push(d.data()));
+      }
+    });
+
+    window.promptDeleteTransaction = function(firestoreId) {
+      document.getElementById("del-txn-id").value = firestoreId;
+      document.getElementById("del-txn-reason").value = "";
+      document.getElementById("delete-txn-modal").style.display = "flex";
+    };
+
+    window.closeDeleteTxnModal = function() {
+      document.getElementById("delete-txn-modal").style.display = "none";
+    };
+
+    window.confirmDeleteTransaction = async function(e) {
+      e.preventDefault();
+      const firestoreId = document.getElementById("del-txn-id").value;
+      const deletionReason = document.getElementById("del-txn-reason").value.trim();
+
+      if (!deletionReason) return alert("ডিলিট করার কারণ লিখুন!");
+
+      const txnItem = cachedTransactions.find(t => t.firestoreId === firestoreId);
+      if (!txnItem) return alert("ট্রানজেকশনটি পাওয়া যায়নি!");
+
+      try {
+        // Save to deletion history in Firebase
+        const delHistoryId = `del_txn_${Date.now()}`;
+        await setDoc(doc(db, "saffron", "mirpur10", "bank_deleted_transactions", delHistoryId), {
+          id: delHistoryId,
+          originalTxnId: txnItem.id || firestoreId,
+          type: txnItem.type,
+          amount: txnItem.amount,
+          originalReason: txnItem.reason,
+          originalTimestamp: txnItem.timestamp,
+          deletionReason: deletionReason,
+          deletedAt: new Date().toISOString()
+        });
+
+        // Delete from active transactions
+        await deleteDoc(doc(db, "saffron", "mirpur10", "bank_transactions", firestoreId));
+
+        alert("ট্রানজেকশন সফলভাবে ডিলিট করা হয়েছে এবং কারণ সংরক্ষণ করা হয়েছে!");
+        closeDeleteTxnModal();
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    };
+
+    window.openDeleteHistoryModal = function() {
+      const tbody = document.getElementById("delete-history-tbody");
+      tbody.innerHTML = "";
+
+      if (cachedDeletedTransactions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color:#64748b;">কোনো ডিলিট হিস্ট্রি পাওয়া যায়নি।</td></tr>';
+      } else {
+        cachedDeletedTransactions.sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
+        cachedDeletedTransactions.forEach(d => {
+          const timeStr = d.deletedAt ? new Date(d.deletedAt).toLocaleString() : 'N/A';
+          tbody.innerHTML += `
+            <tr>
+              <td>${timeStr}</td>
+              <td><span style="font-weight:600; color:${d.type === 'Credit' ? '#166534' : '#b91c1c'};">${d.type}</span></td>
+              <td>${d.originalReason || 'N/A'}</td>
+              <td>৳ ${parseFloat(d.amount).toFixed(2)}</td>
+              <td><strong style="color:#dc2626;">${d.deletionReason}</strong></td>
+            </tr>
+          `;
+        });
+      }
+
+      document.getElementById("delete-history-modal").style.display = "flex";
+    };
+
+    window.closeDeleteHistoryModal = function() {
+      document.getElementById("delete-history-modal").style.display = "none";
+    };
 
     window.openEditBankModal = function() {
       document.getElementById("edit-bank-name").value = cachedBankInfo.bankName || "";
@@ -928,10 +1095,14 @@
       }
     });
 
-    // 4. LISTENERS FOR DATA
+    // 4. LISTENERS FOR DATA WITH PAGINATION & FILTERS
     let cashReserveData = [];
     let manualPayData = [];
     let rawWithdrawals = [];
+    let currentFilteredList = [];
+    let currentPage = 1;
+    const itemsPerPage = 10;
+    let totalAvailableBalanceGlobal = 0;
 
     onSnapshot(cashReserveRef, (snapshot) => {
       cashReserveData = [];
@@ -952,7 +1123,7 @@
           }
         });
       }
-      mergeAndRenderReports();
+      processAndFilterReports();
     });
 
     onSnapshot(manualPaymentsRef, (snapshot) => {
@@ -972,7 +1143,7 @@
           });
         });
       }
-      mergeAndRenderReports();
+      processAndFilterReports();
     });
 
     onSnapshot(withdrawalsRef, (snapshot) => {
@@ -985,38 +1156,82 @@
       renderWithdrawalHistory();
     });
 
-    let currentUnwithdrawnList = [];
-
-    function mergeAndRenderReports() {
+    function processAndFilterReports() {
       const combined = [...cashReserveData, ...manualPayData];
       combined.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-      currentUnwithdrawnList = combined.filter(item => item.isWithdrawn !== true);
+      const unwithdrawnList = combined.filter(item => item.isWithdrawn !== true);
 
+      // Calculate Total Available Balance
+      totalAvailableBalanceGlobal = unwithdrawnList.reduce((sum, item) => sum + item.amount, 0);
+      document.getElementById("disp-available-balance").innerText = "৳ " + totalAvailableBalanceGlobal.toFixed(2);
+
+      // Apply Filters
+      const filterPlatform = document.getElementById("filter-platform").value;
+      const filterDate = document.getElementById("filter-date").value;
+
+      currentFilteredList = unwithdrawnList.filter(item => {
+        let matchPlatform = filterPlatform ? item.platform === filterPlatform : true;
+        let matchDate = filterDate ? item.date === filterDate : true;
+        return matchPlatform && matchDate;
+      });
+
+      currentPage = 1;
+      renderTablePage();
+    }
+
+    window.applyFilters = function() {
+      processAndFilterReports();
+    };
+
+    window.resetFilters = function() {
+      document.getElementById("filter-platform").value = "";
+      document.getElementById("filter-date").value = "";
+      processAndFilterReports();
+    };
+
+    window.changePage = function(direction) {
+      const totalPages = Math.ceil(currentFilteredList.length / itemsPerPage) || 1;
+      currentPage += direction;
+      if (currentPage < 1) currentPage = 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+      renderTablePage();
+    };
+
+    function renderTablePage() {
       const tbody = document.getElementById("online-pay-report-tbody");
       tbody.innerHTML = "";
 
-      let availableBalance = 0;
+      const totalItems = currentFilteredList.length;
+      const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
 
-      if (currentUnwithdrawnList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #64748b;">কোনো পেন্ডিং অনলাইন পেমেন্ট রেকর্ড পাওয়া যায়নি।</td></tr>';
-        document.getElementById("disp-available-balance").innerText = "৳ 0.00";
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const pageItems = currentFilteredList.slice(startIndex, endIndex);
+
+      if (pageItems.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b;">কোনো রেকর্ড পাওয়া যায়নি।</td></tr>';
+        document.getElementById("pagination-info").innerText = "Showing 0 to 0 of 0 entries";
+        document.getElementById("page-numbers").innerText = `Page 1 of 1`;
+        document.getElementById("prev-page-btn").disabled = true;
+        document.getElementById("next-page-btn").disabled = true;
         return;
       }
 
-      currentUnwithdrawnList.forEach((item, index) => {
-        availableBalance += item.amount;
+      pageItems.forEach((item, index) => {
         const tr = document.createElement("tr");
         const timeStr = item.updatedAt ? new Date(item.updatedAt).toLocaleString() : 'N/A';
+        const absoluteIndex = startIndex + index + 1;
 
         let actionBtn = `<span style="color:#64748b; font-size:12px;">Auto</span>`;
         if (item.isManual) {
-          actionBtn = `<button class="btn-del" onclick="deleteManualPayment('${item.id}')">Delete</button>`;
+          actionBtn = `<button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteManualPayment('${item.id}')">Delete</button>`;
         }
 
         tr.innerHTML = `
-          <td class="checkbox-col"><input type="checkbox" class="row-checkbox" value="${item.id}" data-amount="${item.amount}"></td>
-          <td><strong>#${index + 1}</strong></td>
+          <td><strong>#${absoluteIndex}</strong></td>
           <td>${item.date}</td>
           <td><span style="background: #e2e8f0; padding: 3px 8px; border-radius: 4px; font-weight: 600; font-size: 12px;">${item.platform}</span></td>
           <td><code>${item.reference}</code></td>
@@ -1027,7 +1242,11 @@
         tbody.appendChild(tr);
       });
 
-      document.getElementById("disp-available-balance").innerText = "৳ " + availableBalance.toFixed(2);
+      // Update Pagination Bar Info
+      document.getElementById("pagination-info").innerText = `Showing ${startIndex + 1} to ${Math.min(endIndex, totalItems)} of ${totalItems} entries`;
+      document.getElementById("page-numbers").innerText = `Page ${currentPage} of ${totalPages}`;
+      document.getElementById("prev-page-btn").disabled = currentPage === 1;
+      document.getElementById("next-page-btn").disabled = currentPage === totalPages;
     }
 
     function renderWithdrawalHistory() {
@@ -1060,29 +1279,14 @@
       document.getElementById("disp-total-withdrawn").innerText = "৳ " + totalWithdrawnSum.toFixed(2);
     }
 
-    window.toggleSelectAll = function(selectAllCheckbox) {
-      const checkboxes = document.querySelectorAll('.row-checkbox');
-      checkboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
-    };
-
     window.openWithdrawModal = function() {
-      if (!activeSingleBankId) {
-        alert("দয়া করে আগে 'ব্যাংক অ্যাকাউন্ট সেকশন' থেকে একটি ব্যাংক অ্যাকাউন্ট অ্যাড করে নিন!");
-        switchTab('bank');
-        return;
+      if (totalAvailableBalanceGlobal <= 0) {
+        return alert("উইথড্র করার মতো কোনো ব্যালেন্স নেই!");
       }
 
-      const checkboxes = document.querySelectorAll('.row-checkbox:checked');
-      if (checkboxes.length === 0) return alert("দয়া করে অন্তত একটি পেমেন্ট সিলেক্ট করুন!");
-
-      let subtotal = 0;
-      checkboxes.forEach(cb => {
-        subtotal += parseFloat(cb.getAttribute('data-amount') || 0);
-      });
-
-      document.getElementById("modal-subtotal").value = subtotal.toFixed(2);
+      document.getElementById("modal-subtotal").value = totalAvailableBalanceGlobal.toFixed(2);
       document.getElementById("modal-charge").value = "";
-      document.getElementById("modal-net-total").value = subtotal.toFixed(2);
+      document.getElementById("modal-net-total").value = totalAvailableBalanceGlobal.toFixed(2);
       document.getElementById("modal-withdraw-reason").value = "";
       document.getElementById("withdraw-modal").style.display = "flex";
     };
@@ -1100,49 +1304,31 @@
 
     window.processWithdrawal = async function(e) {
       e.preventDefault();
-      const checkboxes = document.querySelectorAll('.row-checkbox:checked');
-      let itemIds = [];
-      let subtotal = 0;
+      
+      const combined = [...cashReserveData, ...manualPayData];
+      const unwithdrawnList = combined.filter(item => item.isWithdrawn !== true);
 
-      checkboxes.forEach(cb => {
-        itemIds.push(cb.value);
-        subtotal += parseFloat(cb.getAttribute('data-amount') || 0);
-      });
+      if (unwithdrawnList.length === 0) return alert("কোনো পেমেন্ট পাওয়া যায়নি!");
+
+      let itemIds = unwithdrawnList.map(item => item.id);
+      let subtotal = totalAvailableBalanceGlobal;
 
       const charge = parseFloat(document.getElementById("modal-charge").value);
       const reason = document.getElementById("modal-withdraw-reason").value.trim();
 
       if (isNaN(charge) || charge < 0) return alert("সঠিক ক্যাশ আউট চার্জ প্রদান করুন!");
       if (!reason) return alert("উইথড্র করার কারণ (Reason) লিখুন!");
-      if (!activeSingleBankId) return alert("কোনো ব্যাংক অ্যাকাউন্ট সেট করা নেই!");
 
       const netAmount = subtotal + charge;
       const withdrawId = `wdr_${Date.now()}`;
 
       try {
-        await updateDoc(doc(db, "saffron", "mirpur10", "bank_accounts", activeSingleBankId), {
-          balance: increment(netAmount),
-          updatedAt: new Date().toISOString()
-        });
-
-        const txnId = `txn_${Date.now()}`;
-        await setDoc(doc(db, "saffron", "mirpur10", "bank_transactions", txnId), {
-          id: txnId,
-          type: "Credit",
-          amount: netAmount,
-          reason: `Online Withdrawal: ${reason}`,
-          timestamp: new Date().toISOString()
-        });
-
-        for (let id of itemIds) {
-          const item = currentUnwithdrawnList.find(p => p.id === id);
-          if (item) {
-            if (item.isManual) {
-              await setDoc(doc(db, "saffron", "mirpur10", "manual_online_payments", id), { ...item, isWithdrawn: true });
-            } else {
-              const datePart = id.replace('cr_', '');
-              await setDoc(doc(db, "saffron", "mirpur10", "cash_reserve", `reserve_${datePart}`), { isWithdrawn: true }, { merge: true });
-            }
+        for (let item of unwithdrawnList) {
+          if (item.isManual) {
+            await setDoc(doc(db, "saffron", "mirpur10", "manual_online_payments", item.id), { ...item, isWithdrawn: true });
+          } else {
+            const datePart = item.id.replace('cr_', '');
+            await setDoc(doc(db, "saffron", "mirpur10", "cash_reserve", `reserve_${datePart}`), { isWithdrawn: true }, { merge: true });
           }
         }
 
@@ -1152,15 +1338,13 @@
           subtotal: subtotal,
           charge: charge,
           netAmount: netAmount,
-          bankId: activeSingleBankId,
-          bankName: cachedBankInfo.bankName || "Registered Bank",
           reason: reason,
           timestamp: new Date().toISOString()
         };
 
         await setDoc(doc(db, "saffron", "mirpur10", "online_withdrawals", withdrawId), withdrawalPayload);
 
-        alert("Withdrawal completed successfully and added to bank statement!");
+        alert("অনলাইন পেমেন্ট উইথড্র সফলভাবে সম্পন্ন হয়েছে!");
         closeWithdrawModal();
       } catch (err) {
         alert("Error processing withdrawal: " + err.message);
