@@ -17,7 +17,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body { display: flex; height: 100vh; background-color: #f4f6f9; color: #333; }
     
-    /* Sidebar Layout (Matched exactly with admin_inventory.html) */
+    /* Sidebar Layout */
     .sidebar { width: 250px; background-color: #1e293b; color: #fff; display: flex; flex-direction: column; position: relative; }
 
     .brand { 
@@ -50,7 +50,7 @@
     .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 16px; transition: 0.2s; color: #cbd5e1; }
     .nav-item:hover, .nav-item.active { background-color: #334155; color: #fff; border-left: 4px solid #f59e0b; }
     
-    /* Main Content Area (Matched with admin_inventory.html) */
+    /* Main Content Area */
     .main-content { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); flex-shrink: 0; }
     .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
@@ -74,7 +74,6 @@
     .btn-danger { background: #ef4444; color: #fff; padding: 4px 10px; font-size: 12px; }
     .btn-secondary { background: #64748b; color: #fff; padding: 8px 14px; font-size: 13px; }
 
-    /* Expense Table Responsive Container - Compact & Fitted */
     .table-responsive { 
       overflow-x: auto; 
       flex: 1; 
@@ -89,7 +88,6 @@
     th { background-color: #f8fafc; color: #475569; font-weight: 600; position: sticky; top: 0; z-index: 1; font-size: 13px; }
     tr:hover { background-color: #f1f5f9; }
 
-    /* Filter Box Style */
     .filter-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
     .add-opt { font-weight: bold; color: #d97706; background-color: #fef3c7; }
     .total-display { margin-top: 10px; padding: 10px 12px; background: #fef3c7; border: 1px solid #fde047; border-radius: 6px; font-weight: 700; color: #92400e; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
@@ -97,7 +95,7 @@
 </head>
 <body>
 
-  <!-- Sidebar Structure Fixed to admin_inventory.html -->
+  <!-- Sidebar Structure -->
   <div class="sidebar">
     <div>
       <div class="brand">
@@ -146,7 +144,6 @@
           <div class="form-group">
             <label>Expense Type *</label>
             <select id="exp-category" class="form-control" onchange="handleCategoryChange(this)" required>
-              <!-- Dynamic Options Load Here -->
             </select>
           </div>
 
@@ -189,12 +186,12 @@
 
           <div class="form-group">
             <label>From Date</label>
-            <input type="date" id="filter-from-date" class="form-control" onchange="applyFilters()">
+            <input type="date" id="filter-from-date" class="form-control" onchange="fetchFromServerByDate()">
           </div>
 
           <div class="form-group">
             <label>To Date</label>
-            <input type="date" id="filter-to-date" class="form-control" onchange="applyFilters()">
+            <input type="date" id="filter-to-date" class="form-control" onchange="fetchFromServerByDate()">
           </div>
 
           <div class="form-group">
@@ -244,7 +241,10 @@
       }
     }
 
+    const todayStr = new Date().toISOString().split('T')[0];
     document.getElementById('exp-date').valueAsDate = new Date();
+    document.getElementById('filter-from-date').value = todayStr;
+    document.getElementById('filter-to-date').value = todayStr;
   </script>
 
   <!-- FIREBASE MODULE SCRIPT -->
@@ -258,7 +258,11 @@
       onSnapshot, 
       doc, 
       setDoc,
-      deleteDoc 
+      deleteDoc,
+      getDocs,
+      query,
+      where,
+      orderBy
     } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -321,17 +325,14 @@
       const currentSelected = formSelect.value;
       const currentFilterSelected = filterSelect.value;
 
-      // Merge defaults with custom categories uniquely
       const allCategories = Array.from(new Set([...defaultCategories, ...customCategories]));
 
-      // Form Dropdown
       formSelect.innerHTML = `<option value="">-- Select Expense Type --</option>`;
       allCategories.forEach(cat => {
         formSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
       });
       formSelect.innerHTML += `<option value="__ADD_NEW__" class="add-opt">+ Add New Expense Type</option>`;
 
-      // Filter Dropdown
       filterSelect.innerHTML = `<option value="">All Expense Types</option>`;
       allCategories.forEach(cat => {
         filterSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
@@ -341,7 +342,6 @@
       if (currentFilterSelected) filterSelect.value = currentFilterSelected;
     }
 
-    // Handle "+ Add New Expense Type" Selection
     window.handleCategoryChange = async function(selectElem) {
       if (selectElem.value === "__ADD_NEW__") {
         const newCatName = prompt("Enter new expense type name:");
@@ -370,7 +370,6 @@
       }
     };
 
-    // Helper: Clean text for Firestore ID
     function sanitizeForId(str) {
       return str.toLowerCase().trim().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_");
     }
@@ -390,12 +389,10 @@
         return;
       }
 
-      // Unique Document ID Format: category_title_timestamp (To prevent overwrite when title is same)
       const cleanCat = sanitizeForId(category);
       const cleanTitle = sanitizeForId(title);
       const docId = editingId || `${cleanCat}_${cleanTitle}_${Date.now()}`;
 
-      // Existing item check for preserving original creation timestamp on edit
       const existingItem = editingId ? rawExpensesList.find(item => item.id === editingId) : null;
       const createdAt = existingItem && existingItem.createdAt ? existingItem.createdAt : new Date().toISOString();
 
@@ -412,12 +409,12 @@
         await setDoc(doc(db, "saffron", "mirpur10", "other_expenses", docId), expensePayload);
         alert(editingId ? "Data updated successfully!" : "Expense saved successfully!");
         resetForm();
+        fetchFromServerByDate(); // Reload data after save
       } catch (err) {
         alert("Error saving data: " + err.message);
       }
     });
 
-    // Reset Form State
     window.resetForm = function() {
       document.getElementById("expense-form").reset();
       document.getElementById("editing-expense-id").value = "";
@@ -427,50 +424,56 @@
       document.getElementById('exp-date').valueAsDate = new Date();
     };
 
-    // 3. FETCH EXPENSES LIST AND LISTEN
-    onSnapshot(expensesRef, (snapshot) => {
-      rawExpensesList = [];
-      if (!snapshot.empty) {
-        snapshot.docs.forEach(d => rawExpensesList.push(d.data()));
+    // 3. FETCH EXPENSES FROM SERVER BASED ON DATE RANGE FILTER
+    window.fetchFromServerByDate = async function() {
+      const fromDate = document.getElementById("filter-from-date").value;
+      const toDate = document.getElementById("filter-to-date").value;
+
+      const tbody = document.getElementById("expense-table-body");
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Loading from server...</td></tr>';
+
+      try {
+        let q;
+        if (fromDate && toDate) {
+          q = query(expensesRef, where("date", ">=", fromDate), where("date", "<=", toDate));
+        } else if (fromDate) {
+          q = query(expensesRef, where("date", ">=", fromDate));
+        } else if (toDate) {
+          q = query(expensesRef, where("date", "<=", toDate));
+        } else {
+          // Default to today only if no dates are selected
+          const today = new Date().toISOString().split('T')[0];
+          q = query(expensesRef, where("date", "==", today));
+        }
+
+        const querySnapshot = await getDocs(q);
+        rawExpensesList = [];
+        querySnapshot.forEach((docSnap) => {
+          rawExpensesList.push(docSnap.data());
+        });
+
+        applyFilters();
+      } catch (err) {
+        console.error("Error fetching from server: ", err);
+        // Fallback to initial default snapshot data if query fails (e.g. missing index)
+        applyFilters();
       }
-      applyFilters();
-    });
+    };
+
+    // Initial Load - fetch today's data from server on startup
+    fetchFromServerByDate();
 
     // 4. FILTER AND RENDER EXPENSES IN TABLE
     window.applyFilters = function() {
       const selectedCat = document.getElementById("filter-category").value;
-      const fromDate = document.getElementById("filter-from-date").value;
-      const toDate = document.getElementById("filter-to-date").value;
       const selectedMonth = document.getElementById("filter-month").value;
-
-      const isSearchActive = Boolean(selectedCat || fromDate || toDate || selectedMonth);
 
       let filteredList = rawExpensesList.filter(item => {
         let matchCat = selectedCat ? item.category === selectedCat : true;
-        let matchDateRange = true;
-        if (fromDate && toDate) {
-          matchDateRange = item.date >= fromDate && item.date <= toDate;
-        } else if (fromDate) {
-          matchDateRange = item.date >= fromDate;
-        } else if (toDate) {
-          matchDateRange = item.date <= toDate;
-        }
         let matchMonth = selectedMonth ? item.date.startsWith(selectedMonth) : true;
-        
-        // If no filter is applied, restrict default view to last 30 days
-        let match30Days = true;
-        if (!isSearchActive && item.date) {
-          const itemDate = new Date(item.date);
-          const thirtyDaysAgo = new Date();
-          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-          thirtyDaysAgo.setHours(0, 0, 0, 0);
-          match30Days = itemDate >= thirtyDaysAgo;
-        }
-
-        return matchCat && matchDateRange && matchMonth && match30Days;
+        return matchCat && matchMonth;
       });
 
-      // Sort by creation timestamp / date descending (Latest entry on top)
       filteredList.sort((a, b) => {
         const timeA = a.createdAt ? new Date(a.createdAt).getTime() : new Date(a.date).getTime();
         const timeB = b.createdAt ? new Date(b.createdAt).getTime() : new Date(b.date).getTime();
@@ -481,11 +484,12 @@
     };
 
     window.clearFilters = function() {
+      const today = new Date().toISOString().split('T')[0];
       document.getElementById("filter-category").value = "";
-      document.getElementById("filter-from-date").value = "";
-      document.getElementById("filter-to-date").value = "";
+      document.getElementById("filter-from-date").value = today;
+      document.getElementById("filter-to-date").value = today;
       document.getElementById("filter-month").value = "";
-      applyFilters();
+      fetchFromServerByDate();
     };
 
     function renderTable(dataList) {
@@ -495,7 +499,7 @@
       let totalAmount = 0;
 
       if (dataList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No expense records found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No expense records found for this date.</td></tr>';
         document.getElementById("filtered-total-amount").innerText = "৳ 0.00";
         return;
       }
@@ -503,7 +507,6 @@
       dataList.forEach((item) => {
         totalAmount += Number(item.amount || 0);
 
-        // Format Date & Time
         let formattedDateTime = item.date || "N/A";
         if (item.createdAt) {
           const dt = new Date(item.createdAt);
@@ -546,7 +549,6 @@
       document.getElementById("save-expense-btn").innerText = "Save Expense Details";
       document.getElementById("cancel-edit-btn").style.display = "inline-flex";
       
-      // Smooth scroll to top form
       const mainContent = document.querySelector('.main-content');
       if (mainContent) mainContent.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -557,6 +559,7 @@
         try {
           await deleteDoc(doc(db, "saffron", "mirpur10", "other_expenses", expenseId));
           alert("Expense record deleted successfully.");
+          fetchFromServerByDate();
         } catch (err) {
           alert("Error deleting record: " + err.message);
         }
